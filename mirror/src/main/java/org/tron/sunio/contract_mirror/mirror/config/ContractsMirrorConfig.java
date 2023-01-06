@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 @Slf4j
 @Component
-@ConfigurationProperties("contracts.mirror")
+@ConfigurationProperties("contract.mirror")
 public class ContractsMirrorConfig {
     private String appName;
     List<ContractInfo> getListContractFactory() {
