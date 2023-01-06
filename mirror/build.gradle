@@ -1,0 +1,24 @@
+buildscript {
+    ext {
+
+    }
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+    }
+}
+
+apply plugin: 'application'
+apply plugin: 'org.springframework.boot'
+
+mainClassName = 'org.tron.sunio.contract_mirror.mirror.MirrorApplication'
+archivesBaseName = 'contract-mirror'
+version = "1.0.0"
+
+dependencies {
+}
+
