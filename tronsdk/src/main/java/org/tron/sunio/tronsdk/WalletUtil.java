@@ -5,6 +5,7 @@ import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.*;
 import org.tron.sunio.tronsdk.common.crypto.Sha256Sm3Hash;
 import org.tron.sunio.tronsdk.common.core.Parameter.CommonConstant;
+import org.web3j.abi.datatypes.Address;
 
 import java.util.Arrays;
 
@@ -88,6 +89,15 @@ public class WalletUtil {
         return encode58Check(HexUtil.decodeHex(input));
     }
 
+    public static String ethAddressToTron(String input){
+        input = input.startsWith("0x") ? input.substring(2) : input;
+        byte[] ethBytes = HexUtil.decodeHex(input);
+        byte[] tronBytes = new byte[ethBytes.length + 1];
+        tronBytes[0] = 0x41;
+        System.arraycopy(ethBytes, 0, tronBytes, 1, ethBytes.length);
+        return encode58Check(tronBytes);
+    }
+
     public static void main(String[] args) {
         String base58check = "TJCnKsPa7y5okkXvQAidZBzqx3QyQ6sxMW";
         System.out.println(WalletUtil.tronAddressHex(base58check));
@@ -95,5 +105,6 @@ public class WalletUtil {
 
         String address = WalletUtil.encode58Check("0x410000000000000000000000000000000000000000");
         System.out.println(address);
+        System.out.println(ethAddressToTron("0x5a523b449890854c8fc460ab602df9f31fe4293f"));
     }
 }

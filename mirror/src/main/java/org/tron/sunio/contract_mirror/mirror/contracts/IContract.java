@@ -7,9 +7,7 @@ public interface IContract {
 
     boolean isUsing();
 
-    boolean initContract();
-
-    ContractType getContract();
+    ContractType getContractType();
 
     String getAddress();
 }

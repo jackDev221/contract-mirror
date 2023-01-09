@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @EnableConfigurationProperties
-@SpringBootApplication(scanBasePackages = "org.tron.sunio.contract_mirror")
+@SpringBootApplication(scanBasePackages = "org.tron.sunio")
 public class MirrorApplication {
 
     public static void main(String[] args) {

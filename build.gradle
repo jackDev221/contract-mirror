@@ -34,8 +34,8 @@ allprojects {
     [compileJava, compileTestJava, javadoc]*.options*.encoding = 'UTF-8'
 
     version = projectVersion
-    group = 'com.huobi.zkdex.perpetual'
-    description = 'L2交易水龙头'
+    group = 'org.tron.sunio'
+    description = 'contract mirror'
 
     repositories {
         mavenLocal()
@@ -115,15 +115,18 @@ allprojects {
 
         implementation("org.apache.httpcomponents:httpclient:${httpclientVersion}")
         implementation("com.squareup.okhttp3:okhttp:$okhttpVersion")
+        implementation("cn.hutool:hutool-all:$hutoolVersion")
 
         testImplementation("org.springframework.boot:spring-boot-starter-test:$springBootVersion")
         testImplementation("org.jacoco:org.jacoco.agent:$jacocoVersion")
         testImplementation("org.mockito:mockito-core:$mockitoVersion")
         testImplementation("org.mockito:mockito-junit-jupiter:$mockitoVersion")
+
         testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
         testImplementation("org.junit.jupiter:junit-jupiter-params:$junitVersion")
         testImplementation("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
         testImplementation("it.ozimov:embedded-redis:0.7.3")
+
         testImplementation("org.awaitility:awaitility:$awaitilityVersion")
         testImplementation("org.awaitility:awaitility-proxy:$awaitilityProxyVersion")
 
@@ -131,6 +134,7 @@ allprojects {
         annotationProcessor("org.projectlombok:lombok:$lombokVersion")
         testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
         testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+
 
         testImplementation 'org.openjdk.jmh:jmh-core:1.29'
         testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.29'

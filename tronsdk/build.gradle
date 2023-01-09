@@ -12,7 +12,6 @@ repositories {
 }
 
 dependencies {
-
     implementation 'io.grpc:grpc-netty-shaded:1.31.0'
     implementation 'io.grpc:grpc-netty:1.31.0'
     implementation 'io.grpc:grpc-okhttp:1.31.0'
@@ -20,7 +19,6 @@ dependencies {
     implementation 'io.grpc:grpc-stub:1.31.0'
     implementation 'com.google.protobuf:protobuf-java-util:3.11.0'
     implementation "org.bouncycastle:bcprov-jdk15on:$bouncycastleVersion"
-
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
