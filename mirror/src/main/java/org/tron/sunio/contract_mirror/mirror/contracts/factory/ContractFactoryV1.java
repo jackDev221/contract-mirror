@@ -121,8 +121,8 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
     }
 
     @Override
-    public boolean initContract() {
-        super.initContract();
+    public boolean initDataFromChain() {
+        super.initDataFromChain();
         ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
         if (ObjectUtil.isNull(factoryV1Data)) {
             factoryV1Data.setReady(false);

@@ -7,7 +7,10 @@ public interface IContract {
 
     boolean isUsing();
 
+    boolean isAddExchangeContracts();
+
     ContractType getContractType();
 
     String getAddress();
+    boolean initDataFromChain1();
 }

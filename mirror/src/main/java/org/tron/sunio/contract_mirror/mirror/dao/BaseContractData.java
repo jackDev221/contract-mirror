@@ -13,4 +13,5 @@ public class BaseContractData {
     protected ContractType type;
     protected boolean isReady;
     protected boolean isUsing;
+    protected boolean isAddExchangeContracts;
 }

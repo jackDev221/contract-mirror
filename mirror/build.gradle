@@ -22,6 +22,7 @@ version = "1.0.0"
 
 dependencies {
     implementation project(':tronsdk')
+    implementation project(':event_decode')
     implementation 'com.google.protobuf:protobuf-java:3.12.0'
 }
 

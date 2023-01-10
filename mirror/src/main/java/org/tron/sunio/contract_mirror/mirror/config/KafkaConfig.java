@@ -2,17 +2,24 @@ package org.tron.sunio.contract_mirror.mirror.config;
 
 import lombok.Data;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "kafka")
 public class KafkaConfig {
+    @Value("${servers:tctest-kafka-t2-1.tc-jp1.huobiidc.com:9092}")
     private String servers;
+    @Value("${groupId:test}")
     private String groupId;
+    @Value("${topicContractLog:test_topicContractLog}")
+    private String topicContractLog;
 
     public Properties defaultConfig() {
         Properties config = new Properties();
@@ -24,5 +31,9 @@ public class KafkaConfig {
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         return config;
+    }
+
+    public List<String> getTopics() {
+        return Arrays.asList(topicContractLog);
     }
 }

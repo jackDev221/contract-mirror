@@ -21,8 +21,8 @@ public class ContractV1 extends BaseContract {
     }
 
     @Override
-    public boolean initContract() {
-        super.initContract();
+    public boolean initDataFromChain() {
+        super.initDataFromChain();
         ContractV1Data v1Data = CacheHandler.v1Cache.getIfPresent(tokenAddress);
         if (ObjectUtil.isNull(v1Data)) {
             v1Data = new ContractV1Data();

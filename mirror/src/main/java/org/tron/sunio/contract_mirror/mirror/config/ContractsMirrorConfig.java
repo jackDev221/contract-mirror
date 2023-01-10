@@ -18,6 +18,7 @@ import java.util.Map;
 @Component
 @ConfigurationProperties("contract.mirror")
 public class ContractsMirrorConfig {
+    private long blockInterval;
     private String appName;
 
     private Map<String, String> factoryInfos = new HashMap<>();

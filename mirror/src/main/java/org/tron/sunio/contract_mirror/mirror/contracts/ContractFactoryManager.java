@@ -4,7 +4,6 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TronChainHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.ContractFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.servers.ContractMirror;
@@ -24,7 +23,7 @@ public class ContractFactoryManager {
 
     public boolean initFactoryMap(List<ContractInfo> contractInfoList) {
         log.info("ContractFactoryManager.initFactoryMap: create Factory!");
-        if (ObjectUtil.isNull(contractInfoList) || contractInfoList.size() == 0){
+        if (ObjectUtil.isNull(contractInfoList) || contractInfoList.size() == 0) {
             return true;
         }
         for (ContractInfo contractInfo : contractInfoList) {
@@ -43,8 +42,8 @@ public class ContractFactoryManager {
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
             BaseContract baseContract = iContractFactory.getBaseContract();
-            baseContract.initContract();
-            baseContract.setReady(true);
+            baseContract.initDataFromChain();
+//            baseContract.setReady(true);
         }
         return true;
     }
@@ -54,6 +53,9 @@ public class ContractFactoryManager {
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
             BaseContract baseContract = iContractFactory.getBaseContract();
+            if (!baseContract.isReady() || baseContract.isAddExchangeContracts()) {
+                continue;
+            }
             HashMap<String, BaseContract> contractHashMap = this.contractMirror.getContractHashMap();
             if (!contractHashMap.containsKey(addr)) {
                 contractHashMap.put(baseContract.address, baseContract);
@@ -66,6 +68,7 @@ public class ContractFactoryManager {
                 }
                 contractHashMap.put(baseContract1.address, baseContract1);
             }
+            baseContract.setAddExchangeContracts(true);
         }
         return true;
     }

@@ -71,9 +71,10 @@ allprojects {
     // general dependencies
     dependencies {
         // FOR KAFKA LOG
-        implementation("ch.qos.logback:logback-classic:${logbackClassicVersion}")
-        implementation("com.github.danielwegener:logback-kafka-appender:${logbackKafkaAppenderVersion}")
-        implementation("net.logstash.logback:logstash-logback-encoder:${logstashLogbackEncoderVersion}")
+//        implementation("ch.qos.logback:logback-classic:${logbackClassicVersion}")
+//        implementation("com.github.danielwegener:logback-kafka-appender:${logbackKafkaAppenderVersion}")
+//        implementation("net.logstash.logback:logstash-logback-encoder:${logstashLogbackEncoderVersion}")
+        implementation("org.apache.kafka:kafka-clients:${kafkaVersion}")
 
         implementation("org.bouncycastle:bcprov-jdk15on:$bouncycastleVersion")
         implementation 'com.github.pcj:google-options:1.0.0'

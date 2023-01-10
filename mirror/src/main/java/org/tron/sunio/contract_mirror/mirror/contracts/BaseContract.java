@@ -23,29 +23,64 @@ import java.util.List;
 @Data
 @Slf4j
 public class BaseContract implements IContract {
+    private static final int INIT_FLAG_INIT = -1;
+    private static final int INIT_FLAG_START = 0;
+    private static final int INIT_FLAG_DOING = 1;
+    private static final int INIT_FLAG_FAILED = 2;
+    private static final int INIT_FLAG_SUCCESS = 2;
     protected String address;
     protected ContractType type;
     protected boolean isReady;
     protected boolean isUsing;
     protected IChainHelper iChainHelper;
-
-
+    protected boolean isAddExchangeContracts;
+    private long t0;
+    private long t1;
+    private int initFlag;
 
     public BaseContract(String address, ContractType type, IChainHelper iChainHelper) {
         this.type = type;
         this.address = address;
         this.iChainHelper = iChainHelper;
         this.isUsing = true;
+        this.initFlag = INIT_FLAG_INIT;
     }
 
-    public boolean initContract() {
+    public boolean initDataFromChain() {
         log.info("Contract:{}, type:{} start init", this.address, this.type);
+        t0 = System.currentTimeMillis();
+        initFlag = INIT_FLAG_START;
+        initDataFromChain1();
+        t1 = System.currentTimeMillis();
         return false;
+    }
+
+    public void handleEvent() {
+        if (initFlag == INIT_FLAG_START) {
+            initFlag = INIT_FLAG_DOING;
+        }
+    }
+
+    // 针对该批次kafka没有对应要消费的事件
+    public void finishBatchKafka() {
+        if (initFlag == INIT_FLAG_START) {
+            initFlag = INIT_FLAG_SUCCESS;
+        }
+        if (initFlag == INIT_FLAG_SUCCESS){
+            isReady = true;
+        }else{
+            initFlag = INIT_FLAG_INIT;
+        }
     }
 
     @Override
     public ContractType getContractType() {
         return type;
+    }
+
+    @Override
+    public boolean initDataFromChain1() {
+        return false;
     }
 
     protected String callContractString(String from, String method) {
