@@ -1,11 +1,14 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.factory;
 
+import cn.hutool.core.util.ObjectUtil;
+import org.tron.sunio.contract_mirror.mirror.cache.CacheHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.ContractV1;
+import org.tron.sunio.contract_mirror.mirror.dao.ContractFactoryV1Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.TypeReference;
@@ -18,8 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ContractFactoryV1 extends BaseContract implements IContractFactory {
-    private String feeAddress;
-    private long feeToRate;
 
     public ContractFactoryV1(String address, IChainHelper iChainHelper) {
         super(address, ContractType.CONTRACT_FACTORY_V1, iChainHelper);
@@ -59,8 +60,13 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
 
     @Override
     public String getFactoryState() {
-        return String.format("Address:%s, Type: %s, feeAddress:%s, feeToRate:%d", this.address, this.type, feeAddress,
-                feeToRate);
+        ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
+        if (ObjectUtil.isNotNull(factoryV1Data)) {
+            return String.format("Address:%s, Type: %s, feeAddress:%s, feeToRate:%d", this.address, this.type, factoryV1Data.getFeeAddress(),
+                    factoryV1Data.getFeeToRate());
+        }
+        return String.format("Address:%s, Type: %s not init", this.address, this.type);
+
     }
 
     private BigInteger getTokenCount() {
@@ -117,6 +123,13 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
     @Override
     public boolean initContract() {
         super.initContract();
+        ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
+        if (ObjectUtil.isNull(factoryV1Data)) {
+            factoryV1Data.setReady(false);
+            factoryV1Data.setUsing(true);
+            factoryV1Data.setAddress(this.address);
+            factoryV1Data.setType(this.type);
+        }
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
         triggerContractInfo.setContractAddress(this.getAddress());
         triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
@@ -128,14 +141,15 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
         });
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         Address feeAddress = (Address) results.get(0).getValue();
-        this.feeAddress = WalletUtil.ethAddressToTron(feeAddress.toString());
+        factoryV1Data.setFeeAddress(WalletUtil.ethAddressToTron(feeAddress.toString()));
         triggerContractInfo.setMethodName("feeToRate");
         outputParameters = new ArrayList<>();
         outputParameters.add(new TypeReference<Uint256>() {
         });
         results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         BigInteger feeToRate = (BigInteger) results.get(0).getValue();
-        this.feeToRate = feeToRate.longValue();
+        factoryV1Data.setFeeToRate(feeToRate.longValue());
+        CacheHandler.v1FactoryCache.put(this.address, factoryV1Data);
         return true;
     }
 

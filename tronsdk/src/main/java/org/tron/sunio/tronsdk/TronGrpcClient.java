@@ -34,7 +34,7 @@ public class TronGrpcClient {
 
     //The "side effect" of long connection keep-alive, convenient to use when constructing transactions
     //see the function "availableReferBlock"
-    private ReferBlock referBlock = null;
+    private  volatile  ReferBlock referBlock = null;
 
     private TronGrpcClient(String grpcEndpoint, String grpcEndpointSolidity) {
         channel = ManagedChannelBuilder.forTarget(grpcEndpoint).usePlaintext().build();

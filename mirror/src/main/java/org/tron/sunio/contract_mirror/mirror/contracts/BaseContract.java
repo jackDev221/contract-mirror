@@ -2,6 +2,8 @@ package org.tron.sunio.contract_mirror.mirror.contracts;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.tron.sunio.contract_mirror.mirror.cache.CacheHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
@@ -26,6 +28,7 @@ public class BaseContract implements IContract {
     protected boolean isReady;
     protected boolean isUsing;
     protected IChainHelper iChainHelper;
+
 
 
     public BaseContract(String address, ContractType type, IChainHelper iChainHelper) {
