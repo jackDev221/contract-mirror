@@ -1,6 +1,12 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.factory;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
+import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
+import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
+import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
 import org.tron.sunio.contract_mirror.mirror.cache.CacheHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
@@ -11,6 +17,7 @@ import org.tron.sunio.contract_mirror.mirror.contracts.impl.ContractV1;
 import org.tron.sunio.contract_mirror.mirror.dao.ContractFactoryV1Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
+import org.web3j.abi.EventValues;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Type;
@@ -18,12 +25,17 @@ import org.web3j.abi.datatypes.generated.Uint256;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 public class ContractFactoryV1 extends BaseContract implements IContractFactory {
+    private Map<String, String> v1SigMap;
 
-    public ContractFactoryV1(String address, IChainHelper iChainHelper) {
-        super(address, ContractType.CONTRACT_FACTORY_V1, iChainHelper);
+    public ContractFactoryV1(String address, IChainHelper iChainHelper, final Map<String, String> sigMap) {
+        super(address, ContractType.CONTRACT_FACTORY_V1, iChainHelper, sigMap);
+        v1SigMap = SwapV1Event.getSigMap();
     }
 
     @Override
@@ -39,7 +51,7 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
             Address tokenAddress = getTokenWithId(i);
             Address contractAddress = getExchange(tokenAddress);
             ContractV1 contractV1 = new ContractV1(WalletUtil.ethAddressToTron(contractAddress.toString()),
-                    this.iChainHelper, WalletUtil.ethAddressToTron(tokenAddress.toString()));
+                    this.iChainHelper, WalletUtil.ethAddressToTron(tokenAddress.toString()), v1SigMap);
 
             result.add(contractV1);
         }
@@ -121,8 +133,7 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
     }
 
     @Override
-    public boolean initDataFromChain() {
-        super.initDataFromChain();
+    public boolean initDataFromChain1() {
         ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
         if (ObjectUtil.isNull(factoryV1Data)) {
             factoryV1Data.setReady(false);
@@ -151,6 +162,71 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
         factoryV1Data.setFeeToRate(feeToRate.longValue());
         CacheHandler.v1FactoryCache.put(this.address, factoryV1Data);
         return true;
+    }
+
+    @Override
+    public void handleEvent(ContractEventLog contractEventLog) {
+        super.handleEvent(contractEventLog);
+        if (!isReady) {
+            return;
+        }
+        String[] topics = contractEventLog.getTopicList();
+        if (topics == null || topics.length <= 0) {
+            log.warn("Wrong log no topic, id:{}", contractEventLog.getUniqueId());
+        }
+        // Do handleEvent
+        String eventName = sigMap.getOrDefault(topics[0], "");
+        if (StringUtils.isEmpty(eventName)) {
+            // 非改合约事件不处理
+            return;
+        }
+        switch (eventName) {
+            case SwapV1FactoryEvent
+                    .EVENT_NAME_FEE_RATE:
+                handEventFeeRate(topics, contractEventLog.getData());
+                break;
+            case SwapV1FactoryEvent
+                    .EVENT_NAME_FEE_TO:
+                handEventFeeTo(topics, contractEventLog.getData());
+                break;
+            case SwapV1FactoryEvent
+                    .EVENT_NAME_NEW_EXCHANGE:
+                handEventNewExchange(topics, contractEventLog.getData());
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void handEventFeeRate(String[] topics, String data) {
+        EventValues values = EventUtils.getEventValue(SwapV1FactoryEvent.EVENT_NAME_FEE_RATE_BODY,
+                Arrays.asList(topics), data, false);
+        if (ObjectUtil.isNull(values)) {
+            log.error("handEventFeeRate failed!!");
+            return;
+        }
+        ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
+        BigInteger feeRate = (BigInteger) values.getNonIndexedValues().get(0).getValue();
+        factoryV1Data.setFeeToRate(feeRate.longValue());
+        CacheHandler.v1FactoryCache.put(this.address, factoryV1Data);
+    }
+
+    private void handEventFeeTo(String[] topics, String data) {
+        EventValues values = EventUtils.getEventValue(SwapV1FactoryEvent.EVENT_NAME_FEE_TO,
+                Arrays.asList(topics), data, false);
+        if (ObjectUtil.isNull(values)) {
+            log.error("handEventFeeRate failed!!");
+            return;
+        }
+        ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
+        String feeAddress = WalletUtil.ethAddressToTron((String)values.getNonIndexedValues().get(0).getValue());
+        factoryV1Data.setFeeAddress(feeAddress);
+        CacheHandler.v1FactoryCache.put(this.address, factoryV1Data);
+
+    }
+
+    private void handEventNewExchange(String[] topics, String data) {
+        isAddExchangeContracts = false;
     }
 
 }

@@ -3,6 +3,7 @@ package org.tron.sunio.contract_mirror.mirror.contracts;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
 import org.tron.sunio.contract_mirror.mirror.cache.CacheHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
@@ -19,6 +20,7 @@ import org.web3j.abi.datatypes.generated.Uint256;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Slf4j
@@ -36,12 +38,22 @@ public class BaseContract implements IContract {
     protected boolean isAddExchangeContracts;
     private long t0;
     private long t1;
+    private long t2;
     private int initFlag;
+    protected Map<String, String> sigMap;
 
-    public BaseContract(String address, ContractType type, IChainHelper iChainHelper) {
+    private boolean isContractIncremental() {
+        if (type == ContractType.CONTRACT_SSP) {
+            return true;
+        }
+        return false;
+    }
+
+    public BaseContract(String address, ContractType type, IChainHelper iChainHelper, final Map<String, String> sigMap) {
         this.type = type;
         this.address = address;
         this.iChainHelper = iChainHelper;
+        this.sigMap = sigMap;
         this.isUsing = true;
         this.initFlag = INIT_FLAG_INIT;
     }
@@ -52,23 +64,56 @@ public class BaseContract implements IContract {
         initFlag = INIT_FLAG_START;
         initDataFromChain1();
         t1 = System.currentTimeMillis();
+        t2 = t1 + (t1 - t0);
         return false;
     }
 
-    public void handleEvent() {
-        if (initFlag == INIT_FLAG_START) {
-            initFlag = INIT_FLAG_DOING;
+    protected void initIncremental(ContractEventLog contractEventLog) {
+        initFlag = INIT_FLAG_DOING;
+        long eventTime = contractEventLog.getTimeStamp();
+        if (eventTime < t0) {
+            return;
+        }
+        if (eventTime <= t2) {
+            isReady = true;
+            initFlag = INIT_FLAG_SUCCESS;
+        } else {
+            isReady = false;
+            initFlag = INIT_FLAG_FAILED;
+        }
+    }
+
+    protected void initFull(ContractEventLog contractEventLog) {
+        initFlag = INIT_FLAG_DOING;
+        long eventTime = contractEventLog.getTimeStamp();
+        if (eventTime < t0) {
+            return;
+        }
+        isReady = true;
+        initFlag = INIT_FLAG_SUCCESS;
+    }
+
+    public void handleEvent(ContractEventLog contractEventLog) {
+        if (!isReady) {
+            if (initFlag == INIT_FLAG_START) {
+                initFlag = INIT_FLAG_DOING;
+            }
+            if (isContractIncremental()) {
+                initIncremental(contractEventLog);
+            } else {
+                initFull(contractEventLog);
+            }
         }
     }
 
     // 针对该批次kafka没有对应要消费的事件
     public void finishBatchKafka() {
-        if (initFlag == INIT_FLAG_START) {
+        if (initFlag == INIT_FLAG_START || initFlag == INIT_FLAG_DOING) {
             initFlag = INIT_FLAG_SUCCESS;
         }
-        if (initFlag == INIT_FLAG_SUCCESS){
+        if (initFlag == INIT_FLAG_SUCCESS) {
             isReady = true;
-        }else{
+        } else {
             initFlag = INIT_FLAG_INIT;
         }
     }

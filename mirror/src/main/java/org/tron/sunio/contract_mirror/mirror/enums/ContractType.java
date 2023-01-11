@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 public enum ContractType {
     CONTRACT_V1("CONTRACT_V1"),
     CONTRACT_V2("CONTRACT_V2"),
-    CONTRACT_SSP("CONTRACT_V3"),
+    CONTRACT_SSP("CONTRACT_SSP"),
     CONTRACT_ROOTER("CONTRACT_ROOTER"),
     CONTRACT_FACTORY_V1("CONTRACT_FACTORY_V1");
     private final String desc;

@@ -2,8 +2,6 @@ package org.tron.sunio.contract_mirror.event_decode.logdata;
 
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 public class ContractEventLog {
     private long timeStamp;
@@ -19,6 +17,6 @@ public class ContractEventLog {
     private boolean removed;
     private long latestSolidifiedBlockNumber;
     private RawData rawData;
-    private List<String> topicList;
+    private String[] topicList;
     private String data;
 }

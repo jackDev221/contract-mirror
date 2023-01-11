@@ -1,6 +1,7 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
 import org.tron.sunio.contract_mirror.mirror.cache.CacheHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
@@ -10,19 +11,20 @@ import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 
 
 import java.math.BigInteger;
+import java.util.Map;
 
 
 public class ContractV1 extends BaseContract {
 
     private String tokenAddress;
-    public ContractV1(String address, IChainHelper iChainHelper, String tokenAddress) {
-        super(address, ContractType.CONTRACT_V1, iChainHelper);
+
+    public ContractV1(String address, IChainHelper iChainHelper, String tokenAddress, final Map<String, String> sigMap) {
+        super(address, ContractType.CONTRACT_V1, iChainHelper, sigMap);
         this.tokenAddress = tokenAddress;
     }
 
     @Override
-    public boolean initDataFromChain() {
-        super.initDataFromChain();
+    public boolean initDataFromChain1() {
         ContractV1Data v1Data = CacheHandler.v1Cache.getIfPresent(tokenAddress);
         if (ObjectUtil.isNull(v1Data)) {
             v1Data = new ContractV1Data();
@@ -46,4 +48,12 @@ public class ContractV1 extends BaseContract {
         return true;
     }
 
+    @Override
+    public void handleEvent(ContractEventLog contractEventLog) {
+        super.handleEvent(contractEventLog);
+        if (!isReady) {
+            return;
+        }
+        // Do handleEvent
+    }
 }

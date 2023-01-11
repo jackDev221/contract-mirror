@@ -4,12 +4,15 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
+import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TronChainHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.ContractFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.servers.ContractMirror;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -20,9 +23,17 @@ public class ContractFactoryManager {
     @Autowired
     private TronChainHelper tronChainHelper;
     private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
+    private Map<String, String> v1FactorySigMap;
+
+
+    private void initSigMaps() {
+
+        v1FactorySigMap = SwapV1FactoryEvent.getSigMap();
+    }
 
     public boolean initFactoryMap(List<ContractInfo> contractInfoList) {
         log.info("ContractFactoryManager.initFactoryMap: create Factory!");
+        initSigMaps();
         if (ObjectUtil.isNull(contractInfoList) || contractInfoList.size() == 0) {
             return true;
         }
@@ -31,7 +42,8 @@ public class ContractFactoryManager {
                 case CONTRACT_FACTORY_V1:
                     contractFactoryHashMap.put(contractInfo.getAddress(), new ContractFactoryV1(
                             contractInfo.getAddress(),
-                            tronChainHelper
+                            tronChainHelper,
+                            v1FactorySigMap
                     ));
                     break;
                 default:

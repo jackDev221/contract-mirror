@@ -46,7 +46,6 @@ public class ContractMirror implements InitializingBean {
         initKafka();
         contractFactoryManager.initFactoryMap(config.getListContractFactory());
         doTask();
-//        contractFactoryManager.updateMirrorContracts();
     }
 
     private void initKafka() {
@@ -110,7 +109,7 @@ public class ContractMirror implements InitializingBean {
                    }
                    BaseContract baseContract = contractHashMap.get(contractEventLog.getContractAddress());
                    if (ObjectUtil.isNotNull(baseContract)) {
-                       baseContract.handleEvent();
+                       baseContract.handleEvent(contractEventLog);
                    }
                }
                consumer.commitSync();
