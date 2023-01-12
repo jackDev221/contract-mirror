@@ -2,6 +2,7 @@ package org.tron.sunio.contract_mirror.mirror.contracts;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
 import org.tron.sunio.contract_mirror.mirror.cache.CacheHandler;
@@ -76,11 +77,16 @@ public class BaseContract implements IContract {
         }
         if (eventTime <= t2) {
             isReady = true;
+            updateBaseInfoToCache(isUsing, isReady, isAddExchangeContracts);
             initFlag = INIT_FLAG_SUCCESS;
         } else {
             isReady = false;
             initFlag = INIT_FLAG_FAILED;
         }
+    }
+
+    public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
+
     }
 
     protected void initFull(ContractEventLog contractEventLog) {
@@ -91,6 +97,17 @@ public class BaseContract implements IContract {
         }
         isReady = true;
         initFlag = INIT_FLAG_SUCCESS;
+        updateBaseInfoToCache(isUsing, isReady, isAddExchangeContracts);
+    }
+
+    protected String getEventName(ContractEventLog contractEventLog) {
+        String[] topics = contractEventLog.getTopicList();
+        if (topics == null || topics.length <= 0) {
+            log.warn("Wrong log no topic, id:{}", contractEventLog.getUniqueId());
+            return null;
+        }
+        // Do handleEvent
+        return sigMap.getOrDefault(topics[0], "");
     }
 
     public void handleEvent(ContractEventLog contractEventLog) {
@@ -113,6 +130,7 @@ public class BaseContract implements IContract {
         }
         if (initFlag == INIT_FLAG_SUCCESS) {
             isReady = true;
+            updateBaseInfoToCache(isUsing, isReady, isAddExchangeContracts);
         } else {
             initFlag = INIT_FLAG_INIT;
         }
@@ -134,8 +152,8 @@ public class BaseContract implements IContract {
         outputParameters.add(new TypeReference<Utf8String>() {
         });
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                this.getAddress(),
                 from,
+                this.getAddress(),
                 method,
                 inputParameters,
                 outputParameters
@@ -150,8 +168,8 @@ public class BaseContract implements IContract {
         outputParameters.add(new TypeReference<Uint256>() {
         });
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                this.getAddress(),
                 from,
+                this.getAddress(),
                 method,
                 inputParameters,
                 outputParameters
@@ -166,8 +184,8 @@ public class BaseContract implements IContract {
         outputParameters.add(new TypeReference<Uint>() {
         });
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                this.getAddress(),
                 from,
+                this.getAddress(),
                 method,
                 inputParameters,
                 outputParameters
@@ -182,14 +200,31 @@ public class BaseContract implements IContract {
         outputParameters.add(new TypeReference<Address>() {
         });
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                this.getAddress(),
                 from,
+                this.getAddress(),
                 method,
                 inputParameters,
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         return (Address) results.get(0).getValue();
+    }
+
+    protected BigInteger tokenBalance(String from, String contract) {
+        List<Type> inputParameters = new ArrayList<>();
+        inputParameters.add(new Address(WalletUtil.ethAddressHex(from)));
+        List<TypeReference<?>> outputParameters = new ArrayList<>();
+        outputParameters.add(new TypeReference<Uint256>() {
+        });
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
+                from,
+                contract,
+                "balanceOf",
+                inputParameters,
+                outputParameters
+        );
+        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        return (BigInteger) results.get(0).getValue();
     }
 
     protected BigInteger getBalance(String address) {

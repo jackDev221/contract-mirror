@@ -16,6 +16,7 @@ import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.ContractV1;
 import org.tron.sunio.contract_mirror.mirror.dao.ContractFactoryV1Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
+import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.TypeReference;
@@ -47,8 +48,12 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
     public List<BaseContract> getListContracts() {
         List<BaseContract> result = new ArrayList<>();
         long totalTokens = getTokenCount().longValue();
+        //TODO 这里token数目太多了，之后看看是否能优化下
         for (long i = 0; i < totalTokens; i++) {
             Address tokenAddress = getTokenWithId(i);
+            if (tokenAddress.equals(Address.DEFAULT)) {
+                continue;
+            }
             Address contractAddress = getExchange(tokenAddress);
             ContractV1 contractV1 = new ContractV1(WalletUtil.ethAddressToTron(contractAddress.toString()),
                     this.iChainHelper, WalletUtil.ethAddressToTron(tokenAddress.toString()), v1SigMap);
@@ -64,6 +69,9 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
         long totalTokens = getTokenCount().longValue();
         for (long i = 0; i < totalTokens; i++) {
             Address tokenAddress = getTokenWithId(i);
+            if (tokenAddress.equals(Address.DEFAULT)) {
+                continue;
+            }
             Address contractAddress = getExchange(tokenAddress);
             result.add(WalletUtil.ethAddressToTron(contractAddress.toString()));
         }
@@ -87,8 +95,8 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
         outputParameters.add(new TypeReference<Uint256>() {
         });
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                this.getAddress(),
                 ContractMirrorConst.EMPTY_ADDRESS,
+                this.getAddress(),
                 "tokenCount",
                 inputParameters,
                 outputParameters
@@ -104,15 +112,15 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
         outputParameters.add(new TypeReference<Address>() {
         });
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                this.getAddress(),
                 ContractMirrorConst.EMPTY_ADDRESS,
+                this.getAddress(),
                 "getTokenWithId",
                 inputParameters,
                 outputParameters
         );
         triggerContractInfo.setOutputParameters(outputParameters);
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        return (Address) results.get(0).getValue();
+        return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
     }
 
     public Address getExchange(Address tokenAddress) {
@@ -122,47 +130,65 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
         outputParameters.add(new TypeReference<Address>() {
         });
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                this.getAddress(),
                 ContractMirrorConst.EMPTY_ADDRESS,
+                this.getAddress(),
                 "getExchange",
                 inputParameters,
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        return (Address) results.get(0).getValue();
+        return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
+    }
+
+    @Override
+    public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
+        ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
+        factoryV1Data.setReady(isReady);
+        factoryV1Data.setUsing(isUsing);
+        factoryV1Data.setAddExchangeContracts(isAddExchangeContracts);
+        CacheHandler.v1FactoryCache.put(address, factoryV1Data);
     }
 
     @Override
     public boolean initDataFromChain1() {
         ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
         if (ObjectUtil.isNull(factoryV1Data)) {
+            factoryV1Data = new ContractFactoryV1Data();
             factoryV1Data.setReady(false);
             factoryV1Data.setUsing(true);
             factoryV1Data.setAddress(this.address);
             factoryV1Data.setType(this.type);
         }
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
-        triggerContractInfo.setContractAddress(this.getAddress());
-        triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
-        triggerContractInfo.setMethodName("feeTo");
-        List<Type> inputParameters = new ArrayList<>();
-        triggerContractInfo.setInputParameters(inputParameters);
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Address>() {
-        });
-        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        Address feeAddress = (Address) results.get(0).getValue();
-        factoryV1Data.setFeeAddress(WalletUtil.ethAddressToTron(feeAddress.toString()));
-        triggerContractInfo.setMethodName("feeToRate");
-        outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Uint256>() {
-        });
-        results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        BigInteger feeToRate = (BigInteger) results.get(0).getValue();
-        factoryV1Data.setFeeToRate(feeToRate.longValue());
+        try {
+            // TODO feeTo feeToRate 可读性
+            TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
+            triggerContractInfo.setContractAddress(this.getAddress());
+            triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
+            triggerContractInfo.setMethodName("feeTo");
+            List<Type> inputParameters = new ArrayList<>();
+            triggerContractInfo.setInputParameters(inputParameters);
+            List<TypeReference<?>> outputParameters = new ArrayList<>();
+            outputParameters.add(new TypeReference<Address>() {
+            });
+            triggerContractInfo.setOutputParameters(outputParameters);
+            List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+            Address feeAddress = (Address) results.get(0).getValue();
+            factoryV1Data.setFeeAddress(WalletUtil.ethAddressToTron(feeAddress.toString()));
+            triggerContractInfo.setMethodName("feeToRate");
+            outputParameters = new ArrayList<>();
+            outputParameters.add(new TypeReference<Uint256>() {
+            });
+            triggerContractInfo.setOutputParameters(outputParameters);
+            results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+            BigInteger feeToRate = (BigInteger) results.get(0).getValue();
+            factoryV1Data.setFeeToRate(feeToRate.longValue());
+        } catch (Exception e) {
+            log.error("Fail to update Factory:{} property!", address);
+        }
         CacheHandler.v1FactoryCache.put(this.address, factoryV1Data);
         return true;
     }
+
 
     @Override
     public void handleEvent(ContractEventLog contractEventLog) {
@@ -170,16 +196,8 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
         if (!isReady) {
             return;
         }
+        String eventName = getEventName(contractEventLog);
         String[] topics = contractEventLog.getTopicList();
-        if (topics == null || topics.length <= 0) {
-            log.warn("Wrong log no topic, id:{}", contractEventLog.getUniqueId());
-        }
-        // Do handleEvent
-        String eventName = sigMap.getOrDefault(topics[0], "");
-        if (StringUtils.isEmpty(eventName)) {
-            // 非改合约事件不处理
-            return;
-        }
         switch (eventName) {
             case SwapV1FactoryEvent
                     .EVENT_NAME_FEE_RATE:
@@ -219,7 +237,7 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
             return;
         }
         ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
-        String feeAddress = WalletUtil.ethAddressToTron((String)values.getNonIndexedValues().get(0).getValue());
+        String feeAddress = WalletUtil.ethAddressToTron((String) values.getNonIndexedValues().get(0).getValue());
         factoryV1Data.setFeeAddress(feeAddress);
         CacheHandler.v1FactoryCache.put(this.address, factoryV1Data);
 

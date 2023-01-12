@@ -18,4 +18,6 @@ public class ContractV1Data extends BaseContractData{
     private long decimals;
     private int kLast;
     private BigInteger trxBalance;
+    private BigInteger tokenBalance;
+    private BigInteger lpTotalSupply;
 }

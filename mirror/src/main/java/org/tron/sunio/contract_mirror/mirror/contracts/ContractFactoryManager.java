@@ -1,11 +1,15 @@
 package org.tron.sunio.contract_mirror.mirror.contracts;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
+import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TronChainHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.ContractFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.servers.ContractMirror;
@@ -17,14 +21,12 @@ import java.util.Map;
 @Component
 @Slf4j
 public class ContractFactoryManager {
-    @Autowired
+    @Setter
     private ContractMirror contractMirror;
-
     @Autowired
-    private TronChainHelper tronChainHelper;
+    private IChainHelper tronChainHelper;
     private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
     private Map<String, String> v1FactorySigMap;
-
 
     private void initSigMaps() {
 
@@ -50,25 +52,25 @@ public class ContractFactoryManager {
                     break;
             }
         }
+        HashMap<String, BaseContract> contractHashMap = this.contractMirror.getContractHashMap();
         log.info("ContractFactoryManager.initFactoryMap: init Factory!");
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
             BaseContract baseContract = iContractFactory.getBaseContract();
-            baseContract.initDataFromChain();
-//            baseContract.setReady(true);
+            contractHashMap.put(baseContract.address, baseContract);
         }
         return true;
     }
 
     public boolean updateMirrorContracts() {
         log.info("ContractFactoryManager: start updateMirrorContracts");
+        HashMap<String, BaseContract> contractHashMap = this.contractMirror.getContractHashMap();
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
             BaseContract baseContract = iContractFactory.getBaseContract();
             if (!baseContract.isReady() || baseContract.isAddExchangeContracts()) {
                 continue;
             }
-            HashMap<String, BaseContract> contractHashMap = this.contractMirror.getContractHashMap();
             if (!contractHashMap.containsKey(addr)) {
                 contractHashMap.put(baseContract.address, baseContract);
             }
@@ -81,6 +83,7 @@ public class ContractFactoryManager {
                 contractHashMap.put(baseContract1.address, baseContract1);
             }
             baseContract.setAddExchangeContracts(true);
+            baseContract.updateBaseInfoToCache(baseContract.isUsing, baseContract.isReady, baseContract.isAddExchangeContracts);
         }
         return true;
     }
