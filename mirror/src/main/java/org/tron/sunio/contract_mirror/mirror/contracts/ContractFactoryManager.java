@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.ContractFactoryV1;
+import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,8 +18,11 @@ import java.util.Map;
 public class ContractFactoryManager {
     @Autowired
     private IChainHelper tronChainHelper;
+    @Autowired
+    private IDbHandler iDbHandler;
     private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
     private Map<String, String> v1FactorySigMap;
+
 
     private void initSigMaps() {
         v1FactorySigMap = SwapV1FactoryEvent.getSigMap();
@@ -36,6 +40,7 @@ public class ContractFactoryManager {
                     contractFactoryHashMap.put(contractInfo.getAddress(), new ContractFactoryV1(
                             contractInfo.getAddress(),
                             tronChainHelper,
+                            iDbHandler,
                             v1FactorySigMap
                     ));
                     break;

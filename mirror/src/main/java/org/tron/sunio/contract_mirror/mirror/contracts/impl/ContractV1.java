@@ -4,7 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
-import org.tron.sunio.contract_mirror.mirror.cache.CacheHandler;
+import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
@@ -34,14 +34,15 @@ public class ContractV1 extends BaseContract {
 
     private String tokenAddress;
 
-    public ContractV1(String address, IChainHelper iChainHelper, String tokenAddress, final Map<String, String> sigMap) {
-        super(address, ContractType.CONTRACT_V1, iChainHelper, sigMap);
+    public ContractV1(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, String tokenAddress,
+                      final Map<String, String> sigMap) {
+        super(address, ContractType.CONTRACT_V1, iChainHelper, iDbHandler, sigMap);
         this.tokenAddress = tokenAddress;
     }
 
     @Override
     public boolean initDataFromChain1() {
-        ContractV1Data v1Data = CacheHandler.v1Cache.getIfPresent(address);
+        ContractV1Data v1Data = iDbHandler.queryContractV1Data(address);
         if (ObjectUtil.isNull(v1Data)) {
             v1Data = new ContractV1Data();
             v1Data.setType(this.type);
@@ -70,17 +71,17 @@ public class ContractV1 extends BaseContract {
         v1Data.setLpTotalSupply(lpTotalSupply);
         v1Data.setTokenBalance(tokenBalance);
         v1Data.setReady(isReady);
-        CacheHandler.v1Cache.put(this.address, v1Data);
+        iDbHandler.updateContractV1Data(v1Data);
         return true;
     }
 
     @Override
     public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        ContractV1Data v1Data = CacheHandler.v1Cache.getIfPresent(address);
+        ContractV1Data v1Data = iDbHandler.queryContractV1Data(address);
         v1Data.setReady(isReady);
         v1Data.setUsing(isUsing);
         v1Data.setAddExchangeContracts(isAddExchangeContracts);
-        CacheHandler.v1Cache.put(this.address, v1Data);
+        iDbHandler.updateContractV1Data(v1Data);
     }
 
     @Override
@@ -129,7 +130,7 @@ public class ContractV1 extends BaseContract {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        ContractV1Data v1Data = CacheHandler.v1Cache.getIfPresent(tokenAddress);
+        ContractV1Data v1Data = iDbHandler.queryContractV1Data(address);
         String from = (String) values.getIndexedValues().get(0).getValue();
         String to = (String) values.getIndexedValues().get(0).getValue();
         BigInteger amount = (BigInteger) values.getNonIndexedValues().get(0).getValue();
@@ -145,7 +146,7 @@ public class ContractV1 extends BaseContract {
 
         }
         if (change) {
-            CacheHandler.v1Cache.put(this.address, v1Data);
+            iDbHandler.updateContractV1Data(v1Data);
         }
     }
 
@@ -156,12 +157,12 @@ public class ContractV1 extends BaseContract {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        ContractV1Data v1Data = CacheHandler.v1Cache.getIfPresent(tokenAddress);
+        ContractV1Data v1Data = iDbHandler.queryContractV1Data(address);
         BigInteger trx = (BigInteger) values.getIndexedValues().get(1).getValue();
         BigInteger tokenBalance = (BigInteger) values.getIndexedValues().get(2).getValue();
         v1Data.setTokenBalance(tokenBalance);
         v1Data.setTrxBalance(trx);
-        CacheHandler.v1Cache.put(this.address, v1Data);
+        iDbHandler.updateContractV1Data(v1Data);
     }
 
     private void handleAddLiquidity(String[] topics, String data) {

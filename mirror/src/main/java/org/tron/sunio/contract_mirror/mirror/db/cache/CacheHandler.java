@@ -1,15 +1,11 @@
-package org.tron.sunio.contract_mirror.mirror.cache;
+package org.tron.sunio.contract_mirror.mirror.db.cache;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import org.springframework.stereotype.Component;
 import org.tron.sunio.contract_mirror.mirror.dao.ContractFactoryV1Data;
 import org.tron.sunio.contract_mirror.mirror.dao.ContractV1Data;
 
-
-@Component
 public class CacheHandler {
-
     // max 16 * 32
     public final static Cache<String, ContractV1Data> v1Cache = CacheBuilder.newBuilder()
             .initialCapacity(2048)

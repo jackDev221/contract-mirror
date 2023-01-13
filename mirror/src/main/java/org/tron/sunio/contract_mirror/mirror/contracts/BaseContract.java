@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
+import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.TypeReference;
@@ -38,6 +39,7 @@ public class BaseContract implements IContract {
     private long t2;
     private int initFlag;
     protected Map<String, String> sigMap;
+    protected IDbHandler iDbHandler;
 
     private boolean isContractIncremental() {
 //        if (type == ContractType.CONTRACT_SSP) {
@@ -46,10 +48,12 @@ public class BaseContract implements IContract {
         return false;
     }
 
-    public BaseContract(String address, ContractType type, IChainHelper iChainHelper, final Map<String, String> sigMap) {
+    public BaseContract(String address, ContractType type, IChainHelper iChainHelper, IDbHandler iDbHandler,
+                        final Map<String, String> sigMap) {
         this.type = type;
         this.address = address;
         this.iChainHelper = iChainHelper;
+        this.iDbHandler = iDbHandler;
         this.sigMap = sigMap;
         this.isUsing = true;
         this.initFlag = INIT_FLAG_INIT;

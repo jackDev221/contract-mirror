@@ -2,12 +2,11 @@ package org.tron.sunio.contract_mirror.mirror.contracts.factory;
 
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
-import org.tron.sunio.contract_mirror.mirror.cache.CacheHandler;
+import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
@@ -34,8 +33,8 @@ import java.util.Map;
 public class ContractFactoryV1 extends BaseContract implements IContractFactory {
     private Map<String, String> v1SigMap;
 
-    public ContractFactoryV1(String address, IChainHelper iChainHelper, final Map<String, String> sigMap) {
-        super(address, ContractType.CONTRACT_FACTORY_V1, iChainHelper, sigMap);
+    public ContractFactoryV1(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, final Map<String, String> sigMap) {
+        super(address, ContractType.CONTRACT_FACTORY_V1, iChainHelper, iDbHandler, sigMap);
         v1SigMap = SwapV1Event.getSigMap();
     }
 
@@ -56,7 +55,7 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
             }
             Address contractAddress = getExchange(tokenAddress);
             ContractV1 contractV1 = new ContractV1(WalletUtil.ethAddressToTron(contractAddress.toString()),
-                    this.iChainHelper, WalletUtil.ethAddressToTron(tokenAddress.toString()), v1SigMap);
+                    this.iChainHelper, this.iDbHandler, WalletUtil.ethAddressToTron(tokenAddress.toString()), v1SigMap);
 
             result.add(contractV1);
         }
@@ -80,7 +79,7 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
 
     @Override
     public String getFactoryState() {
-        ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
+        ContractFactoryV1Data factoryV1Data = iDbHandler.queryContractFactoryV1Data(this.address);
         if (ObjectUtil.isNotNull(factoryV1Data)) {
             return String.format("Address:%s, Type: %s, feeAddress:%s, feeToRate:%d", this.address, this.type, factoryV1Data.getFeeAddress(),
                     factoryV1Data.getFeeToRate());
@@ -142,16 +141,16 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
 
     @Override
     public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
+        ContractFactoryV1Data factoryV1Data =iDbHandler.queryContractFactoryV1Data(this.address);
         factoryV1Data.setReady(isReady);
         factoryV1Data.setUsing(isUsing);
         factoryV1Data.setAddExchangeContracts(isAddExchangeContracts);
-        CacheHandler.v1FactoryCache.put(address, factoryV1Data);
+        iDbHandler.updateContractFactoryV1Data(factoryV1Data);
     }
 
     @Override
     public boolean initDataFromChain1() {
-        ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
+        ContractFactoryV1Data factoryV1Data = iDbHandler.queryContractFactoryV1Data(this.address);
         if (ObjectUtil.isNull(factoryV1Data)) {
             factoryV1Data = new ContractFactoryV1Data();
             factoryV1Data.setReady(false);
@@ -185,7 +184,7 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
         } catch (Exception e) {
             log.error("Fail to update Factory:{} property!", address);
         }
-        CacheHandler.v1FactoryCache.put(this.address, factoryV1Data);
+        iDbHandler.updateContractFactoryV1Data(factoryV1Data);
         return true;
     }
 
@@ -223,10 +222,10 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
             log.error("handEventFeeRate failed!!");
             return;
         }
-        ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
+        ContractFactoryV1Data factoryV1Data = iDbHandler.queryContractFactoryV1Data(this.address);
         BigInteger feeRate = (BigInteger) values.getNonIndexedValues().get(0).getValue();
         factoryV1Data.setFeeToRate(feeRate.longValue());
-        CacheHandler.v1FactoryCache.put(this.address, factoryV1Data);
+        iDbHandler.updateContractFactoryV1Data(factoryV1Data);
     }
 
     private void handEventFeeTo(String[] topics, String data) {
@@ -236,11 +235,10 @@ public class ContractFactoryV1 extends BaseContract implements IContractFactory 
             log.error("handEventFeeRate failed!!");
             return;
         }
-        ContractFactoryV1Data factoryV1Data = CacheHandler.v1FactoryCache.getIfPresent(this.address);
+        ContractFactoryV1Data factoryV1Data =iDbHandler.queryContractFactoryV1Data(this.address);
         String feeAddress = WalletUtil.ethAddressToTron((String) values.getNonIndexedValues().get(0).getValue());
         factoryV1Data.setFeeAddress(feeAddress);
-        CacheHandler.v1FactoryCache.put(this.address, factoryV1Data);
-
+        iDbHandler.updateContractFactoryV1Data(factoryV1Data);
     }
 
     private void handEventNewExchange(String[] topics, String data) {
