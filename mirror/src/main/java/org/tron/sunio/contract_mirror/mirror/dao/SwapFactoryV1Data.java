@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper=false)
-public class ContractFactoryV1Data extends BaseContractData{
+public class SwapFactoryV1Data extends BaseContractData{
     private String feeAddress;
     private long feeToRate;
 }

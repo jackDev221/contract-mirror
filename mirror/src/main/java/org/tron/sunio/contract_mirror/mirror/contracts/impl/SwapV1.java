@@ -8,7 +8,7 @@ import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
-import org.tron.sunio.contract_mirror.mirror.dao.ContractV1Data;
+import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.web3j.abi.EventValues;
 
@@ -30,21 +30,21 @@ import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVE
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_TOPIC_VALUE;
 
 @Slf4j
-public class ContractV1 extends BaseContract {
+public class SwapV1 extends BaseContract {
 
     private String tokenAddress;
 
-    public ContractV1(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, String tokenAddress,
-                      final Map<String, String> sigMap) {
-        super(address, ContractType.CONTRACT_V1, iChainHelper, iDbHandler, sigMap);
+    public SwapV1(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, String tokenAddress,
+                  final Map<String, String> sigMap) {
+        super(address, ContractType.SWAP_V1, iChainHelper, iDbHandler, sigMap);
         this.tokenAddress = tokenAddress;
     }
 
     @Override
     public boolean initDataFromChain1() {
-        ContractV1Data v1Data = iDbHandler.queryContractV1Data(address);
+        SwapV1Data v1Data = iDbHandler.queryContractV1Data(address);
         if (ObjectUtil.isNull(v1Data)) {
-            v1Data = new ContractV1Data();
+            v1Data = new SwapV1Data();
             v1Data.setType(this.type);
             v1Data.setAddress(this.address);
             v1Data.setTokenAddress(this.tokenAddress);
@@ -77,7 +77,7 @@ public class ContractV1 extends BaseContract {
 
     @Override
     public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        ContractV1Data v1Data = iDbHandler.queryContractV1Data(address);
+        SwapV1Data v1Data = iDbHandler.queryContractV1Data(address);
         v1Data.setReady(isReady);
         v1Data.setUsing(isUsing);
         v1Data.setAddExchangeContracts(isAddExchangeContracts);
@@ -130,7 +130,7 @@ public class ContractV1 extends BaseContract {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        ContractV1Data v1Data = iDbHandler.queryContractV1Data(address);
+        SwapV1Data v1Data = iDbHandler.queryContractV1Data(address);
         String from = (String) values.getIndexedValues().get(0).getValue();
         String to = (String) values.getIndexedValues().get(0).getValue();
         BigInteger amount = (BigInteger) values.getNonIndexedValues().get(0).getValue();
@@ -157,7 +157,7 @@ public class ContractV1 extends BaseContract {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        ContractV1Data v1Data = iDbHandler.queryContractV1Data(address);
+        SwapV1Data v1Data = iDbHandler.queryContractV1Data(address);
         BigInteger trx = (BigInteger) values.getIndexedValues().get(1).getValue();
         BigInteger tokenBalance = (BigInteger) values.getIndexedValues().get(2).getValue();
         v1Data.setTokenBalance(tokenBalance);

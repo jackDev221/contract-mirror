@@ -11,7 +11,7 @@ import java.math.BigInteger;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper=false)
-public class ContractV1Data extends BaseContractData{
+public class SwapV1Data extends BaseContractData{
     private String tokenAddress;
     private String name;
     private String symbol;

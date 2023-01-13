@@ -9,11 +9,12 @@ import java.util.stream.Stream;
 @Getter
 @AllArgsConstructor
 public enum ContractType {
-    CONTRACT_V1("CONTRACT_V1"),
-    CONTRACT_V2("CONTRACT_V2"),
+    SWAP_V1("SWAP_V1"),
+    SWAP_V2("SWAP_V2"),
     CONTRACT_SSP("CONTRACT_SSP"),
     CONTRACT_ROOTER("CONTRACT_ROOTER"),
-    CONTRACT_FACTORY_V1("CONTRACT_FACTORY_V1");
+    SWAP_FACTORY_V1("SWAP_FACTORY_V1"),
+    SWAP_FACTORY_V2("SWAP_FACTORY_V2");
     private final String desc;
 
     public static ContractType find(final String desc) {

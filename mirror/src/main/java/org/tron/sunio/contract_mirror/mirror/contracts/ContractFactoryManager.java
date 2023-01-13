@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
-import org.tron.sunio.contract_mirror.mirror.contracts.factory.ContractFactoryV1;
+import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 
 import java.util.HashMap;
@@ -36,8 +36,8 @@ public class ContractFactoryManager {
         }
         for (ContractInfo contractInfo : contractInfoList) {
             switch (contractInfo.getContractType()) {
-                case CONTRACT_FACTORY_V1:
-                    contractFactoryHashMap.put(contractInfo.getAddress(), new ContractFactoryV1(
+                case SWAP_FACTORY_V1:
+                    contractFactoryHashMap.put(contractInfo.getAddress(), new SwapFactoryV1(
                             contractInfo.getAddress(),
                             tronChainHelper,
                             iDbHandler,
