@@ -79,7 +79,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
 
     @Override
     public String getFactoryState() {
-        SwapFactoryV1Data factoryV1Data = iDbHandler.queryContractFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
         if (ObjectUtil.isNotNull(factoryV1Data)) {
             return String.format("Address:%s, Type: %s, feeAddress:%s, feeToRate:%d", this.address, this.type, factoryV1Data.getFeeAddress(),
                     factoryV1Data.getFeeToRate());
@@ -141,16 +141,16 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
 
     @Override
     public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        SwapFactoryV1Data factoryV1Data =iDbHandler.queryContractFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data =iDbHandler.querySwapFactoryV1Data(this.address);
         factoryV1Data.setReady(isReady);
         factoryV1Data.setUsing(isUsing);
         factoryV1Data.setAddExchangeContracts(isAddExchangeContracts);
-        iDbHandler.updateContractFactoryV1Data(factoryV1Data);
+        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
     }
 
     @Override
     public boolean initDataFromChain1() {
-        SwapFactoryV1Data factoryV1Data = iDbHandler.queryContractFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
         if (ObjectUtil.isNull(factoryV1Data)) {
             factoryV1Data = new SwapFactoryV1Data();
             factoryV1Data.setReady(false);
@@ -158,6 +158,12 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
             factoryV1Data.setAddress(this.address);
             factoryV1Data.setType(this.type);
         }
+        callChainData(factoryV1Data);
+        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
+        return true;
+    }
+
+    private void callChainData(SwapFactoryV1Data factoryV1Data) {
         try {
             // TODO feeTo feeToRate 可读性
             TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
@@ -184,8 +190,6 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
         } catch (Exception e) {
             log.error("Fail to update Factory:{} property!", address);
         }
-        iDbHandler.updateContractFactoryV1Data(factoryV1Data);
-        return true;
     }
 
 
@@ -211,6 +215,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
                 handEventNewExchange(topics, contractEventLog.getData());
                 break;
             default:
+                log.warn("event:{} not handle", topics[0]);
                 break;
         }
     }
@@ -222,10 +227,10 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        SwapFactoryV1Data factoryV1Data = iDbHandler.queryContractFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
         BigInteger feeRate = (BigInteger) values.getNonIndexedValues().get(0).getValue();
         factoryV1Data.setFeeToRate(feeRate.longValue());
-        iDbHandler.updateContractFactoryV1Data(factoryV1Data);
+        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
     }
 
     private void handEventFeeTo(String[] topics, String data) {
@@ -235,10 +240,10 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        SwapFactoryV1Data factoryV1Data =iDbHandler.queryContractFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data =iDbHandler.querySwapFactoryV1Data(this.address);
         String feeAddress = WalletUtil.ethAddressToTron((String) values.getNonIndexedValues().get(0).getValue());
         factoryV1Data.setFeeAddress(feeAddress);
-        iDbHandler.updateContractFactoryV1Data(factoryV1Data);
+        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
     }
 
     private void handEventNewExchange(String[] topics, String data) {

@@ -1,15 +1,24 @@
 package org.tron.sunio.contract_mirror.mirror.db;
 
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV1Data;
+import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV2Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
+import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 
 public interface IDbHandler {
-    SwapV1Data queryContractV1Data(String address);
+    SwapV1Data querySwapV1Data(String address);
 
-    void updateContractV1Data(SwapV1Data swapV1Data);
+    void updateSwapV1Data(SwapV1Data swapV1Data);
 
-    SwapFactoryV1Data queryContractFactoryV1Data(String address);
+    SwapFactoryV1Data querySwapFactoryV1Data(String address);
 
-    void updateContractFactoryV1Data(SwapFactoryV1Data factoryV1Data);
+    void updateSwapFactoryV1Data(SwapFactoryV1Data factoryV1Data);
 
+    SwapV2PairData querySwapV2PairData(String address);
+
+    void updateSwapV2PairData(SwapV2PairData swapV1Data);
+
+    SwapFactoryV2Data querySwapFactoryV2Data(String address);
+
+    void updateSwapFactoryV2Data(SwapFactoryV2Data factoryV1Data);
 }

@@ -2,29 +2,51 @@ package org.tron.sunio.contract_mirror.mirror.db;
 
 import org.springframework.stereotype.Component;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV1Data;
+import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV2Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
+import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 import org.tron.sunio.contract_mirror.mirror.db.cache.CacheHandler;
 
 @Component
 public class DbHandler implements IDbHandler {
 
     @Override
-    public SwapV1Data queryContractV1Data(String address) {
-        return CacheHandler.v1Cache.getIfPresent(address);
+    public SwapV1Data querySwapV1Data(String address) {
+        return CacheHandler.swapV1Cache.getIfPresent(address);
     }
 
     @Override
-    public void updateContractV1Data(SwapV1Data contractV1Data) {
-        CacheHandler.v1Cache.put(contractV1Data.getAddress(), contractV1Data);
+    public void updateSwapV1Data(SwapV1Data contractV1Data) {
+        CacheHandler.swapV1Cache.put(contractV1Data.getAddress(), contractV1Data);
     }
 
     @Override
-    public SwapFactoryV1Data queryContractFactoryV1Data(String address) {
-        return CacheHandler.v1FactoryCache.getIfPresent(address);
+    public SwapFactoryV1Data querySwapFactoryV1Data(String address) {
+        return CacheHandler.swapV1FactoryCache.getIfPresent(address);
     }
 
     @Override
-    public void updateContractFactoryV1Data(SwapFactoryV1Data factoryV1Data) {
-        CacheHandler.v1FactoryCache.put(factoryV1Data.getAddress(), factoryV1Data);
+    public void updateSwapFactoryV1Data(SwapFactoryV1Data factoryV1Data) {
+        CacheHandler.swapV1FactoryCache.put(factoryV1Data.getAddress(), factoryV1Data);
+    }
+
+    @Override
+    public SwapV2PairData querySwapV2PairData(String address) {
+        return CacheHandler.swapV2PairCache.getIfPresent(address);
+    }
+
+    @Override
+    public void updateSwapV2PairData(SwapV2PairData swapV2PairData) {
+        CacheHandler.swapV2PairCache.put(swapV2PairData.getAddress(), swapV2PairData);
+    }
+
+    @Override
+    public SwapFactoryV2Data querySwapFactoryV2Data(String address) {
+        return CacheHandler.swapV2FactoryCache.getIfPresent(address);
+    }
+
+    @Override
+    public void updateSwapFactoryV2Data(SwapFactoryV2Data factoryV2Data) {
+        CacheHandler.swapV2FactoryCache.put(factoryV2Data.getAddress(), factoryV2Data);
     }
 }

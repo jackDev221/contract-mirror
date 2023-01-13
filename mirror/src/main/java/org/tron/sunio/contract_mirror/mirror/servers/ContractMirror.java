@@ -9,6 +9,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
 import org.tron.sunio.contract_mirror.event_decode.LogDecode;
@@ -29,6 +30,7 @@ import java.util.Properties;
 @Slf4j
 @Data
 public class ContractMirror implements InitializingBean, IContractsCollectHelper {
+    private final int EVENT_HANDLE_PERIOD = 200;
     @Autowired
     private ContractFactoryManager contractFactoryManager;
     @Autowired
@@ -50,7 +52,6 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     public void afterPropertiesSet() throws Exception {
         initKafka();
         contractFactoryManager.initFactoryMap(config.getListContractFactory(), this);
-        doTask();
     }
 
     private void initKafka() {
@@ -113,48 +114,47 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
             consumer.commitSync();
         }
     }
-
-    private void doTask() {
-        while (true) {
-            try {
-                for (String addr : contractHashMap.keySet()) {
-                    BaseContract baseContract = contractHashMap.get(addr);
-                    if (!baseContract.isReady()) {
-                        // not ready call data from chain
-                        baseContract.initDataFromChain();
-                    }
+    @Scheduled(initialDelay = 5000, fixedDelay = EVENT_HANDLE_PERIOD)
+    public void doTask() {
+        try {
+            for (String addr : contractHashMap.keySet()) {
+                BaseContract baseContract = contractHashMap.get(addr);
+                if (!baseContract.isReady()) {
+                    // not ready call data from chain
+                    baseContract.initDataFromChain();
                 }
-                // 工程合约更新完毕，且需要添加子合约。
-                contractFactoryManager.updateMirrorContracts(this);
-                boolean needSleep = false;
-                ConsumerRecords<String, String> records = kafkaConsumerPoll(200L);
-                for (ConsumerRecord<String, String> record : records) {
-                    ContractEventLog contractEventLog = LogDecode.decode(record.value());
-                    if (isNeedReload(contractEventLog.getBlockHash(), contractEventLog.getBlockNumber())) {
-                        setReloadAllContract();
-                        needSleep = true;
-                        break;
-                    }
-                    BaseContract baseContract = contractHashMap.get(contractEventLog.getContractAddress());
-                    if (ObjectUtil.isNotNull(baseContract)) {
-                        baseContract.handleEvent(contractEventLog);
-                    }
-                }
-                kafkaConsumerCommit();
-                if (needSleep) {
-                    TimeTool.sleep(config.getBlockInterval());
-                }
-                for (String addr : contractHashMap.keySet()) {
-                    BaseContract baseContract = contractHashMap.get(addr);
-                    if (!baseContract.isReady()) {
-                        // not ready call data from chain
-                        baseContract.finishBatchKafka();
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("doTask error:{}", e.toString());
             }
+            // 工程合约更新完毕，且需要添加子合约。
+            contractFactoryManager.updateMirrorContracts(this);
+            boolean needSleep = false;
+            ConsumerRecords<String, String> records = kafkaConsumerPoll(EVENT_HANDLE_PERIOD);
+            for (ConsumerRecord<String, String> record : records) {
+                ContractEventLog contractEventLog = LogDecode.decode(record.value());
+                if (isNeedReload(contractEventLog.getBlockHash(), contractEventLog.getBlockNumber())) {
+                    setReloadAllContract();
+                    needSleep = true;
+                    break;
+                }
+                BaseContract baseContract = contractHashMap.get(contractEventLog.getContractAddress());
+                if (ObjectUtil.isNotNull(baseContract)) {
+                    baseContract.handleEvent(contractEventLog);
+                }
+            }
+            kafkaConsumerCommit();
+            if (needSleep) {
+                TimeTool.sleep(config.getBlockInterval());
+            }
+            for (String addr : contractHashMap.keySet()) {
+                BaseContract baseContract = contractHashMap.get(addr);
+                if (!baseContract.isReady()) {
+                    // not ready call data from chain
+                    baseContract.finishBatchKafka();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("doTask error:{}", e.toString());
         }
+
     }
 
     @Override

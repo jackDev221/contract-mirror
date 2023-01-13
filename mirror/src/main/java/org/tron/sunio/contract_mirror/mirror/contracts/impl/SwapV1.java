@@ -42,7 +42,7 @@ public class SwapV1 extends BaseContract {
 
     @Override
     public boolean initDataFromChain1() {
-        SwapV1Data v1Data = iDbHandler.queryContractV1Data(address);
+        SwapV1Data v1Data = iDbHandler.querySwapV1Data(address);
         if (ObjectUtil.isNull(v1Data)) {
             v1Data = new SwapV1Data();
             v1Data.setType(this.type);
@@ -50,38 +50,45 @@ public class SwapV1 extends BaseContract {
             v1Data.setTokenAddress(this.tokenAddress);
             v1Data.setUsing(true);
         }
-        String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
-        String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
-        long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
-        int kLast = 0;
-        try {
-            kLast = callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "kLast").intValue();
-        } catch (Exception e) {
-            log.error("Contract swap v1:{}  get kLast failed", address);
-        }
-        BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
-        BigInteger tokenBalance = tokenBalance(this.getAddress(), tokenAddress);
-        BigInteger trxBalance = getBalance(address);
-        isReady = false;
-        v1Data.setName(name);
-        v1Data.setSymbol(symbol);
-        v1Data.setDecimals(decimals);
-        v1Data.setKLast(kLast);
-        v1Data.setTrxBalance(trxBalance);
-        v1Data.setLpTotalSupply(lpTotalSupply);
-        v1Data.setTokenBalance(tokenBalance);
-        v1Data.setReady(isReady);
-        iDbHandler.updateContractV1Data(v1Data);
+        callChainData(v1Data);
+        iDbHandler.updateSwapV1Data(v1Data);
         return true;
+    }
+
+    private void callChainData(SwapV1Data v1Data) {
+        try {
+            String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
+            String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
+            long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
+            int kLast = 0;
+            try {
+                kLast = callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "kLast").intValue();
+            } catch (Exception e) {
+                log.error("Contract swap v1:{}  get kLast failed", address);
+            }
+            BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
+            BigInteger tokenBalance = tokenBalance(this.getAddress(), tokenAddress);
+            BigInteger trxBalance = getBalance(address);
+            isReady = false;
+            v1Data.setName(name);
+            v1Data.setSymbol(symbol);
+            v1Data.setDecimals(decimals);
+            v1Data.setKLast(kLast);
+            v1Data.setTrxBalance(trxBalance);
+            v1Data.setLpTotalSupply(lpTotalSupply);
+            v1Data.setTokenBalance(tokenBalance);
+            v1Data.setReady(isReady);
+        } catch (Exception e) {
+        }
     }
 
     @Override
     public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        SwapV1Data v1Data = iDbHandler.queryContractV1Data(address);
+        SwapV1Data v1Data = iDbHandler.querySwapV1Data(address);
         v1Data.setReady(isReady);
         v1Data.setUsing(isUsing);
         v1Data.setAddExchangeContracts(isAddExchangeContracts);
-        iDbHandler.updateContractV1Data(v1Data);
+        iDbHandler.updateSwapV1Data(v1Data);
     }
 
     @Override
@@ -119,6 +126,7 @@ public class SwapV1 extends BaseContract {
                 handleAdminFeeMint(topics, contractEventLog.getData());
                 break;
             default:
+                log.warn("event:{} not handle", topics[0]);
                 break;
         }
     }
@@ -130,7 +138,7 @@ public class SwapV1 extends BaseContract {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        SwapV1Data v1Data = iDbHandler.queryContractV1Data(address);
+        SwapV1Data v1Data = iDbHandler.querySwapV1Data(address);
         String from = (String) values.getIndexedValues().get(0).getValue();
         String to = (String) values.getIndexedValues().get(0).getValue();
         BigInteger amount = (BigInteger) values.getNonIndexedValues().get(0).getValue();
@@ -146,7 +154,7 @@ public class SwapV1 extends BaseContract {
 
         }
         if (change) {
-            iDbHandler.updateContractV1Data(v1Data);
+            iDbHandler.updateSwapV1Data(v1Data);
         }
     }
 
@@ -157,12 +165,12 @@ public class SwapV1 extends BaseContract {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        SwapV1Data v1Data = iDbHandler.queryContractV1Data(address);
+        SwapV1Data v1Data = iDbHandler.querySwapV1Data(address);
         BigInteger trx = (BigInteger) values.getIndexedValues().get(1).getValue();
         BigInteger tokenBalance = (BigInteger) values.getIndexedValues().get(2).getValue();
         v1Data.setTokenBalance(tokenBalance);
         v1Data.setTrxBalance(trx);
-        iDbHandler.updateContractV1Data(v1Data);
+        iDbHandler.updateSwapV1Data(v1Data);
     }
 
     private void handleAddLiquidity(String[] topics, String data) {

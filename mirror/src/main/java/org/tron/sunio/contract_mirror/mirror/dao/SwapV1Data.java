@@ -10,8 +10,8 @@ import java.math.BigInteger;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper=false)
-public class SwapV1Data extends BaseContractData{
+@EqualsAndHashCode(callSuper = false)
+public class SwapV1Data extends BaseContractData {
     private String tokenAddress;
     private String name;
     private String symbol;

@@ -21,7 +21,7 @@ public class ContractStatusController {
     @GetMapping(value = "/swapv1/exchange/{address}/status")
     ResultResponse<SwapV1Data> queryContractV1ExchangeStatus(
             @ApiParam(name = "address", value = "合约地址") @PathVariable("address") String address) {
-        SwapV1Data v1Data = iDbHandler.queryContractV1Data(address);
+        SwapV1Data v1Data = iDbHandler.querySwapV1Data(address);
         if (ObjectUtil.isNull(v1Data)) {
             return RestResultGenerator.genErrorResult(ResponseEnum.SERVER_ERROR);
         }
@@ -31,7 +31,7 @@ public class ContractStatusController {
     @GetMapping(value = "/swapv1/factory/{address}/status")
     ResultResponse<SwapFactoryV1Data> queryContractV1FactoryStatus(
             @ApiParam(name = "address", value = "合约地址") @PathVariable("address") String address) {
-        SwapFactoryV1Data v1Data = iDbHandler.queryContractFactoryV1Data(address);
+        SwapFactoryV1Data v1Data = iDbHandler.querySwapFactoryV1Data(address);
         if (ObjectUtil.isNull(v1Data)) {
             return RestResultGenerator.genErrorResult(ResponseEnum.SERVER_ERROR);
         }
