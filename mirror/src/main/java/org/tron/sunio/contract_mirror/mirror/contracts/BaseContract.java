@@ -2,13 +2,9 @@ package org.tron.sunio.contract_mirror.mirror.contracts;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
-import org.tron.sunio.contract_mirror.mirror.cache.CacheHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
-import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.TypeReference;
@@ -44,9 +40,9 @@ public class BaseContract implements IContract {
     protected Map<String, String> sigMap;
 
     private boolean isContractIncremental() {
-        if (type == ContractType.CONTRACT_SSP) {
-            return true;
-        }
+//        if (type == ContractType.CONTRACT_SSP) {
+//            return true;
+//        }
         return false;
     }
 

@@ -18,6 +18,7 @@ import org.tron.sunio.contract_mirror.mirror.config.KafkaConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.ContractFactoryManager;
 import org.tron.sunio.contract_mirror.mirror.config.ContractsMirrorConfig;
+import org.tron.sunio.contract_mirror.mirror.contracts.IContractsCollectHelper;
 import org.tron.sunio.contract_mirror.mirror.tools.TimeTool;
 
 import java.time.Duration;
@@ -27,7 +28,7 @@ import java.util.Properties;
 @Service
 @Slf4j
 @Data
-public class ContractMirror implements InitializingBean {
+public class ContractMirror implements InitializingBean, IContractsCollectHelper {
     @Autowired
     private ContractFactoryManager contractFactoryManager;
     @Autowired
@@ -48,8 +49,7 @@ public class ContractMirror implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         initKafka();
-        contractFactoryManager.setContractMirror(this);
-        contractFactoryManager.initFactoryMap(config.getListContractFactory());
+        contractFactoryManager.initFactoryMap(config.getListContractFactory(), this);
         doTask();
     }
 
@@ -125,7 +125,7 @@ public class ContractMirror implements InitializingBean {
                     }
                 }
                 // 工程合约更新完毕，且需要添加子合约。
-                contractFactoryManager.updateMirrorContracts();
+                contractFactoryManager.updateMirrorContracts(this);
                 boolean needSleep = false;
                 ConsumerRecords<String, String> records = kafkaConsumerPoll(200L);
                 for (ConsumerRecord<String, String> record : records) {
@@ -155,5 +155,20 @@ public class ContractMirror implements InitializingBean {
                 log.warn("doTask error:{}", e.toString());
             }
         }
+    }
+
+    @Override
+    public void addContract(BaseContract baseContract) {
+        this.contractHashMap.put(baseContract.getAddress(), baseContract);
+    }
+
+    @Override
+    public BaseContract getContract(String address) {
+        return this.contractHashMap.get(address);
+    }
+
+    @Override
+    public boolean containsContract(String address) {
+        return this.contractHashMap.containsKey(address);
     }
 }

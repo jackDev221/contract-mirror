@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_ADD_LIQUIDITY;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_ADMIN_FEE_MINT;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_REMOVE_LIQUIDITY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_SNAPSHOT;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_SNAPSHOT_BODY;
@@ -112,6 +113,9 @@ public class ContractV1 extends BaseContract {
                 break;
             case EVENT_NAME_REMOVE_LIQUIDITY:
                 handleRemoveLiquidity(topics, contractEventLog.getData());
+                break;
+            case EVENT_NAME_ADMIN_FEE_MINT:
+                handleAdminFeeMint(topics, contractEventLog.getData());
                 break;
             default:
                 break;
