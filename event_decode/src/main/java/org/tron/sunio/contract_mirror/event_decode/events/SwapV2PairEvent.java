@@ -6,6 +6,8 @@ import java.util.Map;
 import static org.tron.sunio.contract_mirror.event_decode.events.EventUtils.genSigNameMap;
 
 public class SwapV2PairEvent {
+    public static final String EVENT_NAME_TRANSFER= "Transfer";
+    public static final String EVENT_NAME_TRANSFER_BODY= "event Transfer(address indexed from, address indexed to, uint256 value);";
     public static final String EVENT_NAME_NEW_MINT = "Mint";
     public static final String EVENT_NAME_NEW_MINT_BODY = "event Mint(address indexed sender, uint amount0, uint amount1);";
     public static final String EVENT_NAME_NEW_BURN = "Burn";
@@ -18,6 +20,7 @@ public class SwapV2PairEvent {
     public static Map<String, String> getSigMap() {
         Map<String, String> sigMap = new HashMap<>();
         Map<String, String> eventInfoMap = new HashMap<>();
+        eventInfoMap.put(EVENT_NAME_TRANSFER, EVENT_NAME_TRANSFER_BODY);
         eventInfoMap.put(EVENT_NAME_NEW_MINT, EVENT_NAME_NEW_MINT_BODY);
         eventInfoMap.put(EVENT_NAME_NEW_BURN, EVENT_NAME_NEW_BURN_BODY);
         eventInfoMap.put(EVENT_NAME_NEW_SWAP, EVENT_NAME_NEW_SWAP_BODY);

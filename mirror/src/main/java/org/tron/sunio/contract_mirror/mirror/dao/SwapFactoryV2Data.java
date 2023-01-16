@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class SwapFactoryV2Data extends BaseContractData {
     private String feeTo;
     private String feeToSetter;
+    private long pairCount;
 }

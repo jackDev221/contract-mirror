@@ -2,10 +2,8 @@ package org.tron.sunio.contract_mirror.mirror.contracts;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
-import org.tron.sunio.contract_mirror.mirror.contracts.events.ContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
@@ -162,6 +160,10 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() == 0){
+            log.error("Get contract:{} type:{} , function:{} result len is zero",this.address, this.type, method);
+            return "";
+        }
         return results.get(0).getValue().toString();
     }
 
@@ -178,6 +180,10 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() == 0){
+            log.error("Get contract:{} type:{} , function:{} result len is zero",this.address, this.type, method);
+            return BigInteger.ZERO;
+        }
         return (BigInteger) results.get(0).getValue();
     }
 
@@ -194,6 +200,10 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() == 0){
+            log.error("Get contract:{} type:{} , function:{} result len is zero",this.address, this.type, method);
+            return 0;
+        }
         return (long) results.get(0).getValue();
     }
 
@@ -210,6 +220,10 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() == 0){
+            log.error("Get contract:{} type:{} , function:{} result len is zero",this.address, this.type, method);
+            return Address.DEFAULT;
+        }
         return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
     }
 
@@ -227,6 +241,10 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() == 0){
+            log.error("Get account:{}, token:{} , function:balanceOf result len is zero",from, contract);
+            return BigInteger.ZERO;
+        }
         return (BigInteger) results.get(0).getValue();
     }
 

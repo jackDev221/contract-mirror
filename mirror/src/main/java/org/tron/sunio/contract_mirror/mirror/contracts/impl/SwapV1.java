@@ -3,7 +3,6 @@ package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
-import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
@@ -61,12 +60,7 @@ public class SwapV1 extends BaseContract {
             String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
             String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
             long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
-            long kLast = 0;
-            try {
-                kLast = callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
-            } catch (Exception e) {
-                log.error("Contract swap v1:{}  get kLast failed", address);
-            }
+            long kLast = callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
             BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
             BigInteger tokenBalance = tokenBalance(this.getAddress(), tokenAddress);
             BigInteger trxBalance = getBalance(address);

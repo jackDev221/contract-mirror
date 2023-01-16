@@ -10,6 +10,7 @@ import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.Uint;
+import org.web3j.abi.datatypes.generated.Uint112;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint64;
 
@@ -112,6 +113,10 @@ public class EventUtils {
                 break;
             case "uint256":
                 result = new TypeReference<Uint256>(indexed) {
+                };
+                break;
+            case "uint112":
+                result = new TypeReference<Uint112>(indexed) {
                 };
                 break;
             case "uint64":

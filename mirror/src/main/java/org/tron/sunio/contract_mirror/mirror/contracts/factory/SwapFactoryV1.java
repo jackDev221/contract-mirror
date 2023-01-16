@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
-import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
@@ -48,7 +47,6 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     public List<BaseContract> getListContracts() {
         List<BaseContract> result = new ArrayList<>();
         long totalTokens = getTokenCount().longValue();
-        totalTokens = 10;
         //TODO 这里token数目太多了，之后看看是否能优化下
         for (long i = 0; i < totalTokens; i++) {
             Address tokenAddress = getTokenWithId(i);
@@ -56,6 +54,9 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
                 continue;
             }
             Address contractAddress = getExchange(tokenAddress);
+            if (contractAddress.equals(Address.DEFAULT)) {
+                continue;
+            }
             SwapV1 swapV1 = new SwapV1(WalletUtil.ethAddressToTron(contractAddress.toString()),
                     this.iChainHelper, this.iDbHandler, WalletUtil.ethAddressToTron(tokenAddress.toString()), v1SigMap);
 
@@ -74,6 +75,9 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
                 continue;
             }
             Address contractAddress = getExchange(tokenAddress);
+            if (contractAddress.equals(Address.DEFAULT)) {
+                continue;
+            }
             result.add(WalletUtil.ethAddressToTron(contractAddress.toString()));
         }
         return result;
@@ -103,6 +107,10 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() == 0) {
+            log.error("Contract:{}, type: {} call tokenCount failed", address, type);
+            return BigInteger.ZERO;
+        }
         return (BigInteger) results.get(0).getValue();
     }
 
@@ -121,7 +129,11 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
         );
         triggerContractInfo.setOutputParameters(outputParameters);
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
+        if (results.size() > 0) {
+            return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
+        }
+        log.error("Contract:{}, type: {} call getTokenWithId:{} failed", address, type, id);
+        return Address.DEFAULT;
     }
 
     public Address getExchange(Address tokenAddress) {
@@ -138,12 +150,16 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() == 0) {
+            log.error("Contract:{}, type: {} call getExchange:{} failed", address, type, tokenAddress);
+            return Address.DEFAULT;
+        }
         return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
     }
 
     @Override
     public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        SwapFactoryV1Data factoryV1Data =iDbHandler.querySwapFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
         factoryV1Data.setReady(isReady);
         factoryV1Data.setUsing(isUsing);
         factoryV1Data.setAddExchangeContracts(isAddExchangeContracts);
@@ -168,6 +184,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     private void callChainData(SwapFactoryV1Data factoryV1Data) {
         try {
             // TODO feeTo feeToRate 可读性
+            // set feeTo
             TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
             triggerContractInfo.setContractAddress(this.getAddress());
             triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
@@ -179,16 +196,24 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
             });
             triggerContractInfo.setOutputParameters(outputParameters);
             List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-            Address feeAddress = (Address) results.get(0).getValue();
-            factoryV1Data.setFeeAddress(WalletUtil.ethAddressToTron(feeAddress.toString()));
+            if (results.size() > 0) {
+                Address feeAddress = (Address) results.get(0).getValue();
+                factoryV1Data.setFeeAddress(WalletUtil.ethAddressToTron(feeAddress.toString()));
+            }
+
+            // set feeToRate
             triggerContractInfo.setMethodName("feeToRate");
             outputParameters = new ArrayList<>();
             outputParameters.add(new TypeReference<Uint256>() {
             });
             triggerContractInfo.setOutputParameters(outputParameters);
             results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-            BigInteger feeToRate = (BigInteger) results.get(0).getValue();
-            factoryV1Data.setFeeToRate(feeToRate.longValue());
+            if (results.size() > 0) {
+                BigInteger feeToRate = (BigInteger) results.get(0).getValue();
+                factoryV1Data.setFeeToRate(feeToRate.longValue());
+            }
+            long tokenCount = getTokenCount().longValue();
+            factoryV1Data.setTokenCount(tokenCount);
         } catch (Exception e) {
             log.error("Fail to update Factory:{} property!", address);
         }
@@ -242,14 +267,18 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        SwapFactoryV1Data factoryV1Data =iDbHandler.querySwapFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
         String feeAddress = WalletUtil.ethAddressToTron((String) values.getNonIndexedValues().get(0).getValue());
         factoryV1Data.setFeeAddress(feeAddress);
         iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
     }
 
-    private void handEventNewExchange(String[] topics, String data) {
+    private void handEventNewExchange(String[] _topics, String _data) {
         isAddExchangeContracts = false;
+        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
+        factoryV1Data.setAddExchangeContracts(false);
+        factoryV1Data.setTokenCount(factoryV1Data.getTokenCount() + 1);
+        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
     }
 
 }

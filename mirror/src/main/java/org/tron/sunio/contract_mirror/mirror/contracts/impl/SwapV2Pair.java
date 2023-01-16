@@ -2,7 +2,7 @@ package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
+import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
@@ -12,6 +12,7 @@ import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
+import org.web3j.abi.EventValues;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Uint112;
@@ -19,21 +20,26 @@ import org.web3j.abi.datatypes.generated.Uint32;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_SYNC_BODY;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_TRANSFER_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_BURN;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_MINT;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_SWAP;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_SYNC;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_TRANSFER;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_TOPIC_VALUE;
 
 @Slf4j
 public class SwapV2Pair extends BaseContract {
     private String factory;
 
-    public SwapV2Pair(String address, ContractType type, String factory, IChainHelper iChainHelper,
+    public SwapV2Pair(String address, String factory, IChainHelper iChainHelper,
                       IDbHandler iDbHandler, Map<String, String> sigMap) {
-        super(address, type, iChainHelper, iDbHandler, sigMap);
+        super(address, ContractType.SWAP_V2_PAIR, iChainHelper, iDbHandler, sigMap);
         this.factory = factory;
     }
 
@@ -83,6 +89,8 @@ public class SwapV2Pair extends BaseContract {
             swapV2PairData.setSymbol(symbol);
             long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
             swapV2PairData.setDecimals(decimals);
+            BigInteger kLast = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
+            swapV2PairData.setKLast(kLast);
             BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
             swapV2PairData.setLpTotalSupply(lpTotalSupply);
             BigInteger trxBalance = getBalance(address);
@@ -116,6 +124,9 @@ public class SwapV2Pair extends BaseContract {
         String eventName = getEventName(iContractEventWrap);
         String[] topics = iContractEventWrap.getTopics();
         switch (eventName) {
+            case EVENT_NAME_TRANSFER:
+                handleTransfer(topics, iContractEventWrap.getData());
+                break;
             case EVENT_NAME_NEW_MINT:
                 handleMint(topics, iContractEventWrap.getData());
                 break;
@@ -134,6 +145,33 @@ public class SwapV2Pair extends BaseContract {
         }
     }
 
+    private void handleTransfer(String[] topics, String data) {
+        EventValues values = EventUtils.getEventValue(EVENT_NAME_TRANSFER_BODY,
+                Arrays.asList(topics), data, false);
+        if (ObjectUtil.isNull(values)) {
+            log.error("handEventFeeRate failed!!");
+            return;
+        }
+        SwapV2PairData v2PairData = iDbHandler.querySwapV2PairData(address);
+        String from = (String) values.getIndexedValues().get(0).getValue();
+        String to = (String) values.getIndexedValues().get(0).getValue();
+        BigInteger amount = (BigInteger) values.getNonIndexedValues().get(0).getValue();
+        boolean change = false;
+        if (to.equalsIgnoreCase(EMPTY_TOPIC_VALUE)) {
+            v2PairData.setLpTotalSupply(v2PairData.getLpTotalSupply().subtract(amount));
+            change = true;
+
+        }
+        if (from.equalsIgnoreCase(EMPTY_TOPIC_VALUE)) {
+            v2PairData.setLpTotalSupply(v2PairData.getLpTotalSupply().add(amount));
+            change = true;
+
+        }
+        if (change) {
+            iDbHandler.updateSwapV2PairData(v2PairData);
+        }
+    }
+
     private void handleMint(String[] topics, String data) {
         log.info("handleMint not implements!");
     }
@@ -147,6 +185,17 @@ public class SwapV2Pair extends BaseContract {
     }
 
     private void handleSync(String[] topics, String data) {
-        log.info("handleSync not implements!");
+        EventValues values = EventUtils.getEventValue(EVENT_NAME_NEW_SYNC_BODY,
+                Arrays.asList(topics), data, false);
+        if (ObjectUtil.isNull(values)) {
+            log.error("handleSync failed!!");
+            return;
+        }
+        SwapV2PairData v2PairData = iDbHandler.querySwapV2PairData(address);
+        BigInteger reserve0 = (BigInteger) values.getNonIndexedValues().get(0).getValue();
+        BigInteger reserve1 = (BigInteger) values.getNonIndexedValues().get(1).getValue();
+        v2PairData.setReverse0(reserve0);
+        v2PairData.setReverse1(reserve1);
+        iDbHandler.updateSwapV2PairData(v2PairData);
     }
 }

@@ -20,6 +20,7 @@ public class SwapV2PairData extends BaseContractData {
     private String token1;
     private BigInteger reverse0;
     private BigInteger reverse1;
+    private BigInteger kLast;
     private long blockTimestampLast;
     private long price0CumulativeLast;
     private long price1CumulativeLast;

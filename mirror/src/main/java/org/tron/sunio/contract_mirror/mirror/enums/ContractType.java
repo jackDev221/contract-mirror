@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 public enum ContractType {
     SWAP_V1("SWAP_V1"),
-    SWAP_V2("SWAP_V2"),
+    SWAP_V2_PAIR("SWAP_V2_PAIR"),
     CONTRACT_SSP("CONTRACT_SSP"),
     CONTRACT_ROOTER("CONTRACT_ROOTER"),
     SWAP_FACTORY_V1("SWAP_FACTORY_V1"),
