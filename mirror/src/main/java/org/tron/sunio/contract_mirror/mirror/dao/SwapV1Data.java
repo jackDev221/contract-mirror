@@ -16,7 +16,7 @@ public class SwapV1Data extends BaseContractData {
     private String name;
     private String symbol;
     private long decimals;
-    private int kLast;
+    private long kLast;
     private BigInteger trxBalance;
     private BigInteger tokenBalance;
     private BigInteger lpTotalSupply;

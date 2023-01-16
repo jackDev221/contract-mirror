@@ -1,10 +1,9 @@
 package org.tron.sunio.contract_mirror.event_decode.logdata;
 
-import com.google.gson.JsonObject;
 import lombok.Data;
 
 @Data
-public class ContractEventLog {
+public class ContractLog {
     private long timeStamp;
     private String triggerName;
     private String uniqueId;
@@ -18,9 +17,6 @@ public class ContractEventLog {
     private boolean removed;
     private long latestSolidifiedBlockNumber;
     private RawData rawData;
-    private String eventSignature;
-    private String eventSignatureFull;
-    private String eventName;
-    private JsonObject topicMap;
-    private JsonObject dataMap;
+    private String[] topicList;
+    private String data;
 }

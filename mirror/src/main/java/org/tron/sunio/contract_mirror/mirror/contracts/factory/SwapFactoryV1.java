@@ -5,7 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
-import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
+import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
+import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
@@ -47,6 +48,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     public List<BaseContract> getListContracts() {
         List<BaseContract> result = new ArrayList<>();
         long totalTokens = getTokenCount().longValue();
+        totalTokens = 10;
         //TODO 这里token数目太多了，之后看看是否能优化下
         for (long i = 0; i < totalTokens; i++) {
             Address tokenAddress = getTokenWithId(i);
@@ -194,25 +196,25 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
 
 
     @Override
-    public void handleEvent(ContractEventLog contractEventLog) {
-        super.handleEvent(contractEventLog);
+    public void handleEvent(IContractEventWrap iContractEventWrap) {
+        super.handleEvent(iContractEventWrap);
         if (!isReady) {
             return;
         }
-        String eventName = getEventName(contractEventLog);
-        String[] topics = contractEventLog.getTopicList();
+        String eventName = getEventName(iContractEventWrap);
+        String[] topics = iContractEventWrap.getTopics();
         switch (eventName) {
             case SwapV1FactoryEvent
                     .EVENT_NAME_FEE_RATE:
-                handEventFeeRate(topics, contractEventLog.getData());
+                handEventFeeRate(topics, iContractEventWrap.getData());
                 break;
             case SwapV1FactoryEvent
                     .EVENT_NAME_FEE_TO:
-                handEventFeeTo(topics, contractEventLog.getData());
+                handEventFeeTo(topics, iContractEventWrap.getData());
                 break;
             case SwapV1FactoryEvent
                     .EVENT_NAME_NEW_EXCHANGE:
-                handEventNewExchange(topics, contractEventLog.getData());
+                handEventNewExchange(topics, iContractEventWrap.getData());
                 break;
             default:
                 log.warn("event:{} not handle", topics[0]);

@@ -11,7 +11,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
+import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
 import org.tron.sunio.contract_mirror.event_decode.LogDecode;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.BlockInfo;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
@@ -20,6 +20,7 @@ import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.ContractFactoryManager;
 import org.tron.sunio.contract_mirror.mirror.config.ContractsMirrorConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsCollectHelper;
+import org.tron.sunio.contract_mirror.mirror.contracts.events.ContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.tools.TimeTool;
 
 import java.time.Duration;
@@ -114,6 +115,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
             consumer.commitSync();
         }
     }
+
     @Scheduled(initialDelay = 5000, fixedDelay = EVENT_HANDLE_PERIOD)
     public void doTask() {
         try {
@@ -129,15 +131,18 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
             boolean needSleep = false;
             ConsumerRecords<String, String> records = kafkaConsumerPoll(EVENT_HANDLE_PERIOD);
             for (ConsumerRecord<String, String> record : records) {
-                ContractEventLog contractEventLog = LogDecode.decode(record.value());
-                if (isNeedReload(contractEventLog.getBlockHash(), contractEventLog.getBlockNumber())) {
+                ContractEventWrap contractEventWrap = ContractEventWrap.getInstance(record.topic(), record.value());
+                if (ObjectUtil.isNull(contractEventWrap)) {
+                    continue;
+                }
+                if (isNeedReload(contractEventWrap.getBlockHash(), contractEventWrap.getBlockNumber())) {
                     setReloadAllContract();
                     needSleep = true;
                     break;
                 }
-                BaseContract baseContract = contractHashMap.get(contractEventLog.getContractAddress());
+                BaseContract baseContract = contractHashMap.get(contractEventWrap.getContractAddress());
                 if (ObjectUtil.isNotNull(baseContract)) {
-                    baseContract.handleEvent(contractEventLog);
+                    baseContract.handleEvent(contractEventWrap);
                 }
             }
             kafkaConsumerCommit();

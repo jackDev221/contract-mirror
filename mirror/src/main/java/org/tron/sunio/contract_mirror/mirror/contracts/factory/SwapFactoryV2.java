@@ -1,10 +1,11 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.factory;
 
 import lombok.extern.slf4j.Slf4j;
-import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
+import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
+import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 
@@ -42,17 +43,17 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
     }
 
     @Override
-    public void handleEvent(ContractEventLog contractEventLog) {
-        super.handleEvent(contractEventLog);
+    public void handleEvent(IContractEventWrap iContractEventWrap) {
+        super.handleEvent(iContractEventWrap);
         if (!isReady) {
             return;
         }
         // Do handleEvent
-        String eventName = getEventName(contractEventLog);
-        String[] topics = contractEventLog.getTopicList();
+        String eventName = getEventName(iContractEventWrap);
+        String[] topics = iContractEventWrap.getTopics();
         switch (eventName) {
             case EVENT_NAME_PAIR_CREATED_MINT:
-                handleCreatePair(topics, contractEventLog.getData());
+                handleCreatePair(topics, iContractEventWrap.getData());
                 break;
             default:
                 log.warn("event:{} not handle", topics[0]);

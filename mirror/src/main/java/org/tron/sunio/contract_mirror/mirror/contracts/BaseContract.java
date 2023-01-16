@@ -2,11 +2,14 @@ package org.tron.sunio.contract_mirror.mirror.contracts;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
+import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
+import org.tron.sunio.contract_mirror.mirror.contracts.events.ContractEventWrap;
+import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
+import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
@@ -69,9 +72,9 @@ public class BaseContract implements IContract {
         return false;
     }
 
-    protected void initIncremental(ContractEventLog contractEventLog) {
+    protected void initIncremental(IContractEventWrap iContractEventWrap) {
         initFlag = INIT_FLAG_DOING;
-        long eventTime = contractEventLog.getTimeStamp();
+        long eventTime = iContractEventWrap.getTimeStamp();
         if (eventTime < t0) {
             return;
         }
@@ -89,9 +92,9 @@ public class BaseContract implements IContract {
 
     }
 
-    protected void initFull(ContractEventLog contractEventLog) {
+    protected void initFull(IContractEventWrap iContractEventWrap) {
         initFlag = INIT_FLAG_DOING;
-        long eventTime = contractEventLog.getTimeStamp();
+        long eventTime = iContractEventWrap.getTimeStamp();
         if (eventTime < t0) {
             return;
         }
@@ -100,25 +103,25 @@ public class BaseContract implements IContract {
         updateBaseInfoToCache(isUsing, isReady, isAddExchangeContracts);
     }
 
-    protected String getEventName(ContractEventLog contractEventLog) {
-        String[] topics = contractEventLog.getTopicList();
+    protected String getEventName(IContractEventWrap iContractEventWrap) {
+        String[] topics = iContractEventWrap.getTopics();
         if (topics == null || topics.length <= 0) {
-            log.warn("Wrong log no topic, id:{}", contractEventLog.getUniqueId());
+            log.warn("Wrong log no topic, id:{}", iContractEventWrap.getUniqueId());
             return null;
         }
         // Do handleEvent
         return sigMap.getOrDefault(topics[0], "");
     }
 
-    public void handleEvent(ContractEventLog contractEventLog) {
+    public void handleEvent(IContractEventWrap iContractEventWrap) {
         if (!isReady) {
             if (initFlag == INIT_FLAG_START) {
                 initFlag = INIT_FLAG_DOING;
             }
             if (isContractIncremental()) {
-                initIncremental(contractEventLog);
+                initIncremental(iContractEventWrap);
             } else {
-                initFull(contractEventLog);
+                initFull(iContractEventWrap);
             }
         }
     }
@@ -178,7 +181,7 @@ public class BaseContract implements IContract {
         return (BigInteger) results.get(0).getValue();
     }
 
-    protected BigInteger callContractUint(String from, String method) {
+    protected long callContractUint(String from, String method) {
         List<Type> inputParameters = new ArrayList<>();
         List<TypeReference<?>> outputParameters = new ArrayList<>();
         outputParameters.add(new TypeReference<Uint>() {
@@ -191,7 +194,7 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        return (BigInteger) results.get(0).getValue();
+        return (long) results.get(0).getValue();
     }
 
     protected Address callContractAddress(String from, String method) {
@@ -207,7 +210,7 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        return (Address) results.get(0).getValue();
+        return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
     }
 
     protected BigInteger tokenBalance(String from, String contract) {

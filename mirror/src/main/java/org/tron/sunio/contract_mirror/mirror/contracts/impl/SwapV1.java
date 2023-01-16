@@ -3,7 +3,8 @@ package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
-import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
+import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
+import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
@@ -60,9 +61,9 @@ public class SwapV1 extends BaseContract {
             String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
             String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
             long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
-            int kLast = 0;
+            long kLast = 0;
             try {
-                kLast = callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "kLast").intValue();
+                kLast = callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
             } catch (Exception e) {
                 log.error("Contract swap v1:{}  get kLast failed", address);
             }
@@ -92,38 +93,38 @@ public class SwapV1 extends BaseContract {
     }
 
     @Override
-    public void handleEvent(ContractEventLog contractEventLog) {
-        super.handleEvent(contractEventLog);
+    public void handleEvent(IContractEventWrap iContractEventWrap) {
+        super.handleEvent(iContractEventWrap);
         if (!isReady) {
             return;
         }
         // Do handleEvent
-        String eventName = getEventName(contractEventLog);
-        String[] topics = contractEventLog.getTopicList();
+        String eventName = getEventName(iContractEventWrap);
+        String[] topics = iContractEventWrap.getTopics();
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
-                handleEventTransfer(topics, contractEventLog.getData());
+                handleEventTransfer(topics, iContractEventWrap.getData());
                 break;
             case EVENT_NAME_TOKEN_PURCHASE:
-                handleTokenPurchase(topics, contractEventLog.getData());
+                handleTokenPurchase(topics, iContractEventWrap.getData());
                 break;
             case EVENT_NAME_TRX_PURCHASE:
-                handleTrxPurchase(topics, contractEventLog.getData());
+                handleTrxPurchase(topics, iContractEventWrap.getData());
                 break;
             case EVENT_NAME_TOKEN_TO_TOKEN:
-                handleTokenToToken(topics, contractEventLog.getData());
+                handleTokenToToken(topics, iContractEventWrap.getData());
                 break;
             case EVENT_NAME_SNAPSHOT:
-                handleEventSnapshot(topics, contractEventLog.getData());
+                handleEventSnapshot(topics, iContractEventWrap.getData());
                 break;
             case EVENT_NAME_ADD_LIQUIDITY:
-                handleAddLiquidity(topics, contractEventLog.getData());
+                handleAddLiquidity(topics, iContractEventWrap.getData());
                 break;
             case EVENT_NAME_REMOVE_LIQUIDITY:
-                handleRemoveLiquidity(topics, contractEventLog.getData());
+                handleRemoveLiquidity(topics, iContractEventWrap.getData());
                 break;
             case EVENT_NAME_ADMIN_FEE_MINT:
-                handleAdminFeeMint(topics, contractEventLog.getData());
+                handleAdminFeeMint(topics, iContractEventWrap.getData());
                 break;
             default:
                 log.warn("event:{} not handle", topics[0]);

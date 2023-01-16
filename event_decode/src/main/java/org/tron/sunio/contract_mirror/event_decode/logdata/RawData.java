@@ -7,6 +7,6 @@ import java.util.List;
 @Data
 public class RawData {
     private String address;
-    private List<String> topics;
+    private String[] topics;
     private String data;
 }

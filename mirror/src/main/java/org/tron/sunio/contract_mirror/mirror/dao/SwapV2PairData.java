@@ -12,13 +12,18 @@ import java.math.BigInteger;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class SwapV2PairData extends BaseContractData {
+    private String name;
+    private String symbol;
+    private long decimals;
     private String factory;
     private String token0;
     private String token1;
     private BigInteger reverse0;
     private BigInteger reverse1;
     private long blockTimestampLast;
-    private int price0CumulativeLast;
-    private int price1CumulativeLast;
-    private int unlocked;
+    private long price0CumulativeLast;
+    private long price1CumulativeLast;
+    private long unlocked;
+    private BigInteger trxBalance;
+    private BigInteger lpTotalSupply;
 }
