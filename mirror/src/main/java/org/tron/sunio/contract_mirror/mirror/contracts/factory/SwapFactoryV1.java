@@ -215,7 +215,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
             long tokenCount = getTokenCount().longValue();
             factoryV1Data.setTokenCount(tokenCount);
         } catch (Exception e) {
-            log.error("Fail to update Factory:{} property!", address);
+            log.error("Contract:{} type:{}, failed at function CallChainData:{}", address, type, e.toString());
         }
     }
 

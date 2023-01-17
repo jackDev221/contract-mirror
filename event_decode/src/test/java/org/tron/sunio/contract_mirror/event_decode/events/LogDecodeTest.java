@@ -6,6 +6,14 @@ import org.tron.sunio.contract_mirror.event_decode.LogDecode;
 import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
 import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
 import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
+import org.web3j.abi.datatypes.generated.StaticArray1;
+import org.web3j.abi.datatypes.generated.StaticArray2;
+import org.web3j.abi.datatypes.generated.Uint32;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class LogDecodeTest {
     @Test
@@ -15,6 +23,7 @@ public class LogDecodeTest {
         String gsonString = GsonUtil.objectToGson(eventLog);
         Assert.equals(jsonString, gsonString);
     }
+
     @Test
     public void testContractEventLog() {
         String jsonString = "{\"timeStamp\":1670958264000,\"triggerName\":\"contractEventTrigger\",\"uniqueId\":\"262001121bd7b08fd13a66d9d76ed43aac6e6c43eb6832e6d782e294d1061be5_4\",\"transactionId\":\"262001121bd7b08fd13a66d9d76ed43aac6e6c43eb6832e6d782e294d1061be5\",\"contractAddress\":\"TKcEU8ekq2ZoFzLSGFYCUY6aocJBX9X31b\",\"callerAddress\":\"\",\"originAddress\":\"TActor4gUERiLmWB9AwseX4tkQPzfoposU\",\"creatorAddress\":\"TAFotzexiiUJzGkBHDy9Jbn7rVHoYyWuLA\",\"blockNumber\":46789336,\"blockHash\":\"0000000002c9f2d8f6afb940898cd89d1d9041ca6a2a069f46fd5b79422e0714\",\"removed\":false,\"latestSolidifiedBlockNumber\":46789317,\"rawData\":{\"address\":\"69b9bf3ee6a4781dcac4915a2d4878f9301d63a6\",\"topics\":[\"8b3e96f2b889fa771c53c981b40daf005f63f637f1869f707052d15a3dd97140\",\"000000000000000000000000459f749a62c6afbcd62b8bae33b9d50e433da0e1\"],\"data\":\"0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000004403e96b000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000003dd11840a1f1a5c425\"},\"eventSignature\":\"TokenExchange(address,int128,uint256,int128,uint256)\",\"eventSignatureFull\":\"TokenExchange(address buyer,int128 sold_id,uint256 tokens_sold,int128 bought_id,uint256 tokens_bought)\",\"eventName\":\"TokenExchange\",\"topicMap\":{\"0\":\"TGKLeTRMJyzpHq9ypyukxc3ee4DAyyfbqB\",\"buyer\":\"TGKLeTRMJyzpHq9ypyukxc3ee4DAyyfbqB\"},\"dataMap\":{\"sold_id\":\"2\",\"1\":\"2\",\"2\":\"1141107051\",\"tokens_bought\":\"1140318252113938727973\",\"3\":\"1\",\"4\":\"1140318252113938727973\",\"tokens_sold\":\"1141107051\",\"bought_id\":\"1\"}}";

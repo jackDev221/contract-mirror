@@ -74,6 +74,7 @@ public class SwapV1 extends BaseContract {
             v1Data.setTokenBalance(tokenBalance);
             v1Data.setReady(isReady);
         } catch (Exception e) {
+            log.error("Contract:{} type:{}, failed at function CallChainData:{}", address, type, e.toString());
         }
     }
 

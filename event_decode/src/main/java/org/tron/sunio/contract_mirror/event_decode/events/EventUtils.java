@@ -8,8 +8,10 @@ import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.StaticArray;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.Uint;
+import org.web3j.abi.datatypes.generated.StaticArray2;
 import org.web3j.abi.datatypes.generated.Uint112;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint64;
@@ -24,7 +26,7 @@ public class EventUtils {
 
     public static EventValues getEventValue(String eventBody, List<String> topics, String data, boolean checkSign) {
         Event event = parseEventString(eventBody);
-        if(ObjectUtil.isNull(event)){
+        if (ObjectUtil.isNull(event)) {
             return null;
         }
         if (checkSign) {
@@ -127,8 +129,11 @@ public class EventUtils {
                 result = new TypeReference<Uint>(indexed) {
                 };
                 break;
+            case "uint256[2]":
+                result = new TypeReference.StaticArrayTypeReference<StaticArray<Uint256>>(2) {
+                };
+                break;
         }
         return result;
     }
-
 }

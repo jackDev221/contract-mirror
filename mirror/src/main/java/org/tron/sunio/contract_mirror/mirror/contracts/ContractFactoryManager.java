@@ -4,11 +4,15 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
+import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 
 import java.util.HashMap;
@@ -25,11 +29,15 @@ public class ContractFactoryManager {
     private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
     private Map<String, String> v1FactorySigMap;
     private Map<String, String> v2FactorySigMap;
+    private Map<String, String > curve2PoolSigMap;
+    private Map<String, String > curve3PoolSigMap;
 
 
     private void initSigMaps() {
         v1FactorySigMap = SwapV1FactoryEvent.getSigMap();
         v2FactorySigMap = SwapV2FactoryEvent.getSigMap();
+        curve2PoolSigMap = Curve2PoolEvent.getSigMap();
+        curve3PoolSigMap = Curve3PoolEvent.getSigMap();
     }
 
     public boolean initFactoryMap(List<ContractInfo> contractInfoList, IContractsCollectHelper iContractsCollectHelper) {
@@ -57,6 +65,21 @@ public class ContractFactoryManager {
 
                     ));
                     break;
+                case CONTRACT_CURVE_2POOL:
+                    iContractsCollectHelper.addContract(new Curve2Pool(
+                            contractInfo.getAddress(),
+                            tronChainHelper,
+                            iDbHandler,
+                            curve2PoolSigMap
+                    ));
+
+                case CONTRACT_CURVE_3POOL:
+                    iContractsCollectHelper.addContract(new Curve3Pool(
+                            contractInfo.getAddress(),
+                            tronChainHelper,
+                            iDbHandler,
+                            curve3PoolSigMap
+                    ));
                 default:
                     break;
             }

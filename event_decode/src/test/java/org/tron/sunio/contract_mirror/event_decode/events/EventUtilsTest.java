@@ -6,7 +6,7 @@ import org.web3j.abi.datatypes.Event;
 public class EventUtilsTest {
     @Test
     public void testParseUtils(){
-        Event event =  EventUtils.parseEventString("event Transfer(address indexed from, address indexed to, uint256 value)");
+        Event event =  EventUtils.parseEventString("event RemoveLiquidityImbalance( address indexed provider, uint256[2] token_amounts, uint256[2] fees, uint256 invariant, uint256 token_supply);");
         System.out.println(EventUtils.encodedEventSignature(event));
     }
 }
