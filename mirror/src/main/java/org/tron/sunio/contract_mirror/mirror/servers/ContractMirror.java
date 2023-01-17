@@ -11,8 +11,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
-import org.tron.sunio.contract_mirror.event_decode.LogDecode;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.BlockInfo;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.config.KafkaConfig;
@@ -92,7 +90,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
         for (BaseContract baseContract : contractHashMap.values()) {
             baseContract.setReady(false);
             baseContract.setAddExchangeContracts(false);
-            baseContract.updateBaseInfoToCache(
+            baseContract.updateBaseInfo(
                     baseContract.isUsing(), baseContract.isReady(), baseContract.isAddExchangeContracts());
 
         }
@@ -146,15 +144,12 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
                 }
             }
             kafkaConsumerCommit();
-            if (needSleep) {
-                TimeTool.sleep(config.getBlockInterval());
-            }
             for (String addr : contractHashMap.keySet()) {
                 BaseContract baseContract = contractHashMap.get(addr);
-                if (!baseContract.isReady()) {
-                    // not ready call data from chain
-                    baseContract.finishBatchKafka();
-                }
+                baseContract.finishBatchKafka();
+            }
+            if (needSleep) {
+                TimeTool.sleep(config.getBlockInterval());
             }
         } catch (Exception e) {
             log.warn("doTask error:{}", e.toString());

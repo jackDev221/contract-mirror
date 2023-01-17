@@ -12,6 +12,4 @@ public interface IContract {
     ContractType getContractType();
 
     String getAddress();
-
-    boolean initDataFromChain1();
 }

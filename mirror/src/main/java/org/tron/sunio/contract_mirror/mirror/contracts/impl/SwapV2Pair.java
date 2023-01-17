@@ -36,11 +36,26 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.E
 @Slf4j
 public class SwapV2Pair extends BaseContract {
     private String factory;
+    private SwapV2PairData swapV2PairData;
 
     public SwapV2Pair(String address, String factory, IChainHelper iChainHelper,
                       IDbHandler iDbHandler, Map<String, String> sigMap) {
         super(address, ContractType.SWAP_V2_PAIR, iChainHelper, iDbHandler, sigMap);
         this.factory = factory;
+    }
+
+    private SwapV2PairData getVarSwapV2PairData() {
+        if (ObjectUtil.isNull(swapV2PairData)) {
+            swapV2PairData = iDbHandler.querySwapV2PairData(address);
+            if (ObjectUtil.isNotNull(swapV2PairData)) {
+                swapV2PairData = new SwapV2PairData();
+                swapV2PairData.setFactory(factory);
+                swapV2PairData.setType(type);
+                swapV2PairData.setAddress(address);
+                swapV2PairData.setUsing(true);
+            }
+        }
+        return swapV2PairData;
     }
 
     private void callReservesOnChain(SwapV2PairData swapV2PairData) {
@@ -74,8 +89,10 @@ public class SwapV2Pair extends BaseContract {
         }
     }
 
-    private void callChainData(SwapV2PairData swapV2PairData) {
+    @Override
+    public boolean initDataFromChain1() {
         try {
+            SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
             String token0 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token0").toString());
             swapV2PairData.setToken0(token0);
             String token1 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token1").toString());
@@ -95,23 +112,26 @@ public class SwapV2Pair extends BaseContract {
             swapV2PairData.setLpTotalSupply(lpTotalSupply);
             BigInteger trxBalance = getBalance(address);
             swapV2PairData.setTrxBalance(trxBalance);
+            isDirty = true;
+            return true;
         } catch (Exception e) {
+            return false;
         }
     }
 
     @Override
-    public boolean initDataFromChain1() {
-        SwapV2PairData swapV2PairData = iDbHandler.querySwapV2PairData(address);
-        if (ObjectUtil.isNotNull(swapV2PairData)) {
-            swapV2PairData = new SwapV2PairData();
-            swapV2PairData.setFactory(factory);
-            swapV2PairData.setType(type);
-            swapV2PairData.setAddress(address);
-            swapV2PairData.setUsing(true);
-        }
-        callChainData(swapV2PairData);
+    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
+        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
+        swapV2PairData.setUsing(isUsing);
+        swapV2PairData.setReady(isReady);
+        swapV2PairData.setAddExchangeContracts(isAddExchangeContracts);
+        isDirty = true;
+    }
+
+    @Override
+    protected void saveUpdateToCache() {
+        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
         iDbHandler.updateSwapV2PairData(swapV2PairData);
-        return false;
     }
 
     @Override
@@ -152,23 +172,23 @@ public class SwapV2Pair extends BaseContract {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        SwapV2PairData v2PairData = iDbHandler.querySwapV2PairData(address);
+        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
         String from = (String) values.getIndexedValues().get(0).getValue();
         String to = (String) values.getIndexedValues().get(0).getValue();
         BigInteger amount = (BigInteger) values.getNonIndexedValues().get(0).getValue();
         boolean change = false;
         if (to.equalsIgnoreCase(EMPTY_TOPIC_VALUE)) {
-            v2PairData.setLpTotalSupply(v2PairData.getLpTotalSupply().subtract(amount));
+            swapV2PairData.setLpTotalSupply(swapV2PairData.getLpTotalSupply().subtract(amount));
             change = true;
 
         }
         if (from.equalsIgnoreCase(EMPTY_TOPIC_VALUE)) {
-            v2PairData.setLpTotalSupply(v2PairData.getLpTotalSupply().add(amount));
+            swapV2PairData.setLpTotalSupply(swapV2PairData.getLpTotalSupply().add(amount));
             change = true;
 
         }
         if (change) {
-            iDbHandler.updateSwapV2PairData(v2PairData);
+            isDirty = true;
         }
     }
 
@@ -191,11 +211,11 @@ public class SwapV2Pair extends BaseContract {
             log.error("handleSync failed!!");
             return;
         }
-        SwapV2PairData v2PairData = iDbHandler.querySwapV2PairData(address);
+        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
         BigInteger reserve0 = (BigInteger) values.getNonIndexedValues().get(0).getValue();
         BigInteger reserve1 = (BigInteger) values.getNonIndexedValues().get(1).getValue();
-        v2PairData.setReverse0(reserve0);
-        v2PairData.setReverse1(reserve1);
-        iDbHandler.updateSwapV2PairData(v2PairData);
+        swapV2PairData.setReverse0(reserve0);
+        swapV2PairData.setReverse1(reserve1);
+        isDirty = true;
     }
 }

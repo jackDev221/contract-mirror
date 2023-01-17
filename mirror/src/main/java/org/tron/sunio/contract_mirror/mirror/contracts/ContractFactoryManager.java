@@ -29,8 +29,8 @@ public class ContractFactoryManager {
     private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
     private Map<String, String> v1FactorySigMap;
     private Map<String, String> v2FactorySigMap;
-    private Map<String, String > curve2PoolSigMap;
-    private Map<String, String > curve3PoolSigMap;
+    private Map<String, String> curve2PoolSigMap;
+    private Map<String, String> curve3PoolSigMap;
 
 
     private void initSigMaps() {
@@ -112,7 +112,7 @@ public class ContractFactoryManager {
                 iContractsCollectHelper.addContract(baseContract1);
             }
             baseContract.setAddExchangeContracts(true);
-            baseContract.updateBaseInfoToCache(baseContract.isUsing, baseContract.isReady, baseContract.isAddExchangeContracts);
+            baseContract.updateBaseInfo(baseContract.isUsing, baseContract.isReady, baseContract.isAddExchangeContracts);
         }
         return true;
     }

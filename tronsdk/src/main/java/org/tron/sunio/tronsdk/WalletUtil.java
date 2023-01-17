@@ -31,19 +31,19 @@ public class WalletUtil {
         return decodeFromBase58Check(base58check);
     }
 
-    public static boolean isTronValidAddress(String tronAddress){
+    public static boolean isTronValidAddress(String tronAddress) {
         if (!StrUtil.isNotBlank(tronAddress) || !tronAddress.startsWith("T")) {
             return false;
         }
         byte[] decodeCheck = Base58.decode(tronAddress);
-        if (decodeCheck.length != CommonConstant.ADDRESS_SIZE + 4){
+        if (decodeCheck.length != CommonConstant.ADDRESS_SIZE + 4) {
             return false;
         }
         byte[] decodeData = new byte[decodeCheck.length - 4];
         System.arraycopy(decodeCheck, 0, decodeData, 0, decodeData.length);
         byte[] hash0 = Sha256Sm3Hash.hash(decodeData);
         byte[] hash1 = Sha256Sm3Hash.hash(hash0);
-        if(!Arrays.equals(ArrayUtil.sub(hash1, 0, 4), ArrayUtil.sub(decodeCheck, decodeData.length, decodeData.length + 4))){
+        if (!Arrays.equals(ArrayUtil.sub(hash1, 0, 4), ArrayUtil.sub(decodeCheck, decodeData.length, decodeData.length + 4))) {
             return false;
         }
         return true;
@@ -89,12 +89,22 @@ public class WalletUtil {
         return encode58Check(HexUtil.decodeHex(input));
     }
 
-    public static String ethAddressToTron(String input){
+    public static String ethAddressToTron(String input) {
         input = input.startsWith("0x") ? input.substring(2) : input;
         byte[] ethBytes = HexUtil.decodeHex(input);
         byte[] tronBytes = new byte[ethBytes.length + 1];
         tronBytes[0] = 0x41;
         System.arraycopy(ethBytes, 0, tronBytes, 1, ethBytes.length);
+        return encode58Check(tronBytes);
+    }
+
+    // 取高位的20个字节
+    public static String hexStringToTron(String input) {
+        input = input.startsWith("0x") ? input.substring(2) : input;
+        byte[] ethBytes = HexUtil.decodeHex(input);
+        byte[] tronBytes = new byte[20];
+        tronBytes[0] = 0x41;
+        System.arraycopy(ethBytes, ethBytes.length - 20, tronBytes, 1, 20);
         return encode58Check(tronBytes);
     }
 

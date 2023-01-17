@@ -31,30 +31,29 @@ import static org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent
 @Slf4j
 public class Curve3Pool extends BaseContract {
 
+    private Curve3PoolData curve3PoolData;
     public Curve3Pool(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, Map<String, String> sigMap) {
         super(address, ContractType.CONTRACT_CURVE_3POOL, iChainHelper, iDbHandler, sigMap);
+    }
+    private Curve3PoolData getVarCurve3PoolData(){
+        if(ObjectUtil.isNull(curve3PoolData)){
+            curve3PoolData = iDbHandler.queryCurve3PoolData(address);
+            if (ObjectUtil.isNull(curve3PoolData)) {
+                curve3PoolData = new Curve3PoolData();
+                curve3PoolData.setAddress(address);
+                curve3PoolData.setType(type);
+                curve3PoolData.setUsing(true);
+                curve3PoolData.setReady(false);
+                curve3PoolData.setAddExchangeContracts(false);
+            }
+        }
+        return  curve3PoolData;
     }
 
     @Override
     public boolean initDataFromChain1() {
-        Curve3PoolData curve3PoolData = iDbHandler.queryCurve3PoolData(address);
-        if (ObjectUtil.isNull(curve3PoolData)) {
-            curve3PoolData = new Curve3PoolData();
-            curve3PoolData.setAddress(address);
-            curve3PoolData.setType(type);
-            curve3PoolData.setUsing(true);
-            curve3PoolData.setReady(false);
-            curve3PoolData.setAddExchangeContracts(false);
-        }
-        callChainData(curve3PoolData);
-        iDbHandler.updateCurve3PoolData(curve3PoolData);
-        return true;
-    }
-
-    private void callChainData(Curve3PoolData curve3PoolData) {
         try {
-
-
+            Curve3PoolData curve3PoolData = this.getVarCurve3PoolData();
             String token = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token").toString());
             curve3PoolData.setToken(token);
             BigInteger fee = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "fee");
@@ -83,17 +82,26 @@ public class Curve3Pool extends BaseContract {
             curve3PoolData.setFutureOwner(futureOwner);
             BigInteger transferOwnershipDeadline = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "transfer_ownership_deadline");
             curve3PoolData.setTransferOwnershipDeadline(transferOwnershipDeadline);
+            isDirty = true;
+            return true;
         } catch (Exception e) {
             log.error("Contract:{} type:{}, failed at function CallChainData:{}", address, type, e.toString());
+            return false;
         }
     }
 
     @Override
-    public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        Curve3PoolData curve3PoolData = iDbHandler.queryCurve3PoolData(address);
+    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
+        Curve3PoolData curve3PoolData = this.getVarCurve3PoolData();
         curve3PoolData.setUsing(isUsing);
         curve3PoolData.setReady(isReady);
         curve3PoolData.setAddExchangeContracts(isAddExchangeContracts);
+        isDirty = true;
+    }
+
+    @Override
+    protected void saveUpdateToCache() {
+        Curve3PoolData curve3PoolData = this.getVarCurve3PoolData();
         iDbHandler.updateCurve3PoolData(curve3PoolData);
     }
 
@@ -168,7 +176,7 @@ public class Curve3Pool extends BaseContract {
 
     private void handleEventRemoveLiquidityOne(String[] topics, String data) {
         this.isReady = false;
-        updateBaseInfoToCache(isUsing, false, isAddExchangeContracts);
+        updateBaseInfo(isUsing, false, isAddExchangeContracts);
     }
 
     private void handleEventRemoveLiquidityImbalance(String[] topics, String data) {

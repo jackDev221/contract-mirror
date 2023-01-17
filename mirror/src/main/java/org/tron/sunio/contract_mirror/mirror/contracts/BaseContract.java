@@ -23,7 +23,7 @@ import java.util.Map;
 
 @Data
 @Slf4j
-public class BaseContract implements IContract {
+public abstract class BaseContract implements IContract {
     private static final int INIT_FLAG_INIT = -1;
     private static final int INIT_FLAG_START = 0;
     private static final int INIT_FLAG_DOING = 1;
@@ -35,6 +35,7 @@ public class BaseContract implements IContract {
     protected boolean isUsing;
     protected IChainHelper iChainHelper;
     protected boolean isAddExchangeContracts;
+    protected boolean isDirty;
     private long t0;
     private long t1;
     private long t2;
@@ -42,10 +43,13 @@ public class BaseContract implements IContract {
     protected Map<String, String> sigMap;
     protected IDbHandler iDbHandler;
 
+    public abstract boolean initDataFromChain1();
+
+    public abstract void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts);
+
+    protected abstract void saveUpdateToCache();
+
     private boolean isContractIncremental() {
-//        if (type == ContractType.CONTRACT_SSP) {
-//            return true;
-//        }
         return false;
     }
 
@@ -78,16 +82,12 @@ public class BaseContract implements IContract {
         }
         if (eventTime <= t2) {
             isReady = true;
-            updateBaseInfoToCache(isUsing, isReady, isAddExchangeContracts);
+            updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
             initFlag = INIT_FLAG_SUCCESS;
         } else {
             isReady = false;
             initFlag = INIT_FLAG_FAILED;
         }
-    }
-
-    public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-
     }
 
     protected void initFull(IContractEventWrap iContractEventWrap) {
@@ -98,7 +98,7 @@ public class BaseContract implements IContract {
         }
         isReady = true;
         initFlag = INIT_FLAG_SUCCESS;
-        updateBaseInfoToCache(isUsing, isReady, isAddExchangeContracts);
+        updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
     }
 
     protected String getEventName(IContractEventWrap iContractEventWrap) {
@@ -124,16 +124,18 @@ public class BaseContract implements IContract {
         }
     }
 
-    // 针对该批次kafka没有对应要消费的事件
+    // 处理完后统一更新数据到存储。
     public void finishBatchKafka() {
         if (initFlag == INIT_FLAG_START || initFlag == INIT_FLAG_DOING) {
             initFlag = INIT_FLAG_SUCCESS;
-        }
-        if (initFlag == INIT_FLAG_SUCCESS) {
             isReady = true;
-            updateBaseInfoToCache(isUsing, isReady, isAddExchangeContracts);
-        } else {
+            updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
+        }
+        if (initFlag != INIT_FLAG_SUCCESS) {
             initFlag = INIT_FLAG_INIT;
+        }
+        if (isDirty) {
+            saveUpdateToCache();
         }
     }
 
@@ -142,10 +144,6 @@ public class BaseContract implements IContract {
         return type;
     }
 
-    @Override
-    public boolean initDataFromChain1() {
-        return false;
-    }
 
     protected String callContractString(String from, String method) {
         List<Type> inputParameters = new ArrayList<>();
@@ -160,8 +158,8 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() == 0){
-            log.error("Get contract:{} type:{} , function:{} result len is zero",this.address, this.type, method);
+        if (results.size() == 0) {
+            log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, method);
             return "";
         }
         return results.get(0).getValue().toString();
@@ -180,8 +178,8 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() == 0){
-            log.error("Get contract:{} type:{} , function:{} result len is zero",this.address, this.type, method);
+        if (results.size() == 0) {
+            log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, method);
             return BigInteger.ZERO;
         }
         return (BigInteger) results.get(0).getValue();
@@ -200,8 +198,8 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() == 0){
-            log.error("Get contract:{} type:{} , function:{} result len is zero",this.address, this.type, method);
+        if (results.size() == 0) {
+            log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, method);
             return 0;
         }
         return (long) results.get(0).getValue();
@@ -220,8 +218,8 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() == 0){
-            log.error("Get contract:{} type:{} , function:{} result len is zero",this.address, this.type, method);
+        if (results.size() == 0) {
+            log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, method);
             return Address.DEFAULT;
         }
         return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
@@ -241,8 +239,8 @@ public class BaseContract implements IContract {
                 outputParameters
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() == 0){
-            log.error("Get account:{}, token:{} , function:balanceOf result len is zero",from, contract);
+        if (results.size() == 0) {
+            log.error("Get account:{}, token:{} , function:balanceOf result len is zero", from, contract);
             return BigInteger.ZERO;
         }
         return (BigInteger) results.get(0).getValue();

@@ -2,6 +2,7 @@ package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
@@ -10,14 +11,17 @@ import org.tron.sunio.contract_mirror.mirror.dao.Curve2PoolData;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
+import org.web3j.abi.EventValues;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_ADD_LIQUIDITY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_COMMIT_NEW_ADMIN;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_COMMIT_NEW_FEE;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_NEW_ADMIN;
+import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_NEW_ADMIN_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_NEW_FEE;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_NEW_FEE_CONVERTER;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_RAMP_A;
@@ -30,29 +34,31 @@ import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent
 
 @Slf4j
 public class Curve2Pool extends BaseContract {
+    private Curve2PoolData curve2PoolData;
 
     public Curve2Pool(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, Map<String, String> sigMap) {
         super(address, ContractType.CONTRACT_CURVE_2POOL, iChainHelper, iDbHandler, sigMap);
     }
 
-    @Override
-    public boolean initDataFromChain1() {
-        Curve2PoolData curve2PoolData = iDbHandler.queryCurve2PoolData(address);
+    private Curve2PoolData getVarCurve2PoolData() {
         if (ObjectUtil.isNull(curve2PoolData)) {
-            curve2PoolData = new Curve2PoolData();
-            curve2PoolData.setAddress(address);
-            curve2PoolData.setType(type);
-            curve2PoolData.setUsing(true);
-            curve2PoolData.setReady(false);
-            curve2PoolData.setAddExchangeContracts(false);
+            curve2PoolData = iDbHandler.queryCurve2PoolData(address);
+            if (ObjectUtil.isNull(curve2PoolData)) {
+                curve2PoolData = new Curve2PoolData();
+                curve2PoolData.setAddress(address);
+                curve2PoolData.setType(type);
+                curve2PoolData.setUsing(true);
+                curve2PoolData.setReady(false);
+                curve2PoolData.setAddExchangeContracts(false);
+            }
         }
-        callChainData(curve2PoolData);
-        iDbHandler.updateCurve2PoolData(curve2PoolData);
-        return true;
+        return curve2PoolData;
     }
 
-    private void callChainData(Curve2PoolData curve2PoolData) {
+    @Override
+    public boolean initDataFromChain1() {
         try {
+            Curve2PoolData curve2PoolData = this.getVarCurve2PoolData();
             String token = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token").toString());
             curve2PoolData.setToken(token);
             BigInteger fee = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "fee");
@@ -81,18 +87,26 @@ public class Curve2Pool extends BaseContract {
             curve2PoolData.setFutureOwner(futureOwner);
             BigInteger transferOwnershipDeadline = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "transfer_ownership_deadline");
             curve2PoolData.setTransferOwnershipDeadline(transferOwnershipDeadline);
+            isDirty = true;
+            return true;
         } catch (Exception e) {
-            log.error("Contract:{} type:{}, failed at function CallChainData:{}", address, type, e.toString());
+            log.error("Contract:{} type:{}, failed at function initDataFromChain1:{}", address, type, e.toString());
+            return false;
         }
-
     }
 
     @Override
-    public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        Curve2PoolData curve2PoolData = iDbHandler.queryCurve2PoolData(address);
+    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
+        Curve2PoolData curve2PoolData = this.getVarCurve2PoolData();
         curve2PoolData.setUsing(isUsing);
         curve2PoolData.setReady(isReady);
         curve2PoolData.setAddExchangeContracts(isAddExchangeContracts);
+        isDirty = true;
+    }
+
+    @Override
+    protected void saveUpdateToCache() {
+        Curve2PoolData curve2PoolData = this.getVarCurve2PoolData();
         iDbHandler.updateCurve2PoolData(curve2PoolData);
     }
 
@@ -167,7 +181,7 @@ public class Curve2Pool extends BaseContract {
 
     private void handleEventRemoveLiquidityOne(String[] topics, String data) {
         this.isReady = false;
-        updateBaseInfoToCache(isUsing, false, isAddExchangeContracts);
+        updateBaseInfo(isUsing, false, isAddExchangeContracts);
     }
 
     private void handleEventRemoveLiquidityImbalance(String[] topics, String data) {
@@ -179,7 +193,12 @@ public class Curve2Pool extends BaseContract {
     }
 
     private void handleEventNewAdmin(String[] topics, String data) {
-        log.info("handleEventNewAdmin not implements!");
+        EventValues values = EventUtils.getEventValue(EVENT_NAME_NEW_ADMIN_BODY,
+                Arrays.asList(topics), data, false);
+        String admin = WalletUtil.hexStringToTron((String) values.getIndexedValues().get(0).getValue());
+        Curve2PoolData curve2PoolData = this.getVarCurve2PoolData();
+        curve2PoolData.setOwner(admin);
+        isDirty = true;
     }
 
     private void handleEventNewFeeConverter(String[] topics, String data) {

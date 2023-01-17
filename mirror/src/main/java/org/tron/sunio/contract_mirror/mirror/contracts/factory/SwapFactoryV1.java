@@ -32,10 +32,68 @@ import java.util.Map;
 @Slf4j
 public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     private Map<String, String> v1SigMap;
+    private SwapFactoryV1Data swapFactoryV1Data;
 
     public SwapFactoryV1(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, final Map<String, String> sigMap) {
         super(address, ContractType.SWAP_FACTORY_V1, iChainHelper, iDbHandler, sigMap);
         v1SigMap = SwapV1Event.getSigMap();
+    }
+
+    private SwapFactoryV1Data getVarFactoryV1Data() {
+        if (ObjectUtil.isNull(swapFactoryV1Data)) {
+            swapFactoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
+            if (ObjectUtil.isNull(swapFactoryV1Data)) {
+                swapFactoryV1Data = new SwapFactoryV1Data();
+                swapFactoryV1Data.setReady(false);
+                swapFactoryV1Data.setUsing(true);
+                swapFactoryV1Data.setAddress(this.address);
+                swapFactoryV1Data.setType(this.type);
+            }
+        }
+        return swapFactoryV1Data;
+    }
+
+    @Override
+    public boolean initDataFromChain1() {
+        try {
+            SwapFactoryV1Data swapFactoryV1Data = getVarFactoryV1Data();
+            // TODO feeTo feeToRate 可读性
+            // set feeTo
+            TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
+            triggerContractInfo.setContractAddress(this.getAddress());
+            triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
+            triggerContractInfo.setMethodName("feeTo");
+            List<Type> inputParameters = new ArrayList<>();
+            triggerContractInfo.setInputParameters(inputParameters);
+            List<TypeReference<?>> outputParameters = new ArrayList<>();
+            outputParameters.add(new TypeReference<Address>() {
+            });
+            triggerContractInfo.setOutputParameters(outputParameters);
+            List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+            if (results.size() > 0) {
+                Address feeAddress = (Address) results.get(0).getValue();
+                swapFactoryV1Data.setFeeAddress(WalletUtil.ethAddressToTron(feeAddress.toString()));
+            }
+            // set feeToRate
+            triggerContractInfo.setMethodName("feeToRate");
+            outputParameters = new ArrayList<>();
+            outputParameters.add(new TypeReference<Uint256>() {
+            });
+            triggerContractInfo.setOutputParameters(outputParameters);
+            results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+            if (results.size() > 0) {
+                BigInteger feeToRate = (BigInteger) results.get(0).getValue();
+                swapFactoryV1Data.setFeeToRate(feeToRate.longValue());
+            }
+            long tokenCount = getTokenCount().longValue();
+            swapFactoryV1Data.setTokenCount(tokenCount);
+            isDirty = true;
+            return true;
+        } catch (Exception e) {
+            log.error("Contract:{} type:{}, failed at function initDataFromChain1:{}", address, type, e.toString());
+            return false;
+        }
+
     }
 
     @Override
@@ -85,7 +143,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
 
     @Override
     public String getFactoryState() {
-        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         if (ObjectUtil.isNotNull(factoryV1Data)) {
             return String.format("Address:%s, Type: %s, feeAddress:%s, feeToRate:%d", this.address, this.type, factoryV1Data.getFeeAddress(),
                     factoryV1Data.getFeeToRate());
@@ -158,67 +216,13 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     }
 
     @Override
-    public void updateBaseInfoToCache(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
+    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
+        SwapFactoryV1Data factoryV1Data = getVarFactoryV1Data();
         factoryV1Data.setReady(isReady);
         factoryV1Data.setUsing(isUsing);
         factoryV1Data.setAddExchangeContracts(isAddExchangeContracts);
-        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
+        this.isDirty = true;
     }
-
-    @Override
-    public boolean initDataFromChain1() {
-        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
-        if (ObjectUtil.isNull(factoryV1Data)) {
-            factoryV1Data = new SwapFactoryV1Data();
-            factoryV1Data.setReady(false);
-            factoryV1Data.setUsing(true);
-            factoryV1Data.setAddress(this.address);
-            factoryV1Data.setType(this.type);
-        }
-        callChainData(factoryV1Data);
-        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
-        return true;
-    }
-
-    private void callChainData(SwapFactoryV1Data factoryV1Data) {
-        try {
-            // TODO feeTo feeToRate 可读性
-            // set feeTo
-            TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
-            triggerContractInfo.setContractAddress(this.getAddress());
-            triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
-            triggerContractInfo.setMethodName("feeTo");
-            List<Type> inputParameters = new ArrayList<>();
-            triggerContractInfo.setInputParameters(inputParameters);
-            List<TypeReference<?>> outputParameters = new ArrayList<>();
-            outputParameters.add(new TypeReference<Address>() {
-            });
-            triggerContractInfo.setOutputParameters(outputParameters);
-            List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-            if (results.size() > 0) {
-                Address feeAddress = (Address) results.get(0).getValue();
-                factoryV1Data.setFeeAddress(WalletUtil.ethAddressToTron(feeAddress.toString()));
-            }
-
-            // set feeToRate
-            triggerContractInfo.setMethodName("feeToRate");
-            outputParameters = new ArrayList<>();
-            outputParameters.add(new TypeReference<Uint256>() {
-            });
-            triggerContractInfo.setOutputParameters(outputParameters);
-            results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-            if (results.size() > 0) {
-                BigInteger feeToRate = (BigInteger) results.get(0).getValue();
-                factoryV1Data.setFeeToRate(feeToRate.longValue());
-            }
-            long tokenCount = getTokenCount().longValue();
-            factoryV1Data.setTokenCount(tokenCount);
-        } catch (Exception e) {
-            log.error("Contract:{} type:{}, failed at function CallChainData:{}", address, type, e.toString());
-        }
-    }
-
 
     @Override
     public void handleEvent(IContractEventWrap iContractEventWrap) {
@@ -247,6 +251,12 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
         }
     }
 
+    @Override
+    protected void saveUpdateToCache() {
+        SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
+        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
+    }
+
     private void handEventFeeRate(String[] topics, String data) {
         EventValues values = EventUtils.getEventValue(SwapV1FactoryEvent.EVENT_NAME_FEE_RATE_BODY,
                 Arrays.asList(topics), data, false);
@@ -254,10 +264,10 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         BigInteger feeRate = (BigInteger) values.getNonIndexedValues().get(0).getValue();
         factoryV1Data.setFeeToRate(feeRate.longValue());
-        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
+        this.isDirty = true;
     }
 
     private void handEventFeeTo(String[] topics, String data) {
@@ -267,18 +277,17 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
             log.error("handEventFeeRate failed!!");
             return;
         }
-        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         String feeAddress = WalletUtil.ethAddressToTron((String) values.getNonIndexedValues().get(0).getValue());
         factoryV1Data.setFeeAddress(feeAddress);
-        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
+        this.isDirty = true;
     }
 
     private void handEventNewExchange(String[] _topics, String _data) {
         isAddExchangeContracts = false;
-        SwapFactoryV1Data factoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
+        SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         factoryV1Data.setAddExchangeContracts(false);
         factoryV1Data.setTokenCount(factoryV1Data.getTokenCount() + 1);
-        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
+        this.isDirty = true;
     }
-
 }
