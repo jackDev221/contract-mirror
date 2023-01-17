@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
-import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.dao.Curve3PoolData;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
@@ -32,11 +31,13 @@ import static org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent
 public class Curve3Pool extends BaseContract {
 
     private Curve3PoolData curve3PoolData;
+
     public Curve3Pool(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, Map<String, String> sigMap) {
         super(address, ContractType.CONTRACT_CURVE_3POOL, iChainHelper, iDbHandler, sigMap);
     }
-    private Curve3PoolData getVarCurve3PoolData(){
-        if(ObjectUtil.isNull(curve3PoolData)){
+
+    private Curve3PoolData getVarCurve3PoolData() {
+        if (ObjectUtil.isNull(curve3PoolData)) {
             curve3PoolData = iDbHandler.queryCurve3PoolData(address);
             if (ObjectUtil.isNull(curve3PoolData)) {
                 curve3PoolData = new Curve3PoolData();
@@ -47,7 +48,7 @@ public class Curve3Pool extends BaseContract {
                 curve3PoolData.setAddExchangeContracts(false);
             }
         }
-        return  curve3PoolData;
+        return curve3PoolData;
     }
 
     @Override
@@ -106,56 +107,51 @@ public class Curve3Pool extends BaseContract {
     }
 
     @Override
-    public void handleEvent(IContractEventWrap iContractEventWrap) {
-        super.handleEvent(iContractEventWrap);
-        if (!isReady) {
-            return;
-        }
-        // Do handleEvent
-        String eventName = getEventName(iContractEventWrap);
-        String[] topics = iContractEventWrap.getTopics();
+    protected void handleEvent1(String eventName, String[] topics, String data) {
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
-                handleEventTransfer(topics, iContractEventWrap.getData());
+                handleEventTransfer(topics, data);
                 break;
             case EVENT_NAME_TOKEN_EXCHANGE:
-                handleEventTokenExchange(topics, iContractEventWrap.getData());
+                handleEventTokenExchange(topics, data);
                 break;
             case EVENT_NAME_ADD_LIQUIDITY:
-                handleEventAddLiquidity(topics, iContractEventWrap.getData());
+                handleEventAddLiquidity(topics, data);
                 break;
             case EVENT_NAME_REMOVE_LIQUIDITY:
-                handleEventRemoveLiquidity(topics, iContractEventWrap.getData());
+                handleEventRemoveLiquidity(topics, data);
                 break;
             case EVENT_NAME_REMOVE_LIQUIDITY_ONE:
-                handleEventRemoveLiquidityOne(topics, iContractEventWrap.getData());
+                handleEventRemoveLiquidityOne(topics, data);
                 break;
             case EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE:
-                handleEventRemoveLiquidityImbalance(topics, iContractEventWrap.getData());
+                handleEventRemoveLiquidityImbalance(topics, data);
                 break;
             case EVENT_NAME_COMMIT_NEW_ADMIN:
-                handleEventCommitNewAdmin(topics, iContractEventWrap.getData());
+                handleEventCommitNewAdmin(topics, data);
                 break;
             case EVENT_NAME_NEW_ADMIN:
-                handleEventNewAdmin(topics, iContractEventWrap.getData());
+                handleEventNewAdmin(topics, data);
                 break;
             case EVENT_NAME_NEW_FEE_CONVERTER:
-                handleEventNewFeeConverter(topics, iContractEventWrap.getData());
+                handleEventNewFeeConverter(topics, data);
                 break;
             case EVENT_NAME_COMMIT_NEW_FEE:
-                handleEventCommitNewFee(topics, iContractEventWrap.getData());
+                handleEventCommitNewFee(topics, data);
                 break;
             case EVENT_NAME_NEW_FEE:
-                handleEventNewFee(topics, iContractEventWrap.getData());
+                handleEventNewFee(topics, data);
                 break;
             case EVENT_NAME_RAMP_A:
-                handleEventRampA(topics, iContractEventWrap.getData());
+                handleEventRampA(topics, data);
                 break;
             case EVENT_NAME_STOP_RAMP_A:
-                handleEventStopRampA(topics, iContractEventWrap.getData());
+                handleEventStopRampA(topics, data);
+                break;
+            default:
+                log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
                 break;
         }
-
     }
 
     private void handleEventTransfer(String[] topics, String data) {

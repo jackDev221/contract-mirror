@@ -225,36 +225,30 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     }
 
     @Override
-    public void handleEvent(IContractEventWrap iContractEventWrap) {
-        super.handleEvent(iContractEventWrap);
-        if (!isReady) {
-            return;
-        }
-        String eventName = getEventName(iContractEventWrap);
-        String[] topics = iContractEventWrap.getTopics();
-        switch (eventName) {
-            case SwapV1FactoryEvent
-                    .EVENT_NAME_FEE_RATE:
-                handEventFeeRate(topics, iContractEventWrap.getData());
-                break;
-            case SwapV1FactoryEvent
-                    .EVENT_NAME_FEE_TO:
-                handEventFeeTo(topics, iContractEventWrap.getData());
-                break;
-            case SwapV1FactoryEvent
-                    .EVENT_NAME_NEW_EXCHANGE:
-                handEventNewExchange(topics, iContractEventWrap.getData());
-                break;
-            default:
-                log.warn("event:{} not handle", topics[0]);
-                break;
-        }
-    }
-
-    @Override
     protected void saveUpdateToCache() {
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
+    }
+
+    @Override
+    protected void handleEvent1(String eventName, String[] topics, String data) {
+        switch (eventName) {
+            case SwapV1FactoryEvent
+                    .EVENT_NAME_FEE_RATE:
+                handEventFeeRate(topics, data);
+                break;
+            case SwapV1FactoryEvent
+                    .EVENT_NAME_FEE_TO:
+                handEventFeeTo(topics, data);
+                break;
+            case SwapV1FactoryEvent
+                    .EVENT_NAME_NEW_EXCHANGE:
+                handEventNewExchange(topics, data);
+                break;
+            default:
+                log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
+                break;
+        }
     }
 
     private void handEventFeeRate(String[] topics, String data) {

@@ -135,32 +135,25 @@ public class SwapV2Pair extends BaseContract {
     }
 
     @Override
-    public void handleEvent(IContractEventWrap iContractEventWrap) {
-        super.handleEvent(iContractEventWrap);
-        if (!isReady) {
-            return;
-        }
-        // Do handleEvent
-        String eventName = getEventName(iContractEventWrap);
-        String[] topics = iContractEventWrap.getTopics();
+    protected void handleEvent1(String eventName, String[] topics, String data) {
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
-                handleTransfer(topics, iContractEventWrap.getData());
+                handleTransfer(topics, data);
                 break;
             case EVENT_NAME_NEW_MINT:
-                handleMint(topics, iContractEventWrap.getData());
+                handleMint(topics, data);
                 break;
             case EVENT_NAME_NEW_BURN:
-                handleBurn(topics, iContractEventWrap.getData());
+                handleBurn(topics, data);
                 break;
             case EVENT_NAME_NEW_SWAP:
-                handleSwap(topics, iContractEventWrap.getData());
+                handleSwap(topics, data);
                 break;
             case EVENT_NAME_NEW_SYNC:
-                handleSync(topics, iContractEventWrap.getData());
+                handleSync(topics, data);
                 break;
             default:
-                log.warn("event:{} not handle", topics[0]);
+                log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
                 break;
         }
     }

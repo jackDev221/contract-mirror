@@ -165,6 +165,18 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
     }
 
     @Override
+    protected void handleEvent1(String eventName, String[] topics, String data) {
+        switch (eventName) {
+            case EVENT_NAME_PAIR_CREATED_MINT:
+                handleCreatePair(topics, data);
+                break;
+            default:
+                log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
+                break;
+        }
+    }
+
+    @Override
     public String getFactoryState() {
         SwapFactoryV2Data factoryV2Data = this.getVarFactoryV2Data();
         if (ObjectUtil.isNotNull(factoryV2Data)) {
@@ -192,25 +204,6 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
             return BigInteger.ZERO;
         }
         return (BigInteger) results.get(0).getValue();
-    }
-
-    @Override
-    public void handleEvent(IContractEventWrap iContractEventWrap) {
-        super.handleEvent(iContractEventWrap);
-        if (!isReady) {
-            return;
-        }
-        // Do handleEvent
-        String eventName = getEventName(iContractEventWrap);
-        String[] topics = iContractEventWrap.getTopics();
-        switch (eventName) {
-            case EVENT_NAME_PAIR_CREATED_MINT:
-                handleCreatePair(topics, iContractEventWrap.getData());
-                break;
-            default:
-                log.warn("event:{} not handle", topics[0]);
-                break;
-        }
     }
 
     private void handleCreatePair(String[] _topics, String _data) {

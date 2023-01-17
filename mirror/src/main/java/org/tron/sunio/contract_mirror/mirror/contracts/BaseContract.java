@@ -49,6 +49,8 @@ public abstract class BaseContract implements IContract {
 
     protected abstract void saveUpdateToCache();
 
+    protected abstract void handleEvent1(String eventName, String[] topics, String data);
+
     private boolean isContractIncremental() {
         return false;
     }
@@ -122,6 +124,14 @@ public abstract class BaseContract implements IContract {
                 initFull(iContractEventWrap);
             }
         }
+        if (!isReady) {
+            return;
+        }
+        // Do handleEvent
+        String eventName = getEventName(iContractEventWrap);
+        String[] topics = iContractEventWrap.getTopics();
+        String data = iContractEventWrap.getData();
+        handleEvent1(eventName, topics, data);
     }
 
     // 处理完后统一更新数据到存储。

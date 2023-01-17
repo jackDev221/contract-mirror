@@ -99,41 +99,34 @@ public class SwapV1 extends BaseContract {
     }
 
     @Override
-    public void handleEvent(IContractEventWrap iContractEventWrap) {
-        super.handleEvent(iContractEventWrap);
-        if (!isReady) {
-            return;
-        }
-        // Do handleEvent
-        String eventName = getEventName(iContractEventWrap);
-        String[] topics = iContractEventWrap.getTopics();
+    protected void handleEvent1(String eventName, String[] topics, String data) {
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
-                handleEventTransfer(topics, iContractEventWrap.getData());
+                handleEventTransfer(topics, data);
                 break;
             case EVENT_NAME_TOKEN_PURCHASE:
-                handleTokenPurchase(topics, iContractEventWrap.getData());
+                handleTokenPurchase(topics, data);
                 break;
             case EVENT_NAME_TRX_PURCHASE:
-                handleTrxPurchase(topics, iContractEventWrap.getData());
+                handleTrxPurchase(topics, data);
                 break;
             case EVENT_NAME_TOKEN_TO_TOKEN:
-                handleTokenToToken(topics, iContractEventWrap.getData());
+                handleTokenToToken(topics, data);
                 break;
             case EVENT_NAME_SNAPSHOT:
-                handleEventSnapshot(topics, iContractEventWrap.getData());
+                handleEventSnapshot(topics, data);
                 break;
             case EVENT_NAME_ADD_LIQUIDITY:
-                handleAddLiquidity(topics, iContractEventWrap.getData());
+                handleAddLiquidity(topics, data);
                 break;
             case EVENT_NAME_REMOVE_LIQUIDITY:
-                handleRemoveLiquidity(topics, iContractEventWrap.getData());
+                handleRemoveLiquidity(topics, data);
                 break;
             case EVENT_NAME_ADMIN_FEE_MINT:
-                handleAdminFeeMint(topics, iContractEventWrap.getData());
+                handleAdminFeeMint(topics, data);
                 break;
             default:
-                log.warn("event:{} not handle", topics[0]);
+                log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
                 break;
         }
     }
