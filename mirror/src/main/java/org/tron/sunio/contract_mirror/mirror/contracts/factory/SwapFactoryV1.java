@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
-import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
@@ -231,7 +230,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     }
 
     @Override
-    protected void handleEvent1(String eventName, String[] topics, String data) {
+    protected void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         switch (eventName) {
             case SwapV1FactoryEvent
                     .EVENT_NAME_FEE_RATE:

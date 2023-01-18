@@ -8,7 +8,6 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
-import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV2Pair;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV2Data;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
@@ -165,7 +164,7 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
     }
 
     @Override
-    protected void handleEvent1(String eventName, String[] topics, String data) {
+    protected void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         switch (eventName) {
             case EVENT_NAME_PAIR_CREATED_MINT:
                 handleCreatePair(topics, data);

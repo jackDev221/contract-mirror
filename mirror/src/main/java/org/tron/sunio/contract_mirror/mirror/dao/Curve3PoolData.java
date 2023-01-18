@@ -12,6 +12,8 @@ import java.math.BigInteger;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class Curve3PoolData extends BaseContractData{
+    private String[] coins = new String[2];
+    private BigInteger[] balance = new BigInteger[2];
     private String token;
     private BigInteger fee;
     private BigInteger futureFee;

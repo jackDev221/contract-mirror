@@ -7,7 +7,6 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
-import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
@@ -35,6 +34,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.E
 
 @Slf4j
 public class SwapV2Pair extends BaseContract {
+    private static final BigInteger Q112 = BigInteger.TWO.pow(112);
     private String factory;
     private SwapV2PairData swapV2PairData;
 
@@ -135,7 +135,7 @@ public class SwapV2Pair extends BaseContract {
     }
 
     @Override
-    protected void handleEvent1(String eventName, String[] topics, String data) {
+    protected void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
                 handleTransfer(topics, data);
@@ -150,7 +150,7 @@ public class SwapV2Pair extends BaseContract {
                 handleSwap(topics, data);
                 break;
             case EVENT_NAME_NEW_SYNC:
-                handleSync(topics, data);
+                handleSync(topics, data, handleEventExtraData);
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
@@ -197,7 +197,7 @@ public class SwapV2Pair extends BaseContract {
         log.info("handleSwap not implements!");
     }
 
-    private void handleSync(String[] topics, String data) {
+    private void handleSync(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         EventValues values = EventUtils.getEventValue(EVENT_NAME_NEW_SYNC_BODY,
                 Arrays.asList(topics), data, false);
         if (ObjectUtil.isNull(values)) {
@@ -207,8 +207,25 @@ public class SwapV2Pair extends BaseContract {
         SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
         BigInteger reserve0 = (BigInteger) values.getNonIndexedValues().get(0).getValue();
         BigInteger reserve1 = (BigInteger) values.getNonIndexedValues().get(1).getValue();
+        //4294967296L = 2**32
+        long blockTimestampLast = handleEventExtraData.getTimeStamp() % 4294967296L;
+        long timeElapsed = blockTimestampLast - handleEventExtraData.getTimeStamp();
+        BigInteger reserve0Origin = swapV2PairData.getReverse0();
+        BigInteger reserve1Origin = swapV2PairData.getReverse1();
+        if (timeElapsed > 0 && reserve0Origin.compareTo(BigInteger.ZERO) != 0 && reserve1Origin.compareTo(BigInteger.ZERO) != 0) {
+            long price0Add = priceCumulativeLastAdd(reserve0Origin, reserve1Origin, timeElapsed);
+            long price1Add = priceCumulativeLastAdd(reserve1Origin, reserve0Origin, timeElapsed);
+            swapV2PairData.setPrice0CumulativeLast(swapV2PairData.getPrice0CumulativeLast() + price0Add);
+            swapV2PairData.setPrice1CumulativeLast(swapV2PairData.getPrice1CumulativeLast() + price1Add);
+        }
         swapV2PairData.setReverse0(reserve0);
         swapV2PairData.setReverse1(reserve1);
+        swapV2PairData.setBlockTimestampLast(blockTimestampLast);
         isDirty = true;
     }
+
+    private long priceCumulativeLastAdd(BigInteger reserve0, BigInteger reserve1, long timeElapsed) {
+        return reserve1.multiply(Q112).divide(reserve0).longValue() * timeElapsed;
+    }
+
 }

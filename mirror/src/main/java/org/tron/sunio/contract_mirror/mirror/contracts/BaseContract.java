@@ -1,5 +1,6 @@
 package org.tron.sunio.contract_mirror.mirror.contracts;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
@@ -49,7 +50,7 @@ public abstract class BaseContract implements IContract {
 
     protected abstract void saveUpdateToCache();
 
-    protected abstract void handleEvent1(String eventName, String[] topics, String data);
+    protected abstract void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData);
 
     private boolean isContractIncremental() {
         return false;
@@ -109,19 +110,19 @@ public abstract class BaseContract implements IContract {
             log.warn("Wrong log no topic, id:{}", iContractEventWrap.getUniqueId());
             return null;
         }
-        // Do handleEvent
         return sigMap.getOrDefault(topics[0], "");
     }
 
     public void handleEvent(IContractEventWrap iContractEventWrap) {
         if (!isReady) {
-            if (initFlag == INIT_FLAG_START) {
+            // 过滤中间需要重新init和初始化失败
+            if (initFlag == INIT_FLAG_START || initFlag == INIT_FLAG_DOING) {
                 initFlag = INIT_FLAG_DOING;
-            }
-            if (isContractIncremental()) {
-                initIncremental(iContractEventWrap);
-            } else {
-                initFull(iContractEventWrap);
+                if (isContractIncremental()) {
+                    initIncremental(iContractEventWrap);
+                } else {
+                    initFull(iContractEventWrap);
+                }
             }
         }
         if (!isReady) {
@@ -131,7 +132,8 @@ public abstract class BaseContract implements IContract {
         String eventName = getEventName(iContractEventWrap);
         String[] topics = iContractEventWrap.getTopics();
         String data = iContractEventWrap.getData();
-        handleEvent1(eventName, topics, data);
+        HandleEventExtraData handleEventExtraData = genEventExtraData(iContractEventWrap);
+        handleEvent1(eventName, topics, data, handleEventExtraData);
     }
 
     // 处理完后统一更新数据到存储。
@@ -141,7 +143,7 @@ public abstract class BaseContract implements IContract {
             isReady = true;
             updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
         }
-        if (initFlag != INIT_FLAG_SUCCESS) {
+        if (!isReady) {
             initFlag = INIT_FLAG_INIT;
         }
         if (isDirty) {
@@ -258,5 +260,18 @@ public abstract class BaseContract implements IContract {
 
     protected BigInteger getBalance(String address) {
         return iChainHelper.balance(address);
+    }
+
+    private HandleEventExtraData genEventExtraData(IContractEventWrap iContractEventWrap) {
+        return HandleEventExtraData.builder()
+                .timeStamp(iContractEventWrap.getTimeStamp())
+                .build();
+
+    }
+
+    @Data
+    @Builder
+    public static class HandleEventExtraData {
+        private long timeStamp;
     }
 }

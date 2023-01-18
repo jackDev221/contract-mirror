@@ -133,6 +133,14 @@ public class EventUtils {
                 result = new TypeReference.StaticArrayTypeReference<StaticArray<Uint256>>(2) {
                 };
                 break;
+            case "uint256[3]":
+                result = new TypeReference.StaticArrayTypeReference<StaticArray<Uint256>>(3) {
+                };
+                break;
+            case "uint256[4]":
+                result = new TypeReference.StaticArrayTypeReference<StaticArray<Uint256>>(4) {
+                };
+                break;
         }
         return result;
     }

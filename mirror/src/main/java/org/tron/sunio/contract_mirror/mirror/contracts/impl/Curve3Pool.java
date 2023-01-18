@@ -107,7 +107,7 @@ public class Curve3Pool extends BaseContract {
     }
 
     @Override
-    protected void handleEvent1(String eventName, String[] topics, String data) {
+    protected void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
                 handleEventTransfer(topics, data);
@@ -171,8 +171,9 @@ public class Curve3Pool extends BaseContract {
     }
 
     private void handleEventRemoveLiquidityOne(String[] topics, String data) {
-        this.isReady = false;
         updateBaseInfo(isUsing, false, isAddExchangeContracts);
+        this.isReady = false;
+        this.isDirty = true;
     }
 
     private void handleEventRemoveLiquidityImbalance(String[] topics, String data) {
