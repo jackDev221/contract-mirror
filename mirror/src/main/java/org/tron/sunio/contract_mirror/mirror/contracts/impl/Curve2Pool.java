@@ -47,7 +47,6 @@ import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_STOP_RAMP_A_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_TOKEN_EXCHANGE;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_TOKEN_EXCHANGE_BODY;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_TRANSFER;
 
 @Slf4j
 public class Curve2Pool extends BaseContract {
@@ -307,8 +306,8 @@ public class Curve2Pool extends BaseContract {
         StaticArray<Uint256> fees = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(1);
         for (int i = 0; i < N_COINS; i++) {
             BigInteger originBalance = curve2PoolData.getBalance()[i];
-            BigInteger fee = (BigInteger) fees.getValue().get(i).getValue();
-            BigInteger newBalance = originBalance.subtract((BigInteger) amounts.getValue().get(i).getValue());
+            BigInteger fee = fees.getValue().get(i).getValue();
+            BigInteger newBalance = originBalance.subtract( amounts.getValue().get(i).getValue());
             BigInteger newFee = fee.multiply(curve2PoolData.getAdminFee()).divide(FEE_DENOMINATOR);
             newBalance = newBalance.subtract(newFee);
             curve2PoolData.updateBalances(i, newBalance);
@@ -316,14 +315,13 @@ public class Curve2Pool extends BaseContract {
         BigInteger newTotalSupply = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
         curve2PoolData.setTotalSupply(newTotalSupply);
         this.isDirty = true;
-
     }
 
     private void handleEventCommitNewAdmin(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         EventValues values = EventUtils.getEventValue(EVENT_NAME_COMMIT_NEW_ADMIN_BODY,
                 Arrays.asList(topics), data, false);
         Curve2PoolData curve2PoolData = this.getVarCurve2PoolData();
-        BigInteger deadline = (BigInteger) values.getIndexedValues().get(1).getValue();
+        BigInteger deadline = (BigInteger) values.getIndexedValues().get(0).getValue();
         String admin = WalletUtil.hexStringToTron((String) values.getIndexedValues().get(1).getValue());
         curve2PoolData.setOwner(admin);
         curve2PoolData.setTransferOwnershipDeadline(deadline);
