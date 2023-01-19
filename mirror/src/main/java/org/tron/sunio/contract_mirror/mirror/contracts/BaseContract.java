@@ -1,8 +1,11 @@
 package org.tron.sunio.contract_mirror.mirror.contracts;
 
+import cn.hutool.core.util.ObjectUtil;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
+import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
@@ -10,6 +13,7 @@ import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
+import org.web3j.abi.EventValues;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Type;
@@ -18,7 +22,8 @@ import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Uint256;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -68,13 +73,19 @@ public abstract class BaseContract implements IContract {
     }
 
     public boolean initDataFromChain() {
-        log.info("Contract:{}, type:{} start init", this.address, this.type);
-        t0 = System.currentTimeMillis();
-        initFlag = INIT_FLAG_START;
-        initDataFromChain1();
-        t1 = System.currentTimeMillis();
-        t2 = t1 + (t1 - t0);
-        return false;
+        try {
+            log.info("Contract:{}, type:{} start init", this.address, this.type);
+            t0 = System.currentTimeMillis();
+            initFlag = INIT_FLAG_START;
+            initDataFromChain1();
+            t1 = System.currentTimeMillis();
+            t2 = t1 + (t1 - t0);
+        } catch (Exception e) {
+            log.error("Contract:{} type:{}, failed at function initDataFromChain:{}, init failed", address, type, e.toString());
+            initFlag = INIT_FLAG_FAILED;
+            return false;
+        }
+        return true;
     }
 
     protected void initIncremental(IContractEventWrap iContractEventWrap) {
@@ -158,16 +169,9 @@ public abstract class BaseContract implements IContract {
 
 
     protected String callContractString(String from, String method) {
-        List<Type> inputParameters = new ArrayList<>();
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Utf8String>() {
-        });
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                from,
-                this.getAddress(),
-                method,
-                inputParameters,
-                outputParameters
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, this.getAddress(), method,
+                Collections.EMPTY_LIST, List.of(new TypeReference<Utf8String>() {
+        })
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         if (results.size() == 0) {
@@ -178,16 +182,9 @@ public abstract class BaseContract implements IContract {
     }
 
     protected BigInteger callContractU256(String from, String method) {
-        List<Type> inputParameters = new ArrayList<>();
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Uint256>() {
-        });
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                from,
-                this.getAddress(),
-                method,
-                inputParameters,
-                outputParameters
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, this.getAddress(), method, Collections.EMPTY_LIST,
+                List.of(new TypeReference<Uint256>() {
+                })
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         if (results.size() == 0) {
@@ -198,16 +195,9 @@ public abstract class BaseContract implements IContract {
     }
 
     protected long callContractUint(String from, String method) {
-        List<Type> inputParameters = new ArrayList<>();
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Uint>() {
-        });
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                from,
-                this.getAddress(),
-                method,
-                inputParameters,
-                outputParameters
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, this.getAddress(), method, Collections.EMPTY_LIST,
+                List.of(new TypeReference<Uint>() {
+                })
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         if (results.size() == 0) {
@@ -218,16 +208,9 @@ public abstract class BaseContract implements IContract {
     }
 
     protected Address callContractAddress(String from, String method) {
-        List<Type> inputParameters = new ArrayList<>();
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Address>() {
-        });
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                from,
-                this.getAddress(),
-                method,
-                inputParameters,
-                outputParameters
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, this.getAddress(), method, Collections.EMPTY_LIST,
+                List.of(new TypeReference<Address>() {
+                })
         );
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         if (results.size() == 0) {
@@ -238,18 +221,9 @@ public abstract class BaseContract implements IContract {
     }
 
     protected BigInteger tokenBalance(String from, String contract) {
-        List<Type> inputParameters = new ArrayList<>();
-        inputParameters.add(new Address(WalletUtil.ethAddressHex(from)));
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Uint256>() {
-        });
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                from,
-                contract,
-                "balanceOf",
-                inputParameters,
-                outputParameters
-        );
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, "balanceOf",
+                List.of(new Address(WalletUtil.ethAddressHex(from))), List.of(new TypeReference<Uint256>() {
+        }));
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         if (results.size() == 0) {
             log.error("Get account:{}, token:{} , function:balanceOf result len is zero", from, contract);
@@ -258,13 +232,24 @@ public abstract class BaseContract implements IContract {
         return (BigInteger) results.get(0).getValue();
     }
 
+
     protected BigInteger getBalance(String address) {
         return iChainHelper.balance(address);
+    }
+
+    protected EventValues getEventValue(String eventName, String eventBody, String[] topics, String data, String id) {
+        EventValues values = EventUtils.getEventValue(eventBody, Arrays.asList(topics), data, false);
+        if (ObjectUtil.isNull(values)) {
+            log.error("Contract:{}, type:{} handEvent:{}, id:{}  failed!!", address, type, eventName, id);
+            return null;
+        }
+        return values;
     }
 
     private HandleEventExtraData genEventExtraData(IContractEventWrap iContractEventWrap) {
         return HandleEventExtraData.builder()
                 .timeStamp(iContractEventWrap.getTimeStamp())
+                .UniqueId(iContractEventWrap.getUniqueId())
                 .build();
 
     }
@@ -273,5 +258,6 @@ public abstract class BaseContract implements IContract {
     @Builder
     public static class HandleEventExtraData {
         private long timeStamp;
+        private String UniqueId;
     }
 }

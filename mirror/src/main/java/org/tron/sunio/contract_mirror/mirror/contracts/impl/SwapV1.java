@@ -2,7 +2,6 @@ package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
@@ -11,9 +10,7 @@ import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.web3j.abi.EventValues;
 
-
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.Map;
 
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_ADD_LIQUIDITY;
@@ -56,30 +53,25 @@ public class SwapV1 extends BaseContract {
 
     @Override
     public boolean initDataFromChain1() {
-        try {
-            SwapV1Data v1Data = this.getVarSwapV1Data();
-            String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
-            String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
-            long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
-            long kLast = callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
-            BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
-            BigInteger tokenBalance = tokenBalance(this.getAddress(), tokenAddress);
-            BigInteger trxBalance = getBalance(address);
-            isReady = false;
-            v1Data.setName(name);
-            v1Data.setSymbol(symbol);
-            v1Data.setDecimals(decimals);
-            v1Data.setKLast(kLast);
-            v1Data.setTrxBalance(trxBalance);
-            v1Data.setLpTotalSupply(lpTotalSupply);
-            v1Data.setTokenBalance(tokenBalance);
-            v1Data.setReady(isReady);
-            isDirty = true;
-            return true;
-        } catch (Exception e) {
-            log.error("Contract:{} type:{}, failed at function CallChainData:{}", address, type, e.toString());
-            return false;
-        }
+        SwapV1Data v1Data = this.getVarSwapV1Data();
+        String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
+        String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
+        long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
+        long kLast = callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
+        BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
+        BigInteger tokenBalance = tokenBalance(this.getAddress(), tokenAddress);
+        BigInteger trxBalance = getBalance(address);
+        isReady = false;
+        v1Data.setName(name);
+        v1Data.setSymbol(symbol);
+        v1Data.setDecimals(decimals);
+        v1Data.setKLast(kLast);
+        v1Data.setTrxBalance(trxBalance);
+        v1Data.setLpTotalSupply(lpTotalSupply);
+        v1Data.setTokenBalance(tokenBalance);
+        v1Data.setReady(isReady);
+        isDirty = true;
+        return true;
     }
 
     @Override
@@ -101,7 +93,7 @@ public class SwapV1 extends BaseContract {
     protected void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
-                handleEventTransfer(topics, data);
+                handleEventTransfer(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_TOKEN_PURCHASE:
                 handleTokenPurchase(topics, data);
@@ -113,7 +105,7 @@ public class SwapV1 extends BaseContract {
                 handleTokenToToken(topics, data);
                 break;
             case EVENT_NAME_SNAPSHOT:
-                handleEventSnapshot(topics, data);
+                handleEventSnapshot(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_ADD_LIQUIDITY:
                 handleAddLiquidity(topics, data);
@@ -130,17 +122,16 @@ public class SwapV1 extends BaseContract {
         }
     }
 
-    private void handleEventTransfer(String[] topics, String data) {
-        EventValues values = EventUtils.getEventValue(EVENT_NAME_TRANSFER_BODY,
-                Arrays.asList(topics), data, false);
-        if (ObjectUtil.isNull(values)) {
-            log.error("handEventFeeRate failed!!");
+    private void handleEventTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        EventValues eventValues = getEventValue(EVENT_NAME_TRANSFER, EVENT_NAME_TRANSFER_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
             return;
         }
         SwapV1Data v1Data = this.getVarSwapV1Data();
-        String from = (String) values.getIndexedValues().get(0).getValue();
-        String to = (String) values.getIndexedValues().get(0).getValue();
-        BigInteger amount = (BigInteger) values.getNonIndexedValues().get(0).getValue();
+        String from = (String) eventValues.getIndexedValues().get(0).getValue();
+        String to = (String) eventValues.getIndexedValues().get(0).getValue();
+        BigInteger amount = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         boolean change = false;
         if (to.equalsIgnoreCase(EMPTY_TOPIC_VALUE)) {
             v1Data.setLpTotalSupply(v1Data.getLpTotalSupply().subtract(amount));
@@ -157,16 +148,15 @@ public class SwapV1 extends BaseContract {
         }
     }
 
-    private void handleEventSnapshot(String[] topics, String data) {
-        EventValues values = EventUtils.getEventValue(EVENT_NAME_SNAPSHOT_BODY,
-                Arrays.asList(topics), data, false);
-        if (ObjectUtil.isNull(values)) {
-            log.error("handEventFeeRate failed!!");
+    private void handleEventSnapshot(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        EventValues eventValues = getEventValue(EVENT_NAME_SNAPSHOT, EVENT_NAME_SNAPSHOT_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
             return;
         }
         SwapV1Data v1Data = this.getVarSwapV1Data();
-        BigInteger trx = (BigInteger) values.getIndexedValues().get(1).getValue();
-        BigInteger tokenBalance = (BigInteger) values.getIndexedValues().get(2).getValue();
+        BigInteger trx = (BigInteger) eventValues.getIndexedValues().get(1).getValue();
+        BigInteger tokenBalance = (BigInteger) eventValues.getIndexedValues().get(2).getValue();
         v1Data.setTokenBalance(tokenBalance);
         v1Data.setTrxBalance(trx);
         isDirty = true;

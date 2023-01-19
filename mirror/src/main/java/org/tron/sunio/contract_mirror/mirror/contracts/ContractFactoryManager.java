@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
+import org.tron.sunio.contract_mirror.event_decode.events.PSMEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
@@ -13,6 +14,7 @@ import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 
 import java.util.HashMap;
@@ -31,6 +33,7 @@ public class ContractFactoryManager {
     private Map<String, String> v2FactorySigMap;
     private Map<String, String> curve2PoolSigMap;
     private Map<String, String> curve3PoolSigMap;
+    private Map<String, String> psmSigMap;
 
 
     private void initSigMaps() {
@@ -38,6 +41,7 @@ public class ContractFactoryManager {
         v2FactorySigMap = SwapV2FactoryEvent.getSigMap();
         curve2PoolSigMap = Curve2PoolEvent.getSigMap();
         curve3PoolSigMap = Curve3PoolEvent.getSigMap();
+        psmSigMap = PSMEvent.getSigMap();
     }
 
     public boolean initFactoryMap(List<ContractInfo> contractInfoList, IContractsCollectHelper iContractsCollectHelper) {
@@ -79,6 +83,14 @@ public class ContractFactoryManager {
                             tronChainHelper,
                             iDbHandler,
                             curve3PoolSigMap
+                    ));
+
+                case CONTRACT_PSM:
+                    iContractsCollectHelper.addContract(new PSM(
+                            contractInfo.getAddress(),
+                            tronChainHelper,
+                            iDbHandler,
+                            psmSigMap
                     ));
                 default:
                     break;

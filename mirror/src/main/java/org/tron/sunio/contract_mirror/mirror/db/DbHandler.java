@@ -3,6 +3,7 @@ package org.tron.sunio.contract_mirror.mirror.db;
 import org.springframework.stereotype.Component;
 import org.tron.sunio.contract_mirror.mirror.dao.Curve2PoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.Curve3PoolData;
+import org.tron.sunio.contract_mirror.mirror.dao.PSMData;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV1Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV2Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
@@ -70,5 +71,15 @@ public class DbHandler implements IDbHandler {
     @Override
     public void updateCurve3PoolData(Curve3PoolData curve3PoolData) {
         CacheHandler.curve3PoolCache.put(curve3PoolData.getAddress(), curve3PoolData);
+    }
+
+    @Override
+    public PSMData queryPSMData(String address) {
+        return CacheHandler.psmCache.getIfPresent(address);
+    }
+
+    @Override
+    public void updatePSMData(PSMData psmData) {
+        CacheHandler.psmCache.put(psmData.getAddress(), psmData);
     }
 }

@@ -53,37 +53,32 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
 
     @Override
     public boolean initDataFromChain1() {
-        try {
-            SwapFactoryV2Data factoryV2Data = this.getVarFactoryV2Data();
-            TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
-            triggerContractInfo.setContractAddress(this.getAddress());
-            triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
-            triggerContractInfo.setMethodName("feeTo");
-            List<Type> inputParameters = new ArrayList<>();
-            triggerContractInfo.setInputParameters(inputParameters);
-            List<TypeReference<?>> outputParameters = new ArrayList<>();
-            outputParameters.add(new TypeReference<Address>() {
-            });
-            triggerContractInfo.setOutputParameters(outputParameters);
-            List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-            if (results.size() > 0) {
-                Address feeAddress = (Address) results.get(0).getValue();
-                factoryV2Data.setFeeTo(WalletUtil.ethAddressToTron(feeAddress.toString()));
-            }
-            triggerContractInfo.setMethodName("feeToSetter()");
-            results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-            if (results.size() > 0) {
-                Address feeToSetterAddress = (Address) results.get(0).getValue();
-                factoryV2Data.setFeeToSetter(WalletUtil.ethAddressToTron(feeToSetterAddress.toString()));
-            }
-            long pairCount = getPairCount().longValue();
-            factoryV2Data.setPairCount(pairCount);
-            isDirty = true;
-            return true;
-        } catch (Exception e) {
-            log.error("Contract:{} type:{}, failed at function initDataFromChain1:{}", address, type, e.toString());
-            return false;
+        SwapFactoryV2Data factoryV2Data = this.getVarFactoryV2Data();
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
+        triggerContractInfo.setContractAddress(this.getAddress());
+        triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
+        triggerContractInfo.setMethodName("feeTo");
+        List<Type> inputParameters = new ArrayList<>();
+        triggerContractInfo.setInputParameters(inputParameters);
+        List<TypeReference<?>> outputParameters = new ArrayList<>();
+        outputParameters.add(new TypeReference<Address>() {
+        });
+        triggerContractInfo.setOutputParameters(outputParameters);
+        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() > 0) {
+            Address feeAddress = (Address) results.get(0).getValue();
+            factoryV2Data.setFeeTo(WalletUtil.ethAddressToTron(feeAddress.toString()));
         }
+        triggerContractInfo.setMethodName("feeToSetter()");
+        results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() > 0) {
+            Address feeToSetterAddress = (Address) results.get(0).getValue();
+            factoryV2Data.setFeeToSetter(WalletUtil.ethAddressToTron(feeToSetterAddress.toString()));
+        }
+        long pairCount = getPairCount().longValue();
+        factoryV2Data.setPairCount(pairCount);
+        isDirty = true;
+        return true;
     }
 
     @Override

@@ -2,7 +2,6 @@ package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
@@ -19,7 +18,6 @@ import org.web3j.abi.datatypes.generated.Uint32;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -91,32 +89,28 @@ public class SwapV2Pair extends BaseContract {
 
     @Override
     public boolean initDataFromChain1() {
-        try {
-            SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
-            String token0 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token0").toString());
-            swapV2PairData.setToken0(token0);
-            String token1 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token1").toString());
-            swapV2PairData.setToken1(token1);
-            callReservesOnChain(swapV2PairData);
-            swapV2PairData.setPrice0CumulativeLast(callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "price0CumulativeLast()"));
-            swapV2PairData.setPrice1CumulativeLast(callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "price1CumulativeLast()"));
-            String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
-            swapV2PairData.setName(name);
-            String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
-            swapV2PairData.setSymbol(symbol);
-            long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
-            swapV2PairData.setDecimals(decimals);
-            BigInteger kLast = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
-            swapV2PairData.setKLast(kLast);
-            BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
-            swapV2PairData.setLpTotalSupply(lpTotalSupply);
-            BigInteger trxBalance = getBalance(address);
-            swapV2PairData.setTrxBalance(trxBalance);
-            isDirty = true;
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
+        String token0 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token0").toString());
+        swapV2PairData.setToken0(token0);
+        String token1 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token1").toString());
+        swapV2PairData.setToken1(token1);
+        callReservesOnChain(swapV2PairData);
+        swapV2PairData.setPrice0CumulativeLast(callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "price0CumulativeLast()"));
+        swapV2PairData.setPrice1CumulativeLast(callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "price1CumulativeLast()"));
+        String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
+        swapV2PairData.setName(name);
+        String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
+        swapV2PairData.setSymbol(symbol);
+        long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
+        swapV2PairData.setDecimals(decimals);
+        BigInteger kLast = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
+        swapV2PairData.setKLast(kLast);
+        BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
+        swapV2PairData.setLpTotalSupply(lpTotalSupply);
+        BigInteger trxBalance = getBalance(address);
+        swapV2PairData.setTrxBalance(trxBalance);
+        isDirty = true;
+        return true;
     }
 
     @Override
@@ -138,7 +132,7 @@ public class SwapV2Pair extends BaseContract {
     protected void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
-                handleTransfer(topics, data);
+                handleTransfer(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_NEW_MINT:
                 handleMint(topics, data);
@@ -158,17 +152,16 @@ public class SwapV2Pair extends BaseContract {
         }
     }
 
-    private void handleTransfer(String[] topics, String data) {
-        EventValues values = EventUtils.getEventValue(EVENT_NAME_TRANSFER_BODY,
-                Arrays.asList(topics), data, false);
-        if (ObjectUtil.isNull(values)) {
-            log.error("handEventFeeRate failed!!");
+    private void handleTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        EventValues eventValues = getEventValue(EVENT_NAME_TRANSFER, EVENT_NAME_TRANSFER_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
             return;
         }
         SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
-        String from = (String) values.getIndexedValues().get(0).getValue();
-        String to = (String) values.getIndexedValues().get(0).getValue();
-        BigInteger amount = (BigInteger) values.getNonIndexedValues().get(0).getValue();
+        String from = (String) eventValues.getIndexedValues().get(0).getValue();
+        String to = (String) eventValues.getIndexedValues().get(0).getValue();
+        BigInteger amount = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         boolean change = false;
         if (to.equalsIgnoreCase(EMPTY_TOPIC_VALUE)) {
             swapV2PairData.setLpTotalSupply(swapV2PairData.getLpTotalSupply().subtract(amount));
@@ -198,15 +191,14 @@ public class SwapV2Pair extends BaseContract {
     }
 
     private void handleSync(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues values = EventUtils.getEventValue(EVENT_NAME_NEW_SYNC_BODY,
-                Arrays.asList(topics), data, false);
-        if (ObjectUtil.isNull(values)) {
-            log.error("handleSync failed!!");
+        EventValues eventValues = getEventValue(EVENT_NAME_NEW_SYNC, EVENT_NAME_NEW_SYNC_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
             return;
         }
         SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
-        BigInteger reserve0 = (BigInteger) values.getNonIndexedValues().get(0).getValue();
-        BigInteger reserve1 = (BigInteger) values.getNonIndexedValues().get(1).getValue();
+        BigInteger reserve0 = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+        BigInteger reserve1 = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         //4294967296L = 2**32
         long blockTimestampLast = handleEventExtraData.getTimeStamp() % 4294967296L;
         long timeElapsed = blockTimestampLast - handleEventExtraData.getTimeStamp();

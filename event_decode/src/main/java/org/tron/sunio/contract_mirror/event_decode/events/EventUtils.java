@@ -11,6 +11,7 @@ import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.StaticArray;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.Uint;
+import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.StaticArray2;
 import org.web3j.abi.datatypes.generated.Uint112;
 import org.web3j.abi.datatypes.generated.Uint256;
@@ -141,6 +142,11 @@ public class EventUtils {
                 result = new TypeReference.StaticArrayTypeReference<StaticArray<Uint256>>(4) {
                 };
                 break;
+            case "bytes32":
+                result = new TypeReference<Bytes32>(indexed) {
+                };
+                break;
+
         }
         return result;
     }

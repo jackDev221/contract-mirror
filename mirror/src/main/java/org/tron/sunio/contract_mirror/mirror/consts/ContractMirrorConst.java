@@ -12,4 +12,8 @@ public interface ContractMirrorConst {
     String SWAP_V2_PAIR_STATUS = "/swapv2/pair/{address}/status";
     String SWAP_V2_FAC_STATUS = "/swapv2/factory/{address}/status";
 
+    String CURVE_2POOL_STATUS = "/curve/2pool/{address}/status";
+    String CURVE_3POOL_STATUS = "/curve/3pool/{address}/status";
+    String PSM_STATUS = "/psm/{address}/status";
+
 }

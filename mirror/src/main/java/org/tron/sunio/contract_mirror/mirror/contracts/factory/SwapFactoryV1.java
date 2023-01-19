@@ -54,45 +54,43 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
 
     @Override
     public boolean initDataFromChain1() {
-        try {
-            SwapFactoryV1Data swapFactoryV1Data = getVarFactoryV1Data();
-            // TODO feeTo feeToRate 可读性
-            // set feeTo
-            TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
-            triggerContractInfo.setContractAddress(this.getAddress());
-            triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
-            triggerContractInfo.setMethodName("feeTo");
-            List<Type> inputParameters = new ArrayList<>();
-            triggerContractInfo.setInputParameters(inputParameters);
-            List<TypeReference<?>> outputParameters = new ArrayList<>();
-            outputParameters.add(new TypeReference<Address>() {
-            });
-            triggerContractInfo.setOutputParameters(outputParameters);
-            List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-            if (results.size() > 0) {
-                Address feeAddress = (Address) results.get(0).getValue();
-                swapFactoryV1Data.setFeeAddress(WalletUtil.ethAddressToTron(feeAddress.toString()));
-            }
-            // set feeToRate
-            triggerContractInfo.setMethodName("feeToRate");
-            outputParameters = new ArrayList<>();
-            outputParameters.add(new TypeReference<Uint256>() {
-            });
-            triggerContractInfo.setOutputParameters(outputParameters);
-            results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-            if (results.size() > 0) {
-                BigInteger feeToRate = (BigInteger) results.get(0).getValue();
-                swapFactoryV1Data.setFeeToRate(feeToRate.longValue());
-            }
-            long tokenCount = getTokenCount().longValue();
-            swapFactoryV1Data.setTokenCount(tokenCount);
-            isDirty = true;
-            return true;
-        } catch (Exception e) {
-            log.error("Contract:{} type:{}, failed at function initDataFromChain1:{}", address, type, e.toString());
-            return false;
+        SwapFactoryV1Data swapFactoryV1Data = getVarFactoryV1Data();
+        // TODO feeTo feeToRate 可读性
+        // set feeTo
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
+        triggerContractInfo.setContractAddress(this.getAddress());
+        triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
+        triggerContractInfo.setMethodName("feeTo");
+        List<Type> inputParameters = new ArrayList<>();
+        triggerContractInfo.setInputParameters(inputParameters);
+        List<TypeReference<?>> outputParameters = new ArrayList<>();
+        outputParameters.add(new TypeReference<Address>() {
+        });
+        triggerContractInfo.setOutputParameters(outputParameters);
+        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() > 0) {
+            Address feeAddress = (Address) results.get(0).getValue();
+            swapFactoryV1Data.setFeeAddress(WalletUtil.ethAddressToTron(feeAddress.toString()));
+        } else {
+            log.error("Get contract:{} type:{} , function:feeTo result len is zero", this.address, this.type);
         }
-
+        // set feeToRate
+        triggerContractInfo.setMethodName("feeToRate");
+        outputParameters = new ArrayList<>();
+        outputParameters.add(new TypeReference<Uint256>() {
+        });
+        triggerContractInfo.setOutputParameters(outputParameters);
+        results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() > 0) {
+            BigInteger feeToRate = (BigInteger) results.get(0).getValue();
+            swapFactoryV1Data.setFeeToRate(feeToRate.longValue());
+        } else {
+            log.error("Get contract:{} type:{} , function:feeToRate result len is zero", this.address, this.type);
+        }
+        long tokenCount = getTokenCount().longValue();
+        swapFactoryV1Data.setTokenCount(tokenCount);
+        isDirty = true;
+        return true;
     }
 
     @Override
@@ -104,6 +102,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     public List<BaseContract> getListContracts() {
         List<BaseContract> result = new ArrayList<>();
         long totalTokens = getTokenCount().longValue();
+        totalTokens = 20;
         //TODO 这里token数目太多了，之后看看是否能优化下
         for (long i = 0; i < totalTokens; i++) {
             Address tokenAddress = getTokenWithId(i);
@@ -234,11 +233,11 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
         switch (eventName) {
             case SwapV1FactoryEvent
                     .EVENT_NAME_FEE_RATE:
-                handEventFeeRate(topics, data);
+                handEventFeeRate(topics, data, handleEventExtraData);
                 break;
             case SwapV1FactoryEvent
                     .EVENT_NAME_FEE_TO:
-                handEventFeeTo(topics, data);
+                handEventFeeTo(topics, data, handleEventExtraData);
                 break;
             case SwapV1FactoryEvent
                     .EVENT_NAME_NEW_EXCHANGE:
@@ -250,28 +249,34 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
         }
     }
 
-    private void handEventFeeRate(String[] topics, String data) {
-        EventValues values = EventUtils.getEventValue(SwapV1FactoryEvent.EVENT_NAME_FEE_RATE_BODY,
-                Arrays.asList(topics), data, false);
-        if (ObjectUtil.isNull(values)) {
-            log.error("handEventFeeRate failed!!");
+    private void handEventFeeRate(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        EventValues eventValues = getEventValue(
+                SwapV1FactoryEvent.EVENT_NAME_FEE_RATE,
+                SwapV1FactoryEvent.EVENT_NAME_FEE_RATE_BODY,
+                topics,
+                data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
             return;
         }
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
-        BigInteger feeRate = (BigInteger) values.getNonIndexedValues().get(0).getValue();
+        BigInteger feeRate = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         factoryV1Data.setFeeToRate(feeRate.longValue());
         this.isDirty = true;
     }
 
-    private void handEventFeeTo(String[] topics, String data) {
-        EventValues values = EventUtils.getEventValue(SwapV1FactoryEvent.EVENT_NAME_FEE_TO,
-                Arrays.asList(topics), data, false);
-        if (ObjectUtil.isNull(values)) {
-            log.error("handEventFeeRate failed!!");
+    private void handEventFeeTo(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        EventValues eventValues = getEventValue(
+                SwapV1FactoryEvent.EVENT_NAME_FEE_TO,
+                SwapV1FactoryEvent.EVENT_NAME_FEE_TO_BODY,
+                topics,
+                data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
             return;
         }
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
-        String feeAddress = WalletUtil.ethAddressToTron((String) values.getNonIndexedValues().get(0).getValue());
+        String feeAddress = WalletUtil.ethAddressToTron((String) eventValues.getNonIndexedValues().get(0).getValue());
         factoryV1Data.setFeeAddress(feeAddress);
         this.isDirty = true;
     }
