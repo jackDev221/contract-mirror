@@ -268,8 +268,8 @@ public class Curve2Pool extends BaseContract {
                 Arrays.asList(
                         new StaticArray2(Uint256.class, amountsNew),
                         eventValues.getNonIndexedValues().get(1),
-                        eventValues.getIndexedValues().get(2),
-                        eventValues.getIndexedValues().get(3)
+                        eventValues.getNonIndexedValues().get(2),
+                        eventValues.getNonIndexedValues().get(3)
                 )
         );
 
@@ -299,7 +299,7 @@ public class Curve2Pool extends BaseContract {
                 Arrays.asList(
                         new StaticArray2(Uint256.class, amountsNew),
                         eventValues.getNonIndexedValues().get(1),
-                        eventValues.getIndexedValues().get(2)
+                        eventValues.getNonIndexedValues().get(2)
                 )
         );
         return HandleResult.genHandleSuccessAndSend(topics, newData);
@@ -339,8 +339,8 @@ public class Curve2Pool extends BaseContract {
                 Arrays.asList(
                         new StaticArray2(Uint256.class, amountsNew),
                         eventValues.getNonIndexedValues().get(1),
-                        eventValues.getIndexedValues().get(2),
-                        eventValues.getIndexedValues().get(3)
+                        eventValues.getNonIndexedValues().get(2),
+                        eventValues.getNonIndexedValues().get(3)
                 )
         );
         return HandleResult.genHandleSuccessAndSend(topics, newData);
