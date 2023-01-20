@@ -6,14 +6,6 @@ import org.tron.sunio.contract_mirror.event_decode.LogDecode;
 import org.tron.sunio.contract_mirror.event_decode.logdata.ContractEventLog;
 import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
 import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
-import org.web3j.abi.datatypes.generated.StaticArray1;
-import org.web3j.abi.datatypes.generated.StaticArray2;
-import org.web3j.abi.datatypes.generated.Uint32;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 public class LogDecodeTest {
     @Test

@@ -88,6 +88,15 @@ public class ContractEventWrap implements IContractEventWrap {
         }
     }
 
+    @Override
+    public String updateAndToJson(String[] topicList, String data) {
+        if (eventLogType == EventLogType.CONTRACT_EVENT_LOG) {
+            return contractEventLog.updateAndToJson(topicList, data);
+        } else {
+            return eventWrap.updateAndToJson(topicList, data);
+        }
+    }
+
     public static ContractEventWrap getInstance(String topic, String value) {
         if (topic.equals(ContractMirrorConst.KAFKA_TOPIC_CONTRACT_LOG)) {
             ContractLog contractLog = LogDecode.decodeContractLog(value);

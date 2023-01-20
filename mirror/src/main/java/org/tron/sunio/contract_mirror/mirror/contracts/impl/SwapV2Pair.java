@@ -129,34 +129,38 @@ public class SwapV2Pair extends BaseContract {
     }
 
     @Override
-    protected void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    protected HandleResult handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        HandleResult result;
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
-                handleTransfer(topics, data, handleEventExtraData);
+               result =  handleTransfer(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_NEW_MINT:
-                handleMint(topics, data);
+                result =  handleMint(topics, data);
                 break;
             case EVENT_NAME_NEW_BURN:
-                handleBurn(topics, data);
+                result =  handleBurn(topics, data);
                 break;
             case EVENT_NAME_NEW_SWAP:
-                handleSwap(topics, data);
+                result =  handleSwap(topics, data);
                 break;
             case EVENT_NAME_NEW_SYNC:
-                handleSync(topics, data, handleEventExtraData);
+                result =  handleSync(topics, data, handleEventExtraData);
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
+                result = HandleResult.genHandleFailMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
                 break;
         }
+        return result;
     }
 
-    private void handleTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    private HandleResult handleTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         EventValues eventValues = getEventValue(EVENT_NAME_TRANSFER, EVENT_NAME_TRANSFER_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
-            return;
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleTransfer fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
         }
         SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
         String from = (String) eventValues.getIndexedValues().get(0).getValue();
@@ -176,25 +180,30 @@ public class SwapV2Pair extends BaseContract {
         if (change) {
             isDirty = true;
         }
+        return HandleResult.genHandleSuccess();
     }
 
-    private void handleMint(String[] topics, String data) {
+    private HandleResult handleMint(String[] topics, String data) {
         log.info("handleMint not implements!");
+        return HandleResult.genHandleFailMessage("handleMint not implements!");
     }
 
-    private void handleBurn(String[] topics, String data) {
+    private HandleResult handleBurn(String[] topics, String data) {
         log.info("handleBurn not implements!");
+        return HandleResult.genHandleFailMessage("handleBurn not implements!");
     }
 
-    private void handleSwap(String[] topics, String data) {
+    private HandleResult handleSwap(String[] topics, String data) {
         log.info("handleSwap not implements!");
+        return HandleResult.genHandleFailMessage("handleSwap not implements!");
     }
 
-    private void handleSync(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    private HandleResult handleSync(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         EventValues eventValues = getEventValue(EVENT_NAME_NEW_SYNC, EVENT_NAME_NEW_SYNC_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
-            return;
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleSync fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
         }
         SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
         BigInteger reserve0 = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
@@ -214,6 +223,7 @@ public class SwapV2Pair extends BaseContract {
         swapV2PairData.setReverse1(reserve1);
         swapV2PairData.setBlockTimestampLast(blockTimestampLast);
         isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
     private long priceCumulativeLastAdd(BigInteger reserve0, BigInteger reserve1, long timeElapsed) {

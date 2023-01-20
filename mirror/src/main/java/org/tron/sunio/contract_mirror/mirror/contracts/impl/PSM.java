@@ -81,29 +81,32 @@ public class PSM extends BaseContract {
     }
 
     @Override
-    protected void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    protected HandleResult handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        HandleResult result;
         switch (eventName) {
             case EVENT_NAME_FILE:
-                handleEventFile(topics, data, handleEventExtraData);
+                result = handleEventFile(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_SELL_GEM:
-                handleEventSellGem(topics, data, handleEventExtraData);
+                result = handleEventSellGem(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_BUY_GEM:
-                handleEventBuyGem(topics, data, handleEventExtraData);
+                result = handleEventBuyGem(topics, data, handleEventExtraData);
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
+                result = HandleResult.genHandleFailMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
                 break;
-
         }
+        return result;
     }
 
-    private void handleEventFile(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    private HandleResult handleEventFile(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         EventValues eventValues = getEventValue(EVENT_NAME_FILE, EVENT_NAME_FILE_BODY,
                 topics, data, handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
-            return;
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventFile fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
         }
         PSMData psmData = getVarPsmData();
         Bytes32 whatBytes = (Bytes32) eventValues.getIndexedValues().get(0);
@@ -118,16 +121,20 @@ public class PSM extends BaseContract {
             String quota = WalletUtil.hexStringToTron((String) eventValues.getNonIndexedValues().get(0).getValue());
             psmData.setQuota(quota);
         } else {
-            return;
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s handleEventFile cat find what:{}!, unique id :%s",
+                    address, type, what, handleEventExtraData.getUniqueId()));
         }
         isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
-    private void handleEventSellGem(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    private HandleResult handleEventSellGem(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         log.info("handleEventSellGem not implements!");
+        return HandleResult.genHandleFailMessage("handleEventSellGem not implements!");
     }
 
-    private void handleEventBuyGem(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    private HandleResult handleEventBuyGem(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         log.info("handleEventBuyGem not implements!");
+        return HandleResult.genHandleFailMessage("handleEventBuyGem not implements!");
     }
 }

@@ -14,4 +14,6 @@ public interface IContractEventWrap {
     long getBlockNumber();
 
     String getContractAddress();
+
+    String updateAndToJson(String[] topicList, String data);
 }

@@ -2,6 +2,7 @@ package org.tron.sunio.contract_mirror.event_decode.logdata;
 
 import com.google.gson.JsonObject;
 import lombok.Data;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 
 @Data
 public class ContractEventLog {
@@ -23,4 +24,11 @@ public class ContractEventLog {
     private String eventName;
     private JsonObject topicMap;
     private JsonObject dataMap;
+
+    public String updateAndToJson(String[] topicList, String data) {
+        this.rawData.setTopics(topicList);
+        this.rawData.setData(data);
+        this.uniqueId = String.format("%s_new", uniqueId);
+        return GsonUtil.objectToGson(this);
+    }
 }

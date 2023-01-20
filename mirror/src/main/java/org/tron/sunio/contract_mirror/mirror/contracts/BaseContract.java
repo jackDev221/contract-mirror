@@ -4,8 +4,9 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
-import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
@@ -55,7 +56,7 @@ public abstract class BaseContract implements IContract {
 
     protected abstract void saveUpdateToCache();
 
-    protected abstract void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData);
+    protected abstract HandleResult handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData);
 
     private boolean isContractIncremental() {
         return false;
@@ -124,7 +125,7 @@ public abstract class BaseContract implements IContract {
         return sigMap.getOrDefault(topics[0], "");
     }
 
-    public void handleEvent(IContractEventWrap iContractEventWrap) {
+    public HandleResult handleEvent(IContractEventWrap iContractEventWrap) {
         if (!isReady) {
             // 过滤中间需要重新init和初始化失败
             if (initFlag == INIT_FLAG_START || initFlag == INIT_FLAG_DOING) {
@@ -137,14 +138,14 @@ public abstract class BaseContract implements IContract {
             }
         }
         if (!isReady) {
-            return;
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s not Ready", address, type));
         }
         // Do handleEvent
         String eventName = getEventName(iContractEventWrap);
         String[] topics = iContractEventWrap.getTopics();
         String data = iContractEventWrap.getData();
         HandleEventExtraData handleEventExtraData = genEventExtraData(iContractEventWrap);
-        handleEvent1(eventName, topics, data, handleEventExtraData);
+        return handleEvent1(eventName, topics, data, handleEventExtraData);
     }
 
     // 处理完后统一更新数据到存储。
@@ -259,5 +260,33 @@ public abstract class BaseContract implements IContract {
     public static class HandleEventExtraData {
         private long timeStamp;
         private String UniqueId;
+    }
+
+    @Data
+    @Builder
+    public static class HandleResult {
+        private boolean result;
+        private String message;
+        private String[] newTopic;
+        private String newData;
+
+        public boolean needToSendMessage() {
+            if (!result || newTopic == null || newTopic.length == 0) {
+                return false;
+            }
+            return true;
+        }
+
+        public static HandleResult genHandleFailMessage(String msg) {
+            return HandleResult.builder().result(false).message(msg).build();
+        }
+
+        public static HandleResult genHandleSuccess() {
+            return HandleResult.builder().result(true).build();
+        }
+
+        public static HandleResult genHandleSuccessAndSend(String[] topics, String data) {
+            return HandleResult.builder().result(true).newTopic(topics).newData(data).build();
+        }
     }
 }

@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +44,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     private KafkaConfig kafkaConfig;
 
     private KafkaConsumer<String, String> consumer;
+    private KafkaProducer<String, String> producer;
 
     private HashMap<String, BaseContract> contractHashMap = new HashMap<>();
 
@@ -56,9 +59,11 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     private void initKafka() {
         try {
             if (config.isKafkaEnable()) {
-                Properties properties = kafkaConfig.defaultConfig();
+                Properties properties = kafkaConfig.consumerConfig();
                 consumer = new KafkaConsumer<String, String>(properties);
                 consumer.subscribe(kafkaConfig.getTopics());
+                Properties properties1 = kafkaConfig.producerConfig();
+                producer = new KafkaProducer<String, String>(properties1);
             }
         } catch (KafkaException e) {
             throw new RuntimeException(e);
@@ -114,6 +119,25 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
         }
     }
 
+    private void kafkaProducerSend(String topic, String key, String record) {
+        if (config.isKafkaEnable() && ObjectUtil.isNotNull(consumer)) {
+            producer.send(new ProducerRecord<>(topic, key, record), (metadata, exception) -> {
+                if (exception != null) {
+                    exception.printStackTrace();
+                    log.warn("EventSender send error, topic {}, key {}, exception {}",
+                            topic, key, exception);
+                }
+            });
+        }
+//        producer.flush();
+    }
+
+    private void kafkaProducerFlush() {
+        if (config.isKafkaEnable() && ObjectUtil.isNotNull(consumer)) {
+            producer.flush();
+        }
+    }
+
     @Scheduled(initialDelay = 5000, fixedDelay = EVENT_HANDLE_PERIOD)
     public void doTask() {
         try {
@@ -140,10 +164,16 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
                 }
                 BaseContract baseContract = contractHashMap.get(contractEventWrap.getContractAddress());
                 if (ObjectUtil.isNotNull(baseContract)) {
-                    baseContract.handleEvent(contractEventWrap);
+                    BaseContract.HandleResult result = baseContract.handleEvent(contractEventWrap);
+                    if (result.needToSendMessage()) {
+                        String key = String.format("%_new", record.key());
+                        kafkaProducerSend(kafkaConfig.getProducerTopics(), key,
+                                contractEventWrap.updateAndToJson(result.getNewTopic(), result.getNewData()));
+                    }
                 }
             }
             kafkaConsumerCommit();
+            kafkaProducerFlush();
             for (String addr : contractHashMap.keySet()) {
                 BaseContract baseContract = contractHashMap.get(addr);
                 baseContract.finishBatchKafka();

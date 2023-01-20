@@ -90,43 +90,47 @@ public class SwapV1 extends BaseContract {
     }
 
     @Override
-    protected void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    protected HandleResult handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        HandleResult result;
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
-                handleEventTransfer(topics, data, handleEventExtraData);
+                result = handleEventTransfer(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_TOKEN_PURCHASE:
-                handleTokenPurchase(topics, data);
+                result = handleTokenPurchase(topics, data);
                 break;
             case EVENT_NAME_TRX_PURCHASE:
-                handleTrxPurchase(topics, data);
+                result = handleTrxPurchase(topics, data);
                 break;
             case EVENT_NAME_TOKEN_TO_TOKEN:
-                handleTokenToToken(topics, data);
+                result = handleTokenToToken(topics, data);
                 break;
             case EVENT_NAME_SNAPSHOT:
-                handleEventSnapshot(topics, data, handleEventExtraData);
+                result = handleEventSnapshot(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_ADD_LIQUIDITY:
-                handleAddLiquidity(topics, data);
+                result = handleAddLiquidity(topics, data);
                 break;
             case EVENT_NAME_REMOVE_LIQUIDITY:
-                handleRemoveLiquidity(topics, data);
+                result = handleRemoveLiquidity(topics, data);
                 break;
             case EVENT_NAME_ADMIN_FEE_MINT:
-                handleAdminFeeMint(topics, data);
+                result = handleAdminFeeMint(topics, data);
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
+                result = HandleResult.genHandleFailMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
                 break;
         }
+        return result;
     }
 
-    private void handleEventTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    private HandleResult handleEventTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         EventValues eventValues = getEventValue(EVENT_NAME_TRANSFER, EVENT_NAME_TRANSFER_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
-            return;
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventTransfer fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
         }
         SwapV1Data v1Data = this.getVarSwapV1Data();
         String from = (String) eventValues.getIndexedValues().get(0).getValue();
@@ -146,13 +150,15 @@ public class SwapV1 extends BaseContract {
         if (change) {
             isDirty = true;
         }
+        return HandleResult.genHandleSuccess();
     }
 
-    private void handleEventSnapshot(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    private HandleResult handleEventSnapshot(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         EventValues eventValues = getEventValue(EVENT_NAME_SNAPSHOT, EVENT_NAME_SNAPSHOT_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
-            return;
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventSnapshot fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
         }
         SwapV1Data v1Data = this.getVarSwapV1Data();
         BigInteger trx = (BigInteger) eventValues.getIndexedValues().get(1).getValue();
@@ -160,29 +166,36 @@ public class SwapV1 extends BaseContract {
         v1Data.setTokenBalance(tokenBalance);
         v1Data.setTrxBalance(trx);
         isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
-    private void handleAddLiquidity(String[] topics, String data) {
+    private HandleResult handleAddLiquidity(String[] topics, String data) {
         log.info("handleAddLiquidity not implements!");
+        return HandleResult.genHandleFailMessage("handleAddLiquidity not implements!");
     }
 
-    private void handleRemoveLiquidity(String[] topics, String data) {
+    private HandleResult handleRemoveLiquidity(String[] topics, String data) {
         log.info("handleRemoveLiquidity not implements!");
+        return HandleResult.genHandleFailMessage("handleRemoveLiquidity not implements!");
     }
 
-    private void handleAdminFeeMint(String[] topics, String data) {
+    private HandleResult handleAdminFeeMint(String[] topics, String data) {
         log.info("handleAdminFeeMint not implements!");
+        return HandleResult.genHandleFailMessage("handleAdminFeeMint not implements!");
     }
 
-    private void handleTokenPurchase(String[] topics, String data) {
+    private HandleResult handleTokenPurchase(String[] topics, String data) {
         log.info("handleTokenPurchase not implements!");
+        return HandleResult.genHandleFailMessage("handleTokenPurchase not implements!");
     }
 
-    private void handleTrxPurchase(String[] topics, String data) {
+    private HandleResult handleTrxPurchase(String[] topics, String data) {
         log.info("handleTrxPurchase not implements!");
+        return HandleResult.genHandleFailMessage("handleTrxPurchase not implements!");
     }
 
-    private void handleTokenToToken(String[] topics, String data) {
+    private HandleResult handleTokenToToken(String[] topics, String data) {
         log.info("TokenToToken not implements!");
+        return HandleResult.genHandleFailMessage("handleTokenToToken not implements!");
     }
 }

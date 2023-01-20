@@ -2,7 +2,6 @@ package org.tron.sunio.contract_mirror.mirror.contracts.factory;
 
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
@@ -24,7 +23,6 @@ import org.web3j.abi.datatypes.generated.Uint256;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -102,7 +100,6 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     public List<BaseContract> getListContracts() {
         List<BaseContract> result = new ArrayList<>();
         long totalTokens = getTokenCount().longValue();
-        totalTokens = 20;
         //TODO 这里token数目太多了，之后看看是否能优化下
         for (long i = 0; i < totalTokens; i++) {
             Address tokenAddress = getTokenWithId(i);
@@ -229,27 +226,30 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     }
 
     @Override
-    protected void handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    protected HandleResult handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        HandleResult result;
         switch (eventName) {
             case SwapV1FactoryEvent
                     .EVENT_NAME_FEE_RATE:
-                handEventFeeRate(topics, data, handleEventExtraData);
+                result = handEventFeeRate(topics, data, handleEventExtraData);
                 break;
             case SwapV1FactoryEvent
                     .EVENT_NAME_FEE_TO:
-                handEventFeeTo(topics, data, handleEventExtraData);
+                result = handEventFeeTo(topics, data, handleEventExtraData);
                 break;
             case SwapV1FactoryEvent
                     .EVENT_NAME_NEW_EXCHANGE:
-                handEventNewExchange(topics, data);
+                result = handEventNewExchange(topics, data);
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
+                result = HandleResult.genHandleFailMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
                 break;
         }
+        return result;
     }
 
-    private void handEventFeeRate(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    private HandleResult handEventFeeRate(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         EventValues eventValues = getEventValue(
                 SwapV1FactoryEvent.EVENT_NAME_FEE_RATE,
                 SwapV1FactoryEvent.EVENT_NAME_FEE_RATE_BODY,
@@ -257,15 +257,17 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
                 data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
-            return;
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handEventFeeRate fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
         }
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         BigInteger feeRate = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         factoryV1Data.setFeeToRate(feeRate.longValue());
         this.isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
-    private void handEventFeeTo(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    private HandleResult handEventFeeTo(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         EventValues eventValues = getEventValue(
                 SwapV1FactoryEvent.EVENT_NAME_FEE_TO,
                 SwapV1FactoryEvent.EVENT_NAME_FEE_TO_BODY,
@@ -273,19 +275,22 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
                 data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
-            return;
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handEventFeeTo fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
         }
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         String feeAddress = WalletUtil.ethAddressToTron((String) eventValues.getNonIndexedValues().get(0).getValue());
         factoryV1Data.setFeeAddress(feeAddress);
         this.isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
-    private void handEventNewExchange(String[] _topics, String _data) {
+    private HandleResult handEventNewExchange(String[] _topics, String _data) {
         isAddExchangeContracts = false;
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         factoryV1Data.setAddExchangeContracts(false);
         factoryV1Data.setTokenCount(factoryV1Data.getTokenCount() + 1);
         this.isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 }

@@ -2,6 +2,7 @@ package org.tron.sunio.contract_mirror.mirror.config;
 
 import lombok.Data;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -18,10 +19,12 @@ public class KafkaConfig {
     private String servers;
     @Value("${groupId:test}")
     private String groupId;
-    @Value("${topicContractLog:test_topicContractLog}")
-    private String topicContractLog;
+    @Value("${consumerTopics:[test_topicContractLog]}")
+    private String[] consumerTopics;
+    @Value("${producerTopics:test_topicContractLog}")
+    private String producerTopics;
 
-    public Properties defaultConfig() {
+    public Properties consumerConfig() {
         Properties config = new Properties();
         config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         config.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
@@ -33,7 +36,17 @@ public class KafkaConfig {
         return config;
     }
 
+    public Properties producerConfig() {
+        Properties config = new Properties();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
+        config.put(ProducerConfig.ACKS_CONFIG, "all");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        config.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 500);
+        return config;
+    }
+
     public List<String> getTopics() {
-        return Arrays.asList(topicContractLog);
+        return Arrays.asList(consumerTopics);
     }
 }
