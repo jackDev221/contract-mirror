@@ -94,7 +94,7 @@ public class Curve3Pool extends BaseContract {
             }));
             results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
             if (results.size() == 0) {
-                log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, "coins");
+                log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, "balances");
             } else {
                 curve3PoolData.updateBalances(i, (BigInteger) results.get(0).getValue());
             }

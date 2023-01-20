@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
+import org.tron.sunio.contract_mirror.event_decode.events.Curve4PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.PSMEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent;
@@ -14,6 +15,7 @@ import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve4Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
 import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 
@@ -33,6 +35,7 @@ public class ContractFactoryManager {
     private Map<String, String> v2FactorySigMap;
     private Map<String, String> curve2PoolSigMap;
     private Map<String, String> curve3PoolSigMap;
+    private Map<String, String> curve4PoolSigMap;
     private Map<String, String> psmSigMap;
 
 
@@ -41,6 +44,7 @@ public class ContractFactoryManager {
         v2FactorySigMap = SwapV2FactoryEvent.getSigMap();
         curve2PoolSigMap = Curve2PoolEvent.getSigMap();
         curve3PoolSigMap = Curve3PoolEvent.getSigMap();
+        curve4PoolSigMap = Curve4PoolEvent.getSigMap();
         psmSigMap = PSMEvent.getSigMap();
     }
 
@@ -83,6 +87,14 @@ public class ContractFactoryManager {
                             tronChainHelper,
                             iDbHandler,
                             curve3PoolSigMap
+                    ));
+
+                case CONTRACT_CURVE_4POOL:
+                    iContractsCollectHelper.addContract(new Curve4Pool(
+                            contractInfo.getAddress(),
+                            tronChainHelper,
+                            iDbHandler,
+                            curve4PoolSigMap
                     ));
 
                 case CONTRACT_PSM:

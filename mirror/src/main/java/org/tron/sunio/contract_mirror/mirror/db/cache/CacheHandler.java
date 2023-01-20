@@ -4,6 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.tron.sunio.contract_mirror.mirror.dao.Curve2PoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.Curve3PoolData;
+import org.tron.sunio.contract_mirror.mirror.dao.Curve4PoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMData;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV1Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV2Data;
@@ -45,6 +46,12 @@ public class CacheHandler {
             .initialCapacity(1024)
             .concurrencyLevel(4)
             .build();
+
+    public final static Cache<String, Curve4PoolData> curve4PoolCache = CacheBuilder.newBuilder()
+            .initialCapacity(1024)
+            .concurrencyLevel(4)
+            .build();
+
 
     public final static Cache<String, PSMData> psmCache = CacheBuilder.newBuilder()
             .initialCapacity(256)
