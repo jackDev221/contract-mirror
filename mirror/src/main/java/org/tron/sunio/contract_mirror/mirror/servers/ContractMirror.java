@@ -120,7 +120,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     }
 
     private void kafkaProducerSend(String topic, String key, String record) {
-        if (config.isKafkaEnable() && ObjectUtil.isNotNull(consumer)) {
+        if (config.isKafkaEnable() && ObjectUtil.isNotNull(producer)) {
             producer.send(new ProducerRecord<>(topic, key, record), (metadata, exception) -> {
                 if (exception != null) {
                     exception.printStackTrace();
@@ -133,7 +133,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     }
 
     private void kafkaProducerFlush() {
-        if (config.isKafkaEnable() && ObjectUtil.isNotNull(consumer)) {
+        if (config.isKafkaEnable() && ObjectUtil.isNotNull(producer)) {
             producer.flush();
         }
     }
