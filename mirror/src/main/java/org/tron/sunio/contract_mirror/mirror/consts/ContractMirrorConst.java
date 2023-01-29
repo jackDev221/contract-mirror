@@ -6,11 +6,22 @@ public interface ContractMirrorConst {
     String KAFKA_TOPIC_CONTRACT_LOG = "contract log";
     String KAFKA_TOPIC_CONTRACT_EVENT_LOG = "event log";
     String CONTRACT_CONST_METHOD = "/contract/{address}/const/{method}";
+
+    //Methods
     String METHOD_STATUS = "status";
+    //SwapV1Factory
+    String METHOD_FEE_TO = "feeTo";
+    String METHOD_FEE_TO_RATE = "feeToRate";
+    String METHOD_TOKEN_COUNT = "tokenCount";
     //SwapV1
     String METHOD_NAME = "name";
+    String METHOD_TOKEN = "token";
     String METHOD_DECIMALS = "decimals";
-
+    String METHOD_SYMBOL = "symbol";
+    String METHOD_K_LAST = "kLast";
+    String METHOD_TOTAL_SUPPLY = "totalSupply";
+    String METHOD_BALANCE = "balance";
+    String METHOD_TONE_BALANCE = "tokenBalance";
 
 
 }

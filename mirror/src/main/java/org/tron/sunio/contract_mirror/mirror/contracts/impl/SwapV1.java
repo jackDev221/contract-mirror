@@ -23,8 +23,14 @@ import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVE
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TRANSFER_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TRX_PURCHASE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_TOPIC_VALUE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_BALANCE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_DECIMALS;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_K_LAST;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_NAME;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_SYMBOL;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TONE_BALANCE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOTAL_SUPPLY;
 
 @Slf4j
 public class SwapV1 extends BaseContract {
@@ -127,6 +133,12 @@ public class SwapV1 extends BaseContract {
         return (T) getVarSwapV1Data();
     }
 
+    /*
+    *  String METHOD_SYMBOL = "symbol";
+    String METHOD_K_LAST = "kLast";
+    String METHOD_TOTAL_SUPPLY = "totalSupply";
+    *
+    * */
     @Override
     public <T> T handleSpecialRequest(String method) {
         switch (method) {
@@ -134,6 +146,18 @@ public class SwapV1 extends BaseContract {
                 return (T) this.getVarSwapV1Data().getName();
             case METHOD_DECIMALS:
                 return (T) (Long) this.getVarSwapV1Data().getDecimals();
+            case METHOD_SYMBOL:
+                return (T) this.getVarSwapV1Data().getSymbol();
+            case METHOD_K_LAST:
+                return (T) (Long) this.getVarSwapV1Data().getKLast();
+            case METHOD_TOTAL_SUPPLY:
+                return (T) this.getVarSwapV1Data().getLpTotalSupply();
+            case METHOD_TOKEN:
+                return (T) this.getVarSwapV1Data().getTokenAddress();
+            case METHOD_BALANCE:
+                return (T) this.getVarSwapV1Data().getTrxBalance();
+            case METHOD_TONE_BALANCE:
+                return (T) this.getVarSwapV1Data().getTokenBalance();
         }
         return null;
     }

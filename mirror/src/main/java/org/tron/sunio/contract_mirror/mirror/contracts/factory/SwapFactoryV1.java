@@ -25,6 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE_TO;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE_TO_RATE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN_COUNT;
+
 @Slf4j
 public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     private Map<String, String> v1SigMap;
@@ -252,6 +256,14 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
 
     @Override
     public <T> T handleSpecialRequest(String method) {
+        switch (method) {
+            case METHOD_FEE_TO:
+                return (T) this.getVarFactoryV1Data().getFeeAddress();
+            case METHOD_FEE_TO_RATE:
+                return (T) (Long) this.getVarFactoryV1Data().getFeeToRate();
+            case METHOD_TOKEN_COUNT:
+                return (T) (Long) this.getVarFactoryV1Data().getTokenCount();
+        }
         return null;
     }
 
