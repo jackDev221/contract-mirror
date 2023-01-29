@@ -62,15 +62,12 @@ public class Curve3Pool extends BaseContract {
 
     private Curve3PoolData getVarCurve3PoolData() {
         if (ObjectUtil.isNull(curve3PoolData)) {
-            curve3PoolData = iDbHandler.queryCurve3PoolData(address);
-            if (ObjectUtil.isNull(curve3PoolData)) {
-                curve3PoolData = new Curve3PoolData();
-                curve3PoolData.setAddress(address);
-                curve3PoolData.setType(type);
-                curve3PoolData.setUsing(true);
-                curve3PoolData.setReady(false);
-                curve3PoolData.setAddExchangeContracts(false);
-            }
+            curve3PoolData = new Curve3PoolData();
+            curve3PoolData.setAddress(address);
+            curve3PoolData.setType(type);
+            curve3PoolData.setUsing(true);
+            curve3PoolData.setReady(false);
+            curve3PoolData.setAddExchangeContracts(false);
         }
         return curve3PoolData;
     }
@@ -211,6 +208,16 @@ public class Curve3Pool extends BaseContract {
                 break;
         }
         return result;
+    }
+
+    @Override
+    public <T> T getStatus() {
+        return (T) getVarCurve3PoolData();
+    }
+
+    @Override
+    public <T> T handleSpecialRequest(String method) {
+        return null;
     }
 
     private HandleResult handleEventTokenExchange(String[] topics, String data, HandleEventExtraData handleEventExtraData) {

@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_STATUS;
+
 @Data
 @Slf4j
 public abstract class BaseContract implements IContract {
@@ -60,6 +62,17 @@ public abstract class BaseContract implements IContract {
 
     private boolean isContractIncremental() {
         return false;
+    }
+
+    public abstract <T> T getStatus();
+
+    public abstract <T> T handleSpecialRequest(String method);
+
+    public <T> T handRequest(String method) {
+        if (method.equalsIgnoreCase(METHOD_STATUS)) {
+            return getStatus();
+        }
+        return handleSpecialRequest(method);
     }
 
     public BaseContract(String address, ContractType type, IChainHelper iChainHelper, IDbHandler iDbHandler,
@@ -159,7 +172,8 @@ public abstract class BaseContract implements IContract {
             initFlag = INIT_FLAG_INIT;
         }
         if (isDirty) {
-            saveUpdateToCache();
+//            saveUpdateToCache();
+            isDirty = false;
         }
     }
 

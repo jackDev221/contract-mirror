@@ -46,15 +46,12 @@ public class Curve4Pool extends BaseContract {
 
     private Curve4PoolData getVarCurve4PoolData() {
         if (ObjectUtil.isNull(curve4PoolData)) {
-            curve4PoolData = iDbHandler.queryCurve4PoolData(address);
-            if (ObjectUtil.isNull(curve4PoolData)) {
                 curve4PoolData = new Curve4PoolData();
                 curve4PoolData.setAddress(address);
                 curve4PoolData.setType(type);
                 curve4PoolData.setUsing(true);
                 curve4PoolData.setReady(false);
                 curve4PoolData.setAddExchangeContracts(false);
-            }
         }
         return curve4PoolData;
     }
@@ -219,6 +216,16 @@ public class Curve4Pool extends BaseContract {
                 break;
         }
         return result;
+    }
+
+    @Override
+    public <T> T getStatus() {
+        return (T) getVarCurve4PoolData();
+    }
+
+    @Override
+    public <T> T handleSpecialRequest(String method) {
+        return null;
     }
 
     private HandleResult handleEventTokenExchangeUnderlying(String[] topics, String data, HandleEventExtraData handleEventExtraData) {

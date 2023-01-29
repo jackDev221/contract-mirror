@@ -62,15 +62,12 @@ public class Curve2Pool extends BaseContract {
 
     private Curve2PoolData getVarCurve2PoolData() {
         if (ObjectUtil.isNull(curve2PoolData)) {
-            curve2PoolData = iDbHandler.queryCurve2PoolData(address);
-            if (ObjectUtil.isNull(curve2PoolData)) {
-                curve2PoolData = new Curve2PoolData();
-                curve2PoolData.setAddress(address);
-                curve2PoolData.setType(type);
-                curve2PoolData.setUsing(true);
-                curve2PoolData.setReady(false);
-                curve2PoolData.setAddExchangeContracts(false);
-            }
+            curve2PoolData = new Curve2PoolData();
+            curve2PoolData.setAddress(address);
+            curve2PoolData.setType(type);
+            curve2PoolData.setUsing(true);
+            curve2PoolData.setReady(false);
+            curve2PoolData.setAddExchangeContracts(false);
         }
         return curve2PoolData;
     }
@@ -211,6 +208,16 @@ public class Curve2Pool extends BaseContract {
                 break;
         }
         return result;
+    }
+
+    @Override
+    public <T> T getStatus() {
+        return (T) getVarCurve2PoolData();
+    }
+
+    @Override
+    public <T> T handleSpecialRequest(String method) {
+        return null;
     }
 
     private HandleResult handleEventTokenExchange(String[] topics, String data, HandleEventExtraData handleEventExtraData) {

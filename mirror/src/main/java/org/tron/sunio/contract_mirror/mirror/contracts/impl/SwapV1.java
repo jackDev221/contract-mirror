@@ -24,6 +24,8 @@ import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVE
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TRANSFER_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TRX_PURCHASE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_TOPIC_VALUE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_DECIMALS;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_NAME;
 
 @Slf4j
 public class SwapV1 extends BaseContract {
@@ -39,14 +41,11 @@ public class SwapV1 extends BaseContract {
 
     private SwapV1Data getVarSwapV1Data() {
         if (ObjectUtil.isNull(swapV1Data)) {
-            swapV1Data = iDbHandler.querySwapV1Data(address);
-            if (ObjectUtil.isNull(swapV1Data)) {
-                swapV1Data = new SwapV1Data();
-                swapV1Data.setType(this.type);
-                swapV1Data.setAddress(this.address);
-                swapV1Data.setTokenAddress(this.tokenAddress);
-                swapV1Data.setUsing(true);
-            }
+            swapV1Data = new SwapV1Data();
+            swapV1Data.setType(this.type);
+            swapV1Data.setAddress(this.address);
+            swapV1Data.setTokenAddress(this.tokenAddress);
+            swapV1Data.setUsing(true);
         }
         return swapV1Data;
     }
@@ -123,6 +122,22 @@ public class SwapV1 extends BaseContract {
                 break;
         }
         return result;
+    }
+
+    @Override
+    public <T> T getStatus() {
+        return (T) getVarSwapV1Data();
+    }
+
+    @Override
+    public <T> T handleSpecialRequest(String method) {
+        switch (method) {
+            case METHOD_NAME:
+                return (T) this.getVarSwapV1Data().getName();
+            case METHOD_DECIMALS:
+                return (T) (Long) this.getVarSwapV1Data().getDecimals();
+        }
+        return null;
     }
 
     private HandleResult handleEventTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {

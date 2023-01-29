@@ -39,14 +39,11 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
 
     private SwapFactoryV2Data getVarFactoryV2Data() {
         if (ObjectUtil.isNull(swapFactoryV2Data)) {
-            swapFactoryV2Data = iDbHandler.querySwapFactoryV2Data(this.address);
-            if (ObjectUtil.isNull(swapFactoryV2Data)) {
-                swapFactoryV2Data = new SwapFactoryV2Data();
-                swapFactoryV2Data.setReady(false);
-                swapFactoryV2Data.setUsing(true);
-                swapFactoryV2Data.setAddress(this.address);
-                swapFactoryV2Data.setType(this.type);
-            }
+            swapFactoryV2Data = new SwapFactoryV2Data();
+            swapFactoryV2Data.setReady(false);
+            swapFactoryV2Data.setUsing(true);
+            swapFactoryV2Data.setAddress(this.address);
+            swapFactoryV2Data.setType(this.type);
         }
         return swapFactoryV2Data;
     }
@@ -171,6 +168,16 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
                 break;
         }
         return result;
+    }
+
+    @Override
+    public <T> T getStatus() {
+        return (T) getVarFactoryV2Data();
+    }
+
+    @Override
+    public <T> T handleSpecialRequest(String method) {
+        return null;
     }
 
     @Override

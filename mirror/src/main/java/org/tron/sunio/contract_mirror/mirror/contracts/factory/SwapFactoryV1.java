@@ -38,14 +38,11 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
 
     private SwapFactoryV1Data getVarFactoryV1Data() {
         if (ObjectUtil.isNull(swapFactoryV1Data)) {
-            swapFactoryV1Data = iDbHandler.querySwapFactoryV1Data(this.address);
-            if (ObjectUtil.isNull(swapFactoryV1Data)) {
-                swapFactoryV1Data = new SwapFactoryV1Data();
-                swapFactoryV1Data.setReady(false);
-                swapFactoryV1Data.setUsing(true);
-                swapFactoryV1Data.setAddress(this.address);
-                swapFactoryV1Data.setType(this.type);
-            }
+            swapFactoryV1Data = new SwapFactoryV1Data();
+            swapFactoryV1Data.setReady(false);
+            swapFactoryV1Data.setUsing(true);
+            swapFactoryV1Data.setAddress(this.address);
+            swapFactoryV1Data.setType(this.type);
         }
         return swapFactoryV1Data;
     }
@@ -100,6 +97,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     public List<BaseContract> getListContracts() {
         List<BaseContract> result = new ArrayList<>();
         long totalTokens = getTokenCount().longValue();
+        totalTokens = 10;
         //TODO 这里token数目太多了，之后看看是否能优化下
         for (long i = 0; i < totalTokens; i++) {
             Address tokenAddress = getTokenWithId(i);
@@ -247,6 +245,16 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
                 break;
         }
         return result;
+    }
+
+    @Override
+    public <T> T getStatus() {
+        return (T) getVarFactoryV1Data();
+    }
+
+    @Override
+    public <T> T handleSpecialRequest(String method) {
+        return null;
     }
 
     private HandleResult handEventFeeRate(String[] topics, String data, HandleEventExtraData handleEventExtraData) {

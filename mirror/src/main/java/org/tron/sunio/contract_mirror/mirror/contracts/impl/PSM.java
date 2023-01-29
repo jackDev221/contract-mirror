@@ -33,15 +33,12 @@ public class PSM extends BaseContract {
 
     private PSMData getVarPsmData() {
         if (ObjectUtil.isNull(psmData)) {
-            psmData = iDbHandler.queryPSMData(address);
-            if (ObjectUtil.isNull(psmData)) {
-                psmData = new PSMData();
-                psmData.setAddress(address);
-                psmData.setType(type);
-                psmData.setAddExchangeContracts(false);
-                psmData.setUsing(true);
-                psmData.setReady(false);
-            }
+            psmData = new PSMData();
+            psmData.setAddress(address);
+            psmData.setType(type);
+            psmData.setAddExchangeContracts(false);
+            psmData.setUsing(true);
+            psmData.setReady(false);
         }
         return psmData;
     }
@@ -99,6 +96,16 @@ public class PSM extends BaseContract {
                 break;
         }
         return result;
+    }
+
+    @Override
+    public <T> T getStatus() {
+        return (T) getVarPsmData();
+    }
+
+    @Override
+    public <T> T handleSpecialRequest(String method) {
+        return null;
     }
 
     private HandleResult handleEventFile(String[] topics, String data, HandleEventExtraData handleEventExtraData) {

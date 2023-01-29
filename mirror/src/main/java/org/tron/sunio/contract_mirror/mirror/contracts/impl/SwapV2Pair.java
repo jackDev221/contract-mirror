@@ -44,14 +44,11 @@ public class SwapV2Pair extends BaseContract {
 
     private SwapV2PairData getVarSwapV2PairData() {
         if (ObjectUtil.isNull(swapV2PairData)) {
-            swapV2PairData = iDbHandler.querySwapV2PairData(address);
-            if (ObjectUtil.isNotNull(swapV2PairData)) {
-                swapV2PairData = new SwapV2PairData();
-                swapV2PairData.setFactory(factory);
-                swapV2PairData.setType(type);
-                swapV2PairData.setAddress(address);
-                swapV2PairData.setUsing(true);
-            }
+            swapV2PairData = new SwapV2PairData();
+            swapV2PairData.setFactory(factory);
+            swapV2PairData.setType(type);
+            swapV2PairData.setAddress(address);
+            swapV2PairData.setUsing(true);
         }
         return swapV2PairData;
     }
@@ -133,19 +130,19 @@ public class SwapV2Pair extends BaseContract {
         HandleResult result;
         switch (eventName) {
             case EVENT_NAME_TRANSFER:
-               result =  handleTransfer(topics, data, handleEventExtraData);
+                result = handleTransfer(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_NEW_MINT:
-                result =  handleMint(topics, data);
+                result = handleMint(topics, data);
                 break;
             case EVENT_NAME_NEW_BURN:
-                result =  handleBurn(topics, data);
+                result = handleBurn(topics, data);
                 break;
             case EVENT_NAME_NEW_SWAP:
-                result =  handleSwap(topics, data);
+                result = handleSwap(topics, data);
                 break;
             case EVENT_NAME_NEW_SYNC:
-                result =  handleSync(topics, data, handleEventExtraData);
+                result = handleSync(topics, data, handleEventExtraData);
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
@@ -153,6 +150,16 @@ public class SwapV2Pair extends BaseContract {
                 break;
         }
         return result;
+    }
+
+    @Override
+    public <T> T getStatus() {
+        return (T) getVarSwapV2PairData();
+    }
+
+    @Override
+    public <T> T handleSpecialRequest(String method) {
+        return null;
     }
 
     private HandleResult handleTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
