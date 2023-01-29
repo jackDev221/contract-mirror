@@ -4,7 +4,6 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
-import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
@@ -31,8 +30,8 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     private Map<String, String> v1SigMap;
     private SwapFactoryV1Data swapFactoryV1Data;
 
-    public SwapFactoryV1(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, final Map<String, String> sigMap) {
-        super(address, ContractType.SWAP_FACTORY_V1, iChainHelper, iDbHandler, sigMap);
+    public SwapFactoryV1(String address, IChainHelper iChainHelper, final Map<String, String> sigMap) {
+        super(address, ContractType.SWAP_FACTORY_V1, iChainHelper, sigMap);
         v1SigMap = SwapV1Event.getSigMap();
     }
 
@@ -109,7 +108,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
                 continue;
             }
             SwapV1 swapV1 = new SwapV1(WalletUtil.ethAddressToTron(contractAddress.toString()),
-                    this.iChainHelper, this.iDbHandler, WalletUtil.ethAddressToTron(tokenAddress.toString()), v1SigMap);
+                    this.iChainHelper, WalletUtil.ethAddressToTron(tokenAddress.toString()), v1SigMap);
 
             result.add(swapV1);
         }
@@ -219,8 +218,7 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
 
     @Override
     protected void saveUpdateToCache() {
-        SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
-        iDbHandler.updateSwapFactoryV1Data(factoryV1Data);
+
     }
 
     @Override

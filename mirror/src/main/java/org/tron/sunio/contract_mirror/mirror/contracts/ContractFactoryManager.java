@@ -17,7 +17,6 @@ import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve4Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
-import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,8 +27,7 @@ import java.util.Map;
 public class ContractFactoryManager {
     @Autowired
     private IChainHelper tronChainHelper;
-    @Autowired
-    private IDbHandler iDbHandler;
+
     private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
     private Map<String, String> v1FactorySigMap;
     private Map<String, String> v2FactorySigMap;
@@ -60,7 +58,6 @@ public class ContractFactoryManager {
                     contractFactoryHashMap.put(contractInfo.getAddress(), new SwapFactoryV1(
                             contractInfo.getAddress(),
                             tronChainHelper,
-                            iDbHandler,
                             v1FactorySigMap
                     ));
                     break;
@@ -68,7 +65,6 @@ public class ContractFactoryManager {
                     contractFactoryHashMap.put(contractInfo.getAddress(), new SwapFactoryV2(
                             contractInfo.getAddress(),
                             tronChainHelper,
-                            iDbHandler,
                             v2FactorySigMap
 
                     ));
@@ -77,7 +73,6 @@ public class ContractFactoryManager {
                     iContractsCollectHelper.addContract(new Curve2Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
-                            iDbHandler,
                             curve2PoolSigMap
                     ));
 
@@ -85,7 +80,6 @@ public class ContractFactoryManager {
                     iContractsCollectHelper.addContract(new Curve3Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
-                            iDbHandler,
                             curve3PoolSigMap
                     ));
 
@@ -93,7 +87,6 @@ public class ContractFactoryManager {
                     iContractsCollectHelper.addContract(new Curve4Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
-                            iDbHandler,
                             curve4PoolSigMap
                     ));
 
@@ -101,7 +94,6 @@ public class ContractFactoryManager {
                     iContractsCollectHelper.addContract(new PSM(
                             contractInfo.getAddress(),
                             tronChainHelper,
-                            iDbHandler,
                             psmSigMap
                     ));
                 default:

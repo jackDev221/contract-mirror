@@ -6,7 +6,6 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMData;
-import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.generated.Bytes32;
@@ -27,8 +26,8 @@ public class PSM extends BaseContract {
     private static final String FILE_TYPE_QUOTA = "quota";
     private PSMData psmData;
 
-    public PSM(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, Map<String, String> sigMap) {
-        super(address, CONTRACT_PSM, iChainHelper, iDbHandler, sigMap);
+    public PSM(String address, IChainHelper iChainHelper, Map<String, String> sigMap) {
+        super(address, CONTRACT_PSM, iChainHelper, sigMap);
     }
 
     private PSMData getVarPsmData() {
@@ -73,8 +72,6 @@ public class PSM extends BaseContract {
 
     @Override
     protected void saveUpdateToCache() {
-        PSMData psmData = getVarPsmData();
-        iDbHandler.updatePSMData(psmData);
     }
 
     @Override

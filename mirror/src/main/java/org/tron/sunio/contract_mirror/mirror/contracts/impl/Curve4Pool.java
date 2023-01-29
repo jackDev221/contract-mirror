@@ -7,7 +7,6 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.dao.Curve4PoolData;
-import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.TypeReference;
@@ -40,18 +39,18 @@ public class Curve4Pool extends BaseContract {
     private static final BigInteger FEE_DENOMINATOR = BigInteger.TEN.pow(10);
     private Curve4PoolData curve4PoolData;
 
-    public Curve4Pool(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, Map<String, String> sigMap) {
-        super(address, ContractType.CONTRACT_CURVE_4POOL, iChainHelper, iDbHandler, sigMap);
+    public Curve4Pool(String address, IChainHelper iChainHelper, Map<String, String> sigMap) {
+        super(address, ContractType.CONTRACT_CURVE_4POOL, iChainHelper, sigMap);
     }
 
     private Curve4PoolData getVarCurve4PoolData() {
         if (ObjectUtil.isNull(curve4PoolData)) {
-                curve4PoolData = new Curve4PoolData();
-                curve4PoolData.setAddress(address);
-                curve4PoolData.setType(type);
-                curve4PoolData.setUsing(true);
-                curve4PoolData.setReady(false);
-                curve4PoolData.setAddExchangeContracts(false);
+            curve4PoolData = new Curve4PoolData();
+            curve4PoolData.setAddress(address);
+            curve4PoolData.setType(type);
+            curve4PoolData.setUsing(true);
+            curve4PoolData.setReady(false);
+            curve4PoolData.setAddExchangeContracts(false);
         }
         return curve4PoolData;
     }
@@ -162,8 +161,6 @@ public class Curve4Pool extends BaseContract {
 
     @Override
     protected void saveUpdateToCache() {
-        Curve4PoolData curve4PoolData = this.getVarCurve4PoolData();
-        iDbHandler.updateCurve4PoolData(curve4PoolData);
     }
 
     @Override

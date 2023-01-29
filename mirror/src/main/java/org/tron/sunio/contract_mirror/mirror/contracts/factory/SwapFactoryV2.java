@@ -10,7 +10,6 @@ import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV2Pair;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV2Data;
-import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
@@ -31,9 +30,9 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
     private Map<String, String> v2PairSigMap;
     private SwapFactoryV2Data swapFactoryV2Data;
 
-    public SwapFactoryV2(String address, IChainHelper iChainHelper, IDbHandler iDbHandler,
+    public SwapFactoryV2(String address, IChainHelper iChainHelper,
                          Map<String, String> sigMap) {
-        super(address, ContractType.SWAP_FACTORY_V2, iChainHelper, iDbHandler, sigMap);
+        super(address, ContractType.SWAP_FACTORY_V2, iChainHelper, sigMap);
         v2PairSigMap = SwapV2PairEvent.getSigMap();
     }
 
@@ -117,7 +116,6 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
                     WalletUtil.ethAddressToTron(pairAddress.toString()),
                     this.address,
                     this.iChainHelper,
-                    this.iDbHandler,
                     v2PairSigMap
 
             );
@@ -151,8 +149,6 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
 
     @Override
     protected void saveUpdateToCache() {
-        SwapFactoryV2Data factoryV2Data = this.getVarFactoryV2Data();
-        iDbHandler.updateSwapFactoryV2Data(factoryV2Data);
     }
 
     @Override

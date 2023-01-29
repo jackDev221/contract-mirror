@@ -4,13 +4,10 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
-import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
@@ -50,7 +47,6 @@ public abstract class BaseContract implements IContract {
     private long t2;
     private int initFlag;
     protected Map<String, String> sigMap;
-    protected IDbHandler iDbHandler;
 
     public abstract boolean initDataFromChain1();
 
@@ -75,12 +71,11 @@ public abstract class BaseContract implements IContract {
         return handleSpecialRequest(method);
     }
 
-    public BaseContract(String address, ContractType type, IChainHelper iChainHelper, IDbHandler iDbHandler,
+    public BaseContract(String address, ContractType type, IChainHelper iChainHelper,
                         final Map<String, String> sigMap) {
         this.type = type;
         this.address = address;
         this.iChainHelper = iChainHelper;
-        this.iDbHandler = iDbHandler;
         this.sigMap = sigMap;
         this.isUsing = true;
         this.initFlag = INIT_FLAG_INIT;

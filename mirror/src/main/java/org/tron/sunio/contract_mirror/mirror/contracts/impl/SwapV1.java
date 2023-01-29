@@ -2,7 +2,6 @@ package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
@@ -33,9 +32,9 @@ public class SwapV1 extends BaseContract {
     private String tokenAddress;
     private SwapV1Data swapV1Data;
 
-    public SwapV1(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, String tokenAddress,
+    public SwapV1(String address, IChainHelper iChainHelper, String tokenAddress,
                   final Map<String, String> sigMap) {
-        super(address, ContractType.SWAP_V1, iChainHelper, iDbHandler, sigMap);
+        super(address, ContractType.SWAP_V1, iChainHelper, sigMap);
         this.tokenAddress = tokenAddress;
     }
 
@@ -84,8 +83,7 @@ public class SwapV1 extends BaseContract {
 
     @Override
     protected void saveUpdateToCache() {
-        SwapV1Data v1Data = this.getVarSwapV1Data();
-        iDbHandler.updateSwapV1Data(v1Data);
+
     }
 
     @Override

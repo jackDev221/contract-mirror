@@ -7,7 +7,6 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.dao.Curve2PoolData;
-import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
@@ -56,8 +55,8 @@ public class Curve2Pool extends BaseContract {
     private static final BigInteger FEE_DENOMINATOR = BigInteger.TEN.pow(10);
     private Curve2PoolData curve2PoolData;
 
-    public Curve2Pool(String address, IChainHelper iChainHelper, IDbHandler iDbHandler, Map<String, String> sigMap) {
-        super(address, ContractType.CONTRACT_CURVE_2POOL, iChainHelper, iDbHandler, sigMap);
+    public Curve2Pool(String address, IChainHelper iChainHelper,  Map<String, String> sigMap) {
+        super(address, ContractType.CONTRACT_CURVE_2POOL, iChainHelper, sigMap);
     }
 
     private Curve2PoolData getVarCurve2PoolData() {
@@ -158,8 +157,6 @@ public class Curve2Pool extends BaseContract {
 
     @Override
     protected void saveUpdateToCache() {
-        Curve2PoolData curve2PoolData = this.getVarCurve2PoolData();
-        iDbHandler.updateCurve2PoolData(curve2PoolData);
     }
 
     @Override

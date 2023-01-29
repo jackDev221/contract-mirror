@@ -7,7 +7,6 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
-import org.tron.sunio.contract_mirror.mirror.db.IDbHandler;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
@@ -37,8 +36,8 @@ public class SwapV2Pair extends BaseContract {
     private SwapV2PairData swapV2PairData;
 
     public SwapV2Pair(String address, String factory, IChainHelper iChainHelper,
-                      IDbHandler iDbHandler, Map<String, String> sigMap) {
-        super(address, ContractType.SWAP_V2_PAIR, iChainHelper, iDbHandler, sigMap);
+                      Map<String, String> sigMap) {
+        super(address, ContractType.SWAP_V2_PAIR, iChainHelper, sigMap);
         this.factory = factory;
     }
 
@@ -121,8 +120,6 @@ public class SwapV2Pair extends BaseContract {
 
     @Override
     protected void saveUpdateToCache() {
-        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
-        iDbHandler.updateSwapV2PairData(swapV2PairData);
     }
 
     @Override
