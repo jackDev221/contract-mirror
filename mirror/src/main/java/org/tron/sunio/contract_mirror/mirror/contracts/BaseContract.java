@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_STATUS;
 
@@ -47,6 +48,8 @@ public abstract class BaseContract implements IContract {
     private long t2;
     private int initFlag;
     protected Map<String, String> sigMap;
+    private CountDownLatch latch;
+
 
     public abstract boolean initDataFromChain1();
 
@@ -79,6 +82,26 @@ public abstract class BaseContract implements IContract {
         this.sigMap = sigMap;
         this.isUsing = true;
         this.initFlag = INIT_FLAG_INIT;
+    }
+
+    public boolean initDataFromChainThread() {
+        try {
+            log.info("Contract:{}, type:{} start init", this.address, this.type);
+            t0 = System.currentTimeMillis();
+            initFlag = INIT_FLAG_START;
+            initDataFromChain1();
+            t1 = System.currentTimeMillis();
+            t2 = t1 + (t1 - t0);
+        } catch (Exception e) {
+            log.error("Contract:{} type:{}, failed at function initDataFromChain:{}, init failed", address, type, e.toString());
+            initFlag = INIT_FLAG_FAILED;
+            return false;
+        } finally {
+            if (ObjectUtil.isNotNull(latch)) {
+                latch.countDown();
+            }
+        }
+        return true;
     }
 
     public boolean initDataFromChain() {

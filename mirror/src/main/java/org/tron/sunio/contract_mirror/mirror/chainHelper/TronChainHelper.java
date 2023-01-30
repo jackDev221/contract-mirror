@@ -1,6 +1,7 @@
 package org.tron.sunio.contract_mirror.mirror.chainHelper;
 
 import cn.hutool.core.util.HexUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -17,8 +18,10 @@ import org.web3j.abi.datatypes.Type;
 import org.web3j.utils.Numeric;
 
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 
+@Slf4j
 @Component
 public class TronChainHelper implements IChainHelper {
     @Autowired
@@ -47,6 +50,11 @@ public class TronChainHelper implements IChainHelper {
                 callData
         );
         GrpcAPI.TransactionExtention response = tronGrpcClient.callWithoutBroadcast(triggerSmartContract);
+        String code = response.getResult().getCode().toString();
+        if (!code.equalsIgnoreCase("SUCCESS")) {
+            log.warn("Call contract failed, code:{}, info:{}", code, triggerContractInfo.toString());
+            return Collections.emptyList();
+        }
         String result = Numeric.toHexString(response.getConstantResult(0).toByteArray());
         List<Type> results =
                 FunctionReturnDecoder.decode(result, function.getOutputParameters());

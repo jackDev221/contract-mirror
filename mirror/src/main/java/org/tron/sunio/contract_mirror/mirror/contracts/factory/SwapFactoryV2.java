@@ -11,6 +11,8 @@ import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV2Pair;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV2Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
+import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
+import org.tron.sunio.contract_mirror.mirror.pool.process.out.BaseProcessOut;
 import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.TypeReference;
@@ -24,9 +26,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent.EVENT_NAME_PAIR_CREATED_MINT;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 
 @Slf4j
-public class SwapFactoryV2 extends BaseContract implements IContractFactory {
+public class SwapFactoryV2 extends BaseFactory implements IContractFactory {
     private Map<String, String> v2PairSigMap;
     private SwapFactoryV2Data swapFactoryV2Data;
 
@@ -78,7 +81,7 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
     }
 
     @Override
-    public BaseContract getBaseContract() {
+    public BaseFactory getBaseContract() {
         return this;
     }
 
@@ -104,22 +107,24 @@ public class SwapFactoryV2 extends BaseContract implements IContractFactory {
     }
 
     @Override
-    public List<BaseContract> getListContracts() {
+    public List<BaseContract> getListContracts(CMPool cmPool) {
         List<BaseContract> result = new ArrayList<>();
-        long pairCount = getPairCount().longValue();
-        for (long i = 0; i < pairCount; i++) {
-            Address pairAddress = getPairWithId(i);
-            if (pairAddress.equals(Address.DEFAULT)) {
+        long pairCount = this.getVarFactoryV2Data().getPairCount();
+        List<BaseProcessOut> outs = this.getListContractsBase(cmPool, (int) pairCount);
+        for (BaseProcessOut out : outs) {
+            String pairAddress = out.getAddress();
+            if (pairAddress.equals(EMPTY_ADDRESS)) {
                 continue;
             }
             SwapV2Pair swapV2Pair = new SwapV2Pair(
-                    WalletUtil.ethAddressToTron(pairAddress.toString()),
+                    pairAddress,
                     this.address,
                     this.iChainHelper,
                     v2PairSigMap
 
             );
             result.add(swapV2Pair);
+
         }
         return result;
     }

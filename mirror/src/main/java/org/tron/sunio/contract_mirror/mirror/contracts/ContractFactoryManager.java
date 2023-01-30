@@ -11,12 +11,15 @@ import org.tron.sunio.contract_mirror.event_decode.events.PSMEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
+import org.tron.sunio.contract_mirror.mirror.contracts.factory.BaseFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve4Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
+import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +30,10 @@ import java.util.Map;
 public class ContractFactoryManager {
     @Autowired
     private IChainHelper tronChainHelper;
+
+    @Autowired
+    private CMPool cmPool;
+
 
     private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
     private Map<String, String> v1FactorySigMap;
@@ -112,7 +119,7 @@ public class ContractFactoryManager {
         log.info("ContractFactoryManager: start updateMirrorContracts");
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
-            BaseContract baseContract = iContractFactory.getBaseContract();
+            BaseFactory baseContract = iContractFactory.getBaseContract();
             if (!baseContract.isReady() || baseContract.isAddExchangeContracts()) {
                 continue;
             }
@@ -120,14 +127,14 @@ public class ContractFactoryManager {
                 iContractsCollectHelper.addContract(baseContract);
             }
 
-            List<BaseContract> baseContractList = iContractFactory.getListContracts();
+            List<BaseContract> baseContractList = iContractFactory.getListContracts(cmPool);
             for (BaseContract baseContract1 : baseContractList) {
                 if (iContractsCollectHelper.containsContract(baseContract1.address)) {
                     continue;
                 }
                 iContractsCollectHelper.addContract(baseContract1);
             }
-            baseContract.setAddExchangeContracts(true);
+            baseContract.resetLoadSubContractState();
             baseContract.updateBaseInfo(baseContract.isUsing, baseContract.isReady, baseContract.isAddExchangeContracts);
         }
         return true;

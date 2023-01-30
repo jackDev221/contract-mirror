@@ -12,6 +12,9 @@ import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV1;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV1Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
+import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
+import org.tron.sunio.contract_mirror.mirror.pool.process.out.BaseProcessOut;
+import org.tron.sunio.contract_mirror.mirror.pool.process.out.SwapV1FactoryExOut;
 import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
@@ -25,12 +28,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE_TO;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE_TO_RATE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN_COUNT;
 
 @Slf4j
-public class SwapFactoryV1 extends BaseContract implements IContractFactory {
+public class SwapFactoryV1 extends BaseFactory implements IContractFactory {
     private Map<String, String> v1SigMap;
     private SwapFactoryV1Data swapFactoryV1Data;
 
@@ -53,8 +57,6 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     @Override
     public boolean initDataFromChain1() {
         SwapFactoryV1Data swapFactoryV1Data = getVarFactoryV1Data();
-        // TODO feeTo feeToRate 可读性
-        // set feeTo
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
         triggerContractInfo.setContractAddress(this.getAddress());
         triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
@@ -92,27 +94,25 @@ public class SwapFactoryV1 extends BaseContract implements IContractFactory {
     }
 
     @Override
-    public BaseContract getBaseContract() {
+    public BaseFactory getBaseContract() {
         return this;
     }
 
     @Override
-    public List<BaseContract> getListContracts() {
+    public List<BaseContract> getListContracts(CMPool cmPool) {
         List<BaseContract> result = new ArrayList<>();
-        long totalTokens = getTokenCount().longValue();
-        totalTokens = 10;
-        //TODO 这里token数目太多了，之后看看是否能优化下
-        for (long i = 0; i < totalTokens; i++) {
-            Address tokenAddress = getTokenWithId(i);
-            if (tokenAddress.equals(Address.DEFAULT)) {
+        long totalTokens = this.getVarFactoryV1Data().getTokenCount();
+        //totalTokens = 50;
+        List<BaseProcessOut> outs = this.getListContractsBase(cmPool, (int) totalTokens);
+        for (BaseProcessOut out : outs) {
+            SwapV1FactoryExOut swapV1FactoryExOut = (SwapV1FactoryExOut) out;
+            String address = swapV1FactoryExOut.getAddress();
+            String tokenAddress = swapV1FactoryExOut.getTokenAddress();
+            if (address.equals(EMPTY_ADDRESS) || tokenAddress.equals(EMPTY_ADDRESS)) {
                 continue;
             }
-            Address contractAddress = getExchange(tokenAddress);
-            if (contractAddress.equals(Address.DEFAULT)) {
-                continue;
-            }
-            SwapV1 swapV1 = new SwapV1(WalletUtil.ethAddressToTron(contractAddress.toString()),
-                    this.iChainHelper, WalletUtil.ethAddressToTron(tokenAddress.toString()), v1SigMap);
+            SwapV1 swapV1 = new SwapV1(address,
+                    this.iChainHelper, tokenAddress, v1SigMap);
 
             result.add(swapV1);
         }

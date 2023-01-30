@@ -40,4 +40,15 @@ public class TriggerContractInfo {
     public Function getCallFunction() {
         return new Function(methodName, inputParameters, outputParameters);
     }
+
+    @Override
+    public String toString() {
+        return "TriggerContractInfo{" +
+                "fromAddress='" + fromAddress + '\'' +
+                ", contractAddress='" + contractAddress + '\'' +
+                ", methodName='" + methodName + '\'' +
+                ", inputParameters=" + inputParameters +
+                ", outputParameters=" + outputParameters +
+                '}';
+    }
 }

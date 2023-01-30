@@ -21,11 +21,13 @@ import org.tron.sunio.contract_mirror.mirror.contracts.ContractFactoryManager;
 import org.tron.sunio.contract_mirror.mirror.config.ContractsMirrorConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsCollectHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.ContractEventWrap;
+import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 import org.tron.sunio.contract_mirror.mirror.tools.TimeTool;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 
 @Service
 @Slf4j
@@ -42,6 +44,9 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
 
     @Autowired
     private KafkaConfig kafkaConfig;
+
+    @Autowired
+    private CMPool cmPool;
 
     private KafkaConsumer<String, String> consumer;
     private KafkaProducer<String, String> producer;
@@ -138,15 +143,34 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
         }
     }
 
+    private int getUnReadyCount() {
+        int res = 0;
+        for (String addr : contractHashMap.keySet()) {
+            BaseContract baseContract = contractHashMap.get(addr);
+            if (!baseContract.isReady()) {
+                res++;
+            }
+
+        }
+        return res;
+    }
+
     @Scheduled(initialDelay = 5000, fixedDelay = EVENT_HANDLE_PERIOD)
     public void doTask() {
         try {
-            for (String addr : contractHashMap.keySet()) {
-                BaseContract baseContract = contractHashMap.get(addr);
-                if (!baseContract.isReady()) {
-                    // not ready call data from chain
-                    baseContract.initDataFromChain();
+            int unReadyContract = getUnReadyCount();
+              if (unReadyContract > 0) {
+                CountDownLatch latch = cmPool.initCountDownLatch(unReadyContract);
+                for (String addr : contractHashMap.keySet()) {
+                    BaseContract baseContract = contractHashMap.get(addr);
+                    if (!baseContract.isReady()) {
+                        // not ready call data from chain
+//                    baseContract.initDataFromChain();
+                        baseContract.setLatch(latch);
+                        cmPool.submitT(baseContract::initDataFromChainThread);
+                    }
                 }
+                cmPool.waitFinish();
             }
             // 工程合约更新完毕，且需要添加子合约。
             contractFactoryManager.updateMirrorContracts(this);
