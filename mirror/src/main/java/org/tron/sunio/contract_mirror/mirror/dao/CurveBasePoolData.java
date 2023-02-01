@@ -11,9 +11,9 @@ import java.math.BigInteger;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Curve2PoolData extends BaseContractData {
-    private String[] coins = new String[2];
-    private BigInteger[] balance = new BigInteger[2];
+public class CurveBasePoolData extends BaseContractData {
+    private String[] coins;
+    private BigInteger[] balance;
     private String token;
     private BigInteger fee;
     private BigInteger futureFee;
@@ -29,6 +29,11 @@ public class Curve2PoolData extends BaseContractData {
     private String futureOwner;
     private BigInteger transferOwnershipDeadline;
     private BigInteger totalSupply;
+
+    public CurveBasePoolData(int count) {
+        coins = new String[count];
+        balance = new BigInteger[count];
+    }
 
     public void updateCoins(int index, String address) {
         if (index >= coins.length) {

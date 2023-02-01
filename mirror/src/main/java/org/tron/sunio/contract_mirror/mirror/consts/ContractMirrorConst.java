@@ -32,6 +32,20 @@ public interface ContractMirrorConst {
     String METHOD_PRICE0_CUMULATIVE_LAST = "price0CumulativeLast";
     String METHOD_PRICE1_CUMULATIVE_LAST = "price1CumulativeLast";
     String METHOD_GET_RESERVES = "getReserves";
+    //CurvePool
+    String METHOD_FEE = "fee";
+    String METHOD_FUTURE_FEE = "future_fee";
+    String METHOD_ADMIN_FEE = "admin_fee";
+    String METHOD_FUTURE_ADMIN_FEE = "future_admin_fee";
+    String METHOD_ADMIN_ACTIONS_DEADLINE = "admin_actions_deadline";
+    String METHOD_FEE_CONVERTER = "fee_converter";
+    String METHOD_INITIAL_A = "initial_A";
+    String METHOD_INITIAL_A_TIME = "initial_A_time";
+    String METHOD_FUTURE_A = "future_A";
+    String METHOD_FUTURE_A_TIME = "future_A_time";
+    String METHOD_OWNER = "owner";
+    String METHOD_FUTURE_OWNER = "future_owner";
+    String METHOD_TRANSFER_OWNERSHIP_DEADLINE = "transfer_ownership_deadline";
 
 
 }

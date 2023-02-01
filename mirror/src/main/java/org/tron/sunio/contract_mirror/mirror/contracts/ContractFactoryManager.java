@@ -38,7 +38,7 @@ public class ContractFactoryManager {
     private Map<String, String> v1FactorySigMap;
     private Map<String, String> v2FactorySigMap;
     private Map<String, String> curve2PoolSigMap;
-    private Map<String, String> curve3PoolSigMap;
+    //    private Map<String, String> curve3PoolSigMap;
     private Map<String, String> curve4PoolSigMap;
     private Map<String, String> psmSigMap;
 
@@ -47,7 +47,7 @@ public class ContractFactoryManager {
         v1FactorySigMap = SwapV1FactoryEvent.getSigMap();
         v2FactorySigMap = SwapV2FactoryEvent.getSigMap();
         curve2PoolSigMap = Curve2PoolEvent.getSigMap();
-        curve3PoolSigMap = Curve3PoolEvent.getSigMap();
+//        curve3PoolSigMap = Curve3PoolEvent.getSigMap();
         curve4PoolSigMap = Curve4PoolEvent.getSigMap();
         psmSigMap = PSMEvent.getSigMap();
     }
@@ -79,6 +79,7 @@ public class ContractFactoryManager {
                     iContractsCollectHelper.addContract(new Curve2Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
+                            2,
                             curve2PoolSigMap
                     ));
 
@@ -86,7 +87,8 @@ public class ContractFactoryManager {
                     iContractsCollectHelper.addContract(new Curve3Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
-                            curve3PoolSigMap
+                            3,
+                            curve2PoolSigMap
                     ));
 
                 case CONTRACT_CURVE_4POOL:
