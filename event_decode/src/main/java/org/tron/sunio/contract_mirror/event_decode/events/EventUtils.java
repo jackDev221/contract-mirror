@@ -12,7 +12,6 @@ import org.web3j.abi.datatypes.StaticArray;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.Uint;
 import org.web3j.abi.datatypes.generated.Bytes32;
-import org.web3j.abi.datatypes.generated.StaticArray2;
 import org.web3j.abi.datatypes.generated.Uint112;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint64;
@@ -24,6 +23,7 @@ import java.util.Map;
 public class EventUtils {
     private static final String EVENT_START = "event";
     private static final String EVENT_INDEXED = "indexed";
+    public static final String HEX_PREFIX = "0x";
 
     public static EventValues getEventValue(String eventBody, List<String> topics, String data, boolean checkSign) {
         Event event = parseEventString(eventBody);
@@ -80,9 +80,17 @@ public class EventUtils {
         for (Map.Entry<String, String> entry : eventInfoMap.entrySet()) {
             String sig = EventUtils.encodedEventSignature(EventUtils.parseEventString(entry.getValue()));
             if (ObjectUtil.isNotNull(sig)) {
-                sigMap.put(sig, entry.getKey());
+                sigMap.put(removePrefix(sig), entry.getKey());
             }
         }
+    }
+
+    public static String removePrefix(String input) {
+        if (StringUtils.isNotEmpty(input) && input.startsWith(HEX_PREFIX)) {
+            return input.substring(2);
+        }
+
+        return input;
     }
 
     private static TypeReference<?> parseParamString(String input) {

@@ -12,11 +12,12 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_BODY;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_SNAPSHOT_BODY;
 
 public class EventUtilsTest {
     @Test
     public void testParseUtils() {
-        Event event = EventUtils.parseEventString("event Transfer(address indexed from, address index to, uint256 value)");
+        Event event = EventUtils.parseEventString(EVENT_NAME_SNAPSHOT_BODY);
         System.out.println(EventUtils.encodedEventSignature(event));
     }
 

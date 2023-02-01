@@ -121,7 +121,7 @@ public class SwapV1 extends BaseContract {
                 result = handleAdminFeeMint(topics, data);
                 break;
             default:
-                log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
+                log.warn("Contract:{} type:{} event:{}  unique id:{} not handle", address, type, topics[0], handleEventExtraData.getUniqueId());
                 result = HandleResult.genHandleFailMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
                 break;
         }
@@ -163,6 +163,7 @@ public class SwapV1 extends BaseContract {
     }
 
     private HandleResult handleEventTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleEventTransfer, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(EVENT_NAME_TRANSFER, EVENT_NAME_TRANSFER_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
@@ -191,6 +192,7 @@ public class SwapV1 extends BaseContract {
     }
 
     private HandleResult handleEventSnapshot(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleEventSnapshot, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(EVENT_NAME_SNAPSHOT, EVENT_NAME_SNAPSHOT_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {

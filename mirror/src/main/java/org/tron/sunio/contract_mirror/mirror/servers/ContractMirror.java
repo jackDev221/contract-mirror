@@ -34,6 +34,9 @@ import java.util.concurrent.CountDownLatch;
 @Data
 public class ContractMirror implements InitializingBean, IContractsCollectHelper {
     private final int EVENT_HANDLE_PERIOD = 200;
+    private final int KAFKA_READY_CHECK_INTERVAL = 500;
+    private final int KAFKA_PULL_TIMEOUT = 2000;
+
     @Autowired
     private ContractFactoryManager contractFactoryManager;
     @Autowired
@@ -63,15 +66,32 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
 
     private void initKafka() {
         try {
-            if (config.isKafkaEnable()) {
+            if (kafkaConfig.getConsumerEnable()) {
                 Properties properties = kafkaConfig.consumerConfig();
                 consumer = new KafkaConsumer<String, String>(properties);
                 consumer.subscribe(kafkaConfig.getTopics());
+                readyKafka();
+            }
+            if (kafkaConfig.getProducerEnable()) {
                 Properties properties1 = kafkaConfig.producerConfig();
                 producer = new KafkaProducer<String, String>(properties1);
             }
         } catch (KafkaException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void readyKafka() {
+        if (kafkaConfig.getConsumerEnable() && ObjectUtil.isNotNull(consumer)) {
+            while (true) {
+                ConsumerRecords<String, String> records = kafkaConsumerPoll(KAFKA_PULL_TIMEOUT);
+                if (records.count() > 0) {
+                    break;
+                } else {
+                    log.info("Kafka not ready sleep 500mils");
+                    TimeTool.sleep(KAFKA_READY_CHECK_INTERVAL);
+                }
+            }
         }
     }
 
@@ -98,17 +118,13 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
 
     private void setReloadAllContract() {
         for (BaseContract baseContract : contractHashMap.values()) {
-            baseContract.setReady(false);
-            baseContract.setAddExchangeContracts(false);
-            baseContract.updateBaseInfo(
-                    baseContract.isUsing(), baseContract.isReady(), baseContract.isAddExchangeContracts());
-
+            baseContract.resetReloadData();
         }
     }
 
     private ConsumerRecords<String, String> kafkaConsumerPoll(long millis) {
         ConsumerRecords<String, String> records = ConsumerRecords.empty();
-        if (config.isKafkaEnable() && ObjectUtil.isNotNull(consumer)) {
+        if (kafkaConfig.getConsumerEnable() && ObjectUtil.isNotNull(consumer)) {
             try {
                 records = consumer.poll(Duration.ofMillis(millis));
             } catch (Exception e) {
@@ -119,13 +135,13 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     }
 
     private void kafkaConsumerCommit() {
-        if (config.isKafkaEnable() && ObjectUtil.isNotNull(consumer)) {
+        if (kafkaConfig.getConsumerEnable() && ObjectUtil.isNotNull(consumer)) {
             consumer.commitSync();
         }
     }
 
     private void kafkaProducerSend(String topic, String key, String record) {
-        if (config.isKafkaEnable() && ObjectUtil.isNotNull(producer)) {
+        if (kafkaConfig.getProducerEnable() && ObjectUtil.isNotNull(producer)) {
             producer.send(new ProducerRecord<>(topic, key, record), (metadata, exception) -> {
                 if (exception != null) {
                     exception.printStackTrace();
@@ -134,11 +150,10 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
                 }
             });
         }
-//        producer.flush();
     }
 
     private void kafkaProducerFlush() {
-        if (config.isKafkaEnable() && ObjectUtil.isNotNull(producer)) {
+        if (kafkaConfig.getProducerEnable() && ObjectUtil.isNotNull(producer)) {
             producer.flush();
         }
     }
@@ -150,7 +165,6 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
             if (!baseContract.isReady()) {
                 res++;
             }
-
         }
         return res;
     }
@@ -159,13 +173,13 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     public void doTask() {
         try {
             int unReadyContract = getUnReadyCount();
-              if (unReadyContract > 0) {
+            if (unReadyContract > 0) {
                 CountDownLatch latch = cmPool.initCountDownLatch(unReadyContract);
                 for (String addr : contractHashMap.keySet()) {
                     BaseContract baseContract = contractHashMap.get(addr);
                     if (!baseContract.isReady()) {
                         // not ready call data from chain
-//                    baseContract.initDataFromChain();
+//                      baseContract.initDataFromChain();
                         baseContract.setLatch(latch);
                         cmPool.submitT(baseContract::initDataFromChainThread);
                     }
@@ -175,7 +189,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
             // 工程合约更新完毕，且需要添加子合约。
             contractFactoryManager.updateMirrorContracts(this);
             boolean needSleep = false;
-            ConsumerRecords<String, String> records = kafkaConsumerPoll(EVENT_HANDLE_PERIOD);
+            ConsumerRecords<String, String> records = kafkaConsumerPoll(KAFKA_PULL_TIMEOUT);
             for (ConsumerRecord<String, String> record : records) {
                 ContractEventWrap contractEventWrap = ContractEventWrap.getInstance(record.topic(), record.value());
                 if (ObjectUtil.isNull(contractEventWrap)) {
@@ -191,7 +205,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
                     BaseContract.HandleResult result = baseContract.handleEvent(contractEventWrap);
                     if (result.needToSendMessage()) {
                         String key = String.format("%_new", record.key());
-                        kafkaProducerSend(kafkaConfig.getProducerTopics(), key,
+                        kafkaProducerSend(kafkaConfig.getProducerTopic(), key,
                                 contractEventWrap.updateAndToJson(result.getNewTopic(), result.getNewData()));
                     }
                 }

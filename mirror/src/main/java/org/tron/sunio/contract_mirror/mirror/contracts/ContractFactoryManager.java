@@ -34,7 +34,6 @@ public class ContractFactoryManager {
     @Autowired
     private CMPool cmPool;
 
-
     private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
     private Map<String, String> v1FactorySigMap;
     private Map<String, String> v2FactorySigMap;

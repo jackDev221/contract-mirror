@@ -11,6 +11,7 @@ import org.tron.sunio.contract_mirror.mirror.pool.process.in.BaseProcessIn;
 import org.tron.sunio.contract_mirror.mirror.pool.process.out.BaseProcessOut;
 import org.tron.sunio.contract_mirror.mirror.tools.TimeTool;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,7 +26,7 @@ public class CMPool {
     @Autowired
     private ProcessInitializer initializer;
 
-    private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(10);
+    private ExecutorService fixedThreadPool ;
 
     private List<BaseProcessOut> res = new ArrayList<>();
 
@@ -34,6 +35,14 @@ public class CMPool {
 
     @Setter
     CountDownLatch latch;
+
+
+    @PostConstruct
+    public void init() {
+        int coreSize = Runtime.getRuntime().availableProcessors();
+//        coreSize = 8;
+        fixedThreadPool = Executors.newFixedThreadPool(coreSize);
+    }
 
     public void submit(BaseProcessIn in) {
         IProcessor iProcessor = initializer.getProcessor(in.getProcessType());

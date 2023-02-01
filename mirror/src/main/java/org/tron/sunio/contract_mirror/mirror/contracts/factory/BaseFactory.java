@@ -74,6 +74,7 @@ public class BaseFactory extends BaseContract implements IContractFactory {
     }
 
     protected List<BaseProcessOut> getListContractsBase(CMPool cmPool, int baseCount) {
+        log.info("Into BaseFactory: getListContractsBase:baseCount:{} unFinshLoadSub:{}", baseCount, unFinshLoadSub.size());
         List<BaseProcessOut> result = new ArrayList<>();
         if (baseCount <= 0 && unFinshLoadSub.size() == 0) {
             return Collections.emptyList();
@@ -101,7 +102,7 @@ public class BaseFactory extends BaseContract implements IContractFactory {
             }
         }
         int finishCount = cmPool.getResultSize();
-        log.info("getListContractsBase finishCount:{} unfinished:{}", finishCount, unfinished.size());
+        log.info("BaseFactory: getListContractsBase Result: finishCount:{} unfinished:{}", finishCount, unfinished.size());
         unFinshLoadSub.clear();
         unFinshLoadSub.addAll(unfinished);
         return result;

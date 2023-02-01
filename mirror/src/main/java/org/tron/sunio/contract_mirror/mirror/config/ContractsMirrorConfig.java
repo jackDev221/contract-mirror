@@ -20,7 +20,6 @@ import java.util.Map;
 public class ContractsMirrorConfig {
     private long blockInterval;
     private String appName;
-    private boolean kafkaEnable;
     private Map<String, String> factoryInfos = new HashMap<>();
 
     public List<ContractInfo> getListContractFactory() {

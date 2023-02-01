@@ -126,7 +126,7 @@ public abstract class BaseContract implements IContract {
         if (eventTime < t0) {
             return;
         }
-        if (eventTime <= t2) {
+        if (eventTime > t2) {
             isReady = true;
             updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
             initFlag = INIT_FLAG_SUCCESS;
@@ -171,6 +171,13 @@ public abstract class BaseContract implements IContract {
         if (!isReady) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s not Ready", address, type));
         }
+
+        if (iContractEventWrap.getTimeStamp() <= t2) {
+            log.error("OMG Ready contract {}:{}receive pre kafka msg, contract time:{} kafka time: {}, " +
+                    "contract need reload", type, address, iContractEventWrap.getTimeStamp(), t2);
+            this.resetReloadData();
+            return HandleResult.genHandleFailMessage("Fuccck");
+        }
         // Do handleEvent
         String eventName = getEventName(iContractEventWrap);
         String[] topics = iContractEventWrap.getTopics();
@@ -198,6 +205,13 @@ public abstract class BaseContract implements IContract {
     @Override
     public ContractType getContractType() {
         return type;
+    }
+
+    public void resetReloadData() {
+        isReady = false;
+        isAddExchangeContracts = false;
+        isDirty = true;
+        this.updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
     }
 
 

@@ -100,9 +100,10 @@ public class SwapFactoryV1 extends BaseFactory implements IContractFactory {
 
     @Override
     public List<BaseContract> getListContracts(CMPool cmPool) {
+        log.info("SwapFactoryV1: getListContracts");
         List<BaseContract> result = new ArrayList<>();
         long totalTokens = this.getVarFactoryV1Data().getTokenCount();
-        //totalTokens = 50;
+//        totalTokens = 20;
         List<BaseProcessOut> outs = this.getListContractsBase(cmPool, (int) totalTokens);
         for (BaseProcessOut out : outs) {
             SwapV1FactoryExOut swapV1FactoryExOut = (SwapV1FactoryExOut) out;
@@ -268,6 +269,7 @@ public class SwapFactoryV1 extends BaseFactory implements IContractFactory {
     }
 
     private HandleResult handEventFeeRate(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapFactoryV1:{}, handEventFeeRate, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(
                 SwapV1FactoryEvent.EVENT_NAME_FEE_RATE,
                 SwapV1FactoryEvent.EVENT_NAME_FEE_RATE_BODY,
@@ -286,6 +288,7 @@ public class SwapFactoryV1 extends BaseFactory implements IContractFactory {
     }
 
     private HandleResult handEventFeeTo(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapFactoryV1:{}, handEventFeeTo, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(
                 SwapV1FactoryEvent.EVENT_NAME_FEE_TO,
                 SwapV1FactoryEvent.EVENT_NAME_FEE_TO_BODY,
@@ -303,7 +306,8 @@ public class SwapFactoryV1 extends BaseFactory implements IContractFactory {
         return HandleResult.genHandleSuccess();
     }
 
-    private HandleResult handEventNewExchange(String[] _topics, String _data) {
+    private HandleResult handEventNewExchange(String[] topics, String data) {
+        log.info("SwapFactoryV1:{}, handEventNewExchange, topics:{} data:{} ", address, topics, data);
         isAddExchangeContracts = false;
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         factoryV1Data.setAddExchangeContracts(false);
