@@ -28,6 +28,18 @@ import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_SYNC;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_TRANSFER;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_TOPIC_VALUE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_BALANCE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_DECIMALS;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FACTORY;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_GET_RESERVES;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_K_LAST;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_NAME;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_PRICE0_CUMULATIVE_LAST;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_PRICE1_CUMULATIVE_LAST;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_SYMBOL;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN0;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN1;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOTAL_SUPPLY;
 
 @Slf4j
 public class SwapV2Pair extends BaseContract {
@@ -75,8 +87,8 @@ public class SwapV2Pair extends BaseContract {
                 log.error("SwapV2Pair :{} fail to get getReserves, size:{}", address, results.size());
                 return;
             }
-            swapV2PairData.setReverse0((BigInteger) results.get(0).getValue());
-            swapV2PairData.setReverse1((BigInteger) results.get(1).getValue());
+            swapV2PairData.setReserve0((BigInteger) results.get(0).getValue());
+            swapV2PairData.setReserve1((BigInteger) results.get(1).getValue());
             swapV2PairData.setBlockTimestampLast((long) results.get(2).getValue());
         } catch (Exception e) {
             log.error("SwapV2Pair :{} fail to get getReserves, size:{}", address, e.toString());
@@ -156,6 +168,32 @@ public class SwapV2Pair extends BaseContract {
 
     @Override
     public <T> T handleSpecialRequest(String method) {
+        switch (method) {
+            case METHOD_NAME:
+                return (T) this.getVarSwapV2PairData().getName();
+            case METHOD_DECIMALS:
+                return (T) (Long) this.getVarSwapV2PairData().getDecimals();
+            case METHOD_SYMBOL:
+                return (T) this.getVarSwapV2PairData().getSymbol();
+            case METHOD_K_LAST:
+                return (T) this.getVarSwapV2PairData().getKLast();
+            case METHOD_TOTAL_SUPPLY:
+                return (T) this.getVarSwapV2PairData().getLpTotalSupply();
+            case METHOD_BALANCE:
+                return (T) this.getVarSwapV2PairData().getTrxBalance();
+            case METHOD_FACTORY:
+                return (T) this.getVarSwapV2PairData().getFactory();
+            case METHOD_TOKEN0:
+                return (T) this.getVarSwapV2PairData().getToken0();
+            case METHOD_TOKEN1:
+                return (T) this.getVarSwapV2PairData().getToken1();
+            case METHOD_PRICE0_CUMULATIVE_LAST:
+                return (T) (Long) this.getVarSwapV2PairData().getPrice0CumulativeLast();
+            case METHOD_PRICE1_CUMULATIVE_LAST:
+                return (T) (Long) this.getVarSwapV2PairData().getPrice1CumulativeLast();
+            case METHOD_GET_RESERVES:
+                return (T) this.getVarSwapV2PairData().getReserves();
+        }
         return null;
     }
 
@@ -215,16 +253,16 @@ public class SwapV2Pair extends BaseContract {
         //4294967296L = 2**32
         long blockTimestampLast = handleEventExtraData.getTimeStamp() % 4294967296L;
         long timeElapsed = blockTimestampLast - handleEventExtraData.getTimeStamp();
-        BigInteger reserve0Origin = swapV2PairData.getReverse0();
-        BigInteger reserve1Origin = swapV2PairData.getReverse1();
+        BigInteger reserve0Origin = swapV2PairData.getReserve0();
+        BigInteger reserve1Origin = swapV2PairData.getReserve1();
         if (timeElapsed > 0 && reserve0Origin.compareTo(BigInteger.ZERO) != 0 && reserve1Origin.compareTo(BigInteger.ZERO) != 0) {
             long price0Add = priceCumulativeLastAdd(reserve0Origin, reserve1Origin, timeElapsed);
             long price1Add = priceCumulativeLastAdd(reserve1Origin, reserve0Origin, timeElapsed);
             swapV2PairData.setPrice0CumulativeLast(swapV2PairData.getPrice0CumulativeLast() + price0Add);
             swapV2PairData.setPrice1CumulativeLast(swapV2PairData.getPrice1CumulativeLast() + price1Add);
         }
-        swapV2PairData.setReverse0(reserve0);
-        swapV2PairData.setReverse1(reserve1);
+        swapV2PairData.setReserve0(reserve0);
+        swapV2PairData.setReserve1(reserve1);
         swapV2PairData.setBlockTimestampLast(blockTimestampLast);
         isDirty = true;
         return HandleResult.genHandleSuccess();

@@ -18,8 +18,8 @@ public class SwapV2PairData extends BaseContractData {
     private String factory;
     private String token0;
     private String token1;
-    private BigInteger reverse0;
-    private BigInteger reverse1;
+    private BigInteger reserve0;
+    private BigInteger reserve1;
     private BigInteger kLast;
     private long blockTimestampLast;
     private long price0CumulativeLast;
@@ -27,4 +27,22 @@ public class SwapV2PairData extends BaseContractData {
     private long unlocked;
     private BigInteger trxBalance;
     private BigInteger lpTotalSupply;
+
+
+    public Reserves getReserves() {
+        return new Reserves(reserve0, reserve1, blockTimestampLast);
+    }
+
+    @Data
+    public static class Reserves {
+        private BigInteger reserve0;
+        private BigInteger reserve1;
+        private long blockTimestampLast;
+
+        public Reserves(BigInteger reserve0, BigInteger reserve1, long blockTimestampLast) {
+            this.reserve0 = reserve0;
+            this.reserve1 = reserve1;
+            this.blockTimestampLast = blockTimestampLast;
+        }
+    }
 }

@@ -22,6 +22,16 @@ public interface ContractMirrorConst {
     String METHOD_TOTAL_SUPPLY = "totalSupply";
     String METHOD_BALANCE = "balance";
     String METHOD_TONE_BALANCE = "tokenBalance";
+    //SwapV2Factory
+    String METHOD_FEE_TO_SETTER = "feeToSetter";
+    String METHOD_ALL_PAIRS_LENGTH = "allPairsLength";
+    //SwapV2Pair
+    String METHOD_FACTORY = "factory";
+    String METHOD_TOKEN0 = "token0";
+    String METHOD_TOKEN1 = "token1";
+    String METHOD_PRICE0_CUMULATIVE_LAST = "price0CumulativeLast";
+    String METHOD_PRICE1_CUMULATIVE_LAST = "price1CumulativeLast";
+    String METHOD_GET_RESERVES = "getReserves";
 
 
 }

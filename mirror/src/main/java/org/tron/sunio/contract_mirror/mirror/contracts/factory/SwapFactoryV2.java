@@ -27,6 +27,9 @@ import java.util.Map;
 
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent.EVENT_NAME_PAIR_CREATED_MINT;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_ALL_PAIRS_LENGTH;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE_TO;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE_TO_SETTER;
 
 @Slf4j
 public class SwapFactoryV2 extends BaseFactory implements IContractFactory {
@@ -178,6 +181,14 @@ public class SwapFactoryV2 extends BaseFactory implements IContractFactory {
 
     @Override
     public <T> T handleSpecialRequest(String method) {
+        switch (method) {
+            case METHOD_FEE_TO:
+                return (T) this.getVarFactoryV2Data().getFeeTo();
+            case METHOD_FEE_TO_SETTER:
+                return (T) this.getVarFactoryV2Data().getFeeToSetter();
+            case METHOD_ALL_PAIRS_LENGTH:
+                return (T) (Long) this.getVarFactoryV2Data().getPairCount();
+        }
         return null;
     }
 
