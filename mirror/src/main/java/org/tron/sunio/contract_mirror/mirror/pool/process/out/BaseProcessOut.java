@@ -11,6 +11,7 @@ import org.tron.sunio.contract_mirror.mirror.pool.process.in.BaseProcessIn;
 public class BaseProcessOut {
     protected String outKey;
     protected String address;
+    protected int id;
 
     public void initWitBaseIn(BaseProcessIn in) {
         this.outKey = in.getOutKey();

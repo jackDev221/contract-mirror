@@ -180,7 +180,7 @@ public class SwapFactoryV2 extends BaseFactory implements IContractFactory {
     }
 
     @Override
-    public <T> T handleSpecialRequest(String method) {
+    public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_FEE_TO:
                 return (T) this.getVarFactoryV2Data().getFeeTo();

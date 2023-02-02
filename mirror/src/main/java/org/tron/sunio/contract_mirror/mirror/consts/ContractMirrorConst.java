@@ -5,11 +5,14 @@ public interface ContractMirrorConst {
     String EMPTY_TOPIC_VALUE = "0000000000000000000000000000000000000000000000000000000000000000";
     String KAFKA_TOPIC_CONTRACT_LOG = "contractlog";
     String KAFKA_TOPIC_CONTRACT_EVENT_LOG = "contractevent";
-    String CONTRACT_CONST_METHOD = "/contract/{address}/const/{method}";
+    String CONTRACT_CONST_METHOD = "/contract/{address}/{method}";
 
     //Methods
     String METHOD_STATUS = "status";
     //SwapV1Factory
+    String METHOD_GET_EXCHANGE = "getExchange";
+    String METHOD_GET_TOKEN = "getToken";
+    String METHOD_GET_TOKEN_WITH_ID = "getTokenWithId";
     String METHOD_FEE_TO = "feeTo";
     String METHOD_FEE_TO_RATE = "feeToRate";
     String METHOD_TOKEN_COUNT = "tokenCount";

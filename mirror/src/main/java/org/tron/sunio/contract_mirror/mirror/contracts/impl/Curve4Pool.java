@@ -55,7 +55,6 @@ public class Curve4Pool extends BaseContract {
         return curve4PoolData;
     }
 
-
     private void updateCoinsAndBalance(Curve4PoolData curve4PoolData) {
         for (int i = 0; i < N_COINS; i++) {
             // update coins string
@@ -221,7 +220,7 @@ public class Curve4Pool extends BaseContract {
     }
 
     @Override
-    public <T> T handleSpecialRequest(String method) {
+    public <T> T handleSpecialRequest(String method, String params) throws Exception {
         return null;
     }
 

@@ -11,4 +11,5 @@ public class BaseProcessIn {
    private String processType;
    private String outKey;
    private String Address;
+   private int id;
 }

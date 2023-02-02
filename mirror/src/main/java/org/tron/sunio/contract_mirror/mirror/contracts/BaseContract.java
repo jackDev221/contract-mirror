@@ -65,13 +65,13 @@ public abstract class BaseContract implements IContract {
 
     public abstract <T> T getStatus();
 
-    public abstract <T> T handleSpecialRequest(String method);
+    public abstract <T> T handleSpecialRequest(String method, String params) throws Exception;
 
-    public <T> T handRequest(String method) {
+    public <T> T handRequest(String method, String params) throws Exception {
         if (method.equalsIgnoreCase(METHOD_STATUS)) {
             return getStatus();
         }
-        return handleSpecialRequest(method);
+        return handleSpecialRequest(method, params);
     }
 
     public BaseContract(String address, ContractType type, IChainHelper iChainHelper,
@@ -213,7 +213,6 @@ public abstract class BaseContract implements IContract {
         isDirty = true;
         this.updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
     }
-
 
     protected String callContractString(String from, String method) {
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, this.getAddress(), method,

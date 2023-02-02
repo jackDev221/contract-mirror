@@ -167,7 +167,7 @@ public class SwapV2Pair extends BaseContract {
     }
 
     @Override
-    public <T> T handleSpecialRequest(String method) {
+    public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_NAME:
                 return (T) this.getVarSwapV2PairData().getName();

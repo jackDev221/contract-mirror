@@ -35,6 +35,7 @@ public class SwapV2FactoryExcProcess implements IProcessor {
                 Address pairAddress = getPairWithId(swapFactoryExIn.getId(), swapFactoryExIn.getAddress());
                 BaseProcessOut out = new BaseProcessOut();
                 out.setOutKey(swapFactoryExIn.getOutKey());
+                out.setId(swapFactoryExIn.getId());
                 out.setAddress(WalletUtil.ethAddressToTron(pairAddress.toString()));
                 return new Pair<>(out.getOutKey(), out);
             } catch (Exception e) {

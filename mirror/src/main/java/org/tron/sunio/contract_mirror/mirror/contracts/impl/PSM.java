@@ -101,7 +101,7 @@ public class PSM extends BaseContract {
     }
 
     @Override
-    public <T> T handleSpecialRequest(String method) {
+    public <T> T handleSpecialRequest(String method, String params) throws Exception {
         return null;
     }
 

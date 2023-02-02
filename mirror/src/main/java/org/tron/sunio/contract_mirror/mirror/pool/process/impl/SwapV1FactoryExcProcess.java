@@ -37,6 +37,7 @@ public class SwapV1FactoryExcProcess implements IProcessor {
                 swapV1FactoryExOut.setOutKey(swapFactoryExIn.getOutKey());
                 Address tokenAddress = getTokenWithId(swapFactoryExIn.getId(), swapFactoryExIn.getAddress());
                 Address contractAddress = getExchange(tokenAddress, (in.getAddress()));
+                swapV1FactoryExOut.setId(swapFactoryExIn.getId());
                 swapV1FactoryExOut.setAddress(WalletUtil.ethAddressToTron(contractAddress.toString()));
                 swapV1FactoryExOut.setTokenAddress(WalletUtil.ethAddressToTron(tokenAddress.toString()));
                 return new Pair<>(swapV1FactoryExOut.getOutKey(), swapV1FactoryExOut);

@@ -228,7 +228,7 @@ public class CurveBasePool extends BaseContract {
     }
 
     @Override
-    public <T> T handleSpecialRequest(String method) {
+    public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_TOKEN:
                 return (T) this.getVarCurveBasePoolData().getToken();

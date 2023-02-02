@@ -102,14 +102,14 @@ public class WalletUtil {
     public static String hexStringToTron(String input) {
         input = input.startsWith("0x") ? input.substring(2) : input;
         byte[] ethBytes = HexUtil.decodeHex(input);
-        byte[] tronBytes = new byte[20];
+        byte[] tronBytes = new byte[21];
         tronBytes[0] = 0x41;
         System.arraycopy(ethBytes, ethBytes.length - 20, tronBytes, 1, 20);
         return encode58Check(tronBytes);
     }
 
     public static void main(String[] args) {
-        String base58check = "TJCnKsPa7y5okkXvQAidZBzqx3QyQ6sxMW";
+        String base58check = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
         System.out.println(WalletUtil.tronAddressHex(base58check));
         System.out.println(WalletUtil.ethAddressHex(base58check));
 

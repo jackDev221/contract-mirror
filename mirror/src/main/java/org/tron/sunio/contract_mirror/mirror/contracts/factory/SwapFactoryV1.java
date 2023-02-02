@@ -18,7 +18,9 @@ import org.tron.sunio.contract_mirror.mirror.pool.process.out.SwapV1FactoryExOut
 import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
+import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
+import org.web3j.abi.Utils;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Uint256;
@@ -31,6 +33,9 @@ import java.util.Map;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE_TO;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE_TO_RATE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_GET_EXCHANGE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_GET_TOKEN;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_GET_TOKEN_WITH_ID;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN_COUNT;
 
 @Slf4j
@@ -102,13 +107,17 @@ public class SwapFactoryV1 extends BaseFactory implements IContractFactory {
     public List<BaseContract> getListContracts(CMPool cmPool) {
         log.info("SwapFactoryV1: getListContracts");
         List<BaseContract> result = new ArrayList<>();
-        long totalTokens = this.getVarFactoryV1Data().getTokenCount();
+        SwapFactoryV1Data v1Data = this.getVarFactoryV1Data();
+        long totalTokens = v1Data.getTokenCount();
 //        totalTokens = 20;
         List<BaseProcessOut> outs = this.getListContractsBase(cmPool, (int) totalTokens);
         for (BaseProcessOut out : outs) {
             SwapV1FactoryExOut swapV1FactoryExOut = (SwapV1FactoryExOut) out;
             String address = swapV1FactoryExOut.getAddress();
             String tokenAddress = swapV1FactoryExOut.getTokenAddress();
+            v1Data.getTokenToExchangeMap().put(tokenAddress, address);
+            v1Data.getExchangeToTokenMap().put(address, tokenAddress);
+            v1Data.getIdTokenMap().put(out.getId(), tokenAddress);
             if (address.equals(EMPTY_ADDRESS) || tokenAddress.equals(EMPTY_ADDRESS)) {
                 continue;
             }
@@ -256,7 +265,7 @@ public class SwapFactoryV1 extends BaseFactory implements IContractFactory {
     }
 
     @Override
-    public <T> T handleSpecialRequest(String method) {
+    public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_FEE_TO:
                 return (T) this.getVarFactoryV1Data().getFeeAddress();
@@ -264,8 +273,41 @@ public class SwapFactoryV1 extends BaseFactory implements IContractFactory {
                 return (T) (Long) this.getVarFactoryV1Data().getFeeToRate();
             case METHOD_TOKEN_COUNT:
                 return (T) (Long) this.getVarFactoryV1Data().getTokenCount();
+            case METHOD_GET_TOKEN_WITH_ID:
+                return handleCallGetTokenWithID(params);
+            case METHOD_GET_EXCHANGE:
+                return handleCallGetExchangeOrToken(params, true);
+            case METHOD_GET_TOKEN:
+                return handleCallGetExchangeOrToken(params, false);
+
         }
         return null;
+    }
+
+
+    public <T> T handleCallGetTokenWithID(String params) {
+        List<TypeReference<?>> outputParameters = List.of(new TypeReference<Uint256>() {
+        });
+        List<Type> res = FunctionReturnDecoder.decode(params, Utils.convert(outputParameters));
+        if (res.size() == 0) {
+            throw new RuntimeException("Decode failed");
+        }
+        int id = ((BigInteger) res.get(0).getValue()).intValue();
+        return (T) this.getVarFactoryV1Data().getIdTokenMap().getOrDefault(id, "");
+    }
+
+    public <T> T handleCallGetExchangeOrToken(String params, boolean outExchange) {
+        List<TypeReference<?>> outputParameters = List.of(new TypeReference<Address>() {
+        });
+        List<Type> res = FunctionReturnDecoder.decode(params, Utils.convert(outputParameters));
+        if (res.size() == 0) {
+            throw new RuntimeException("Decode failed");
+        }
+        String address = WalletUtil.hexStringToTron((String) res.get(0).getValue());
+        if (outExchange) {
+            return (T) this.getVarFactoryV1Data().getTokenToExchangeMap().getOrDefault(address, "");
+        }
+        return (T) this.getVarFactoryV1Data().getExchangeToTokenMap().getOrDefault(address, "");
     }
 
     private HandleResult handEventFeeRate(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
