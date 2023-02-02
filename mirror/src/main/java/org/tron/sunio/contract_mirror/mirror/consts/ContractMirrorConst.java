@@ -28,6 +28,8 @@ public interface ContractMirrorConst {
     //SwapV2Factory
     String METHOD_FEE_TO_SETTER = "feeToSetter";
     String METHOD_ALL_PAIRS_LENGTH = "allPairsLength";
+    String METHOD_GET_PAIR = "getPair";
+    String METHOD_ALL_PAIRS = "allPairs";
     //SwapV2Pair
     String METHOD_FACTORY = "factory";
     String METHOD_TOKEN0 = "token0";
