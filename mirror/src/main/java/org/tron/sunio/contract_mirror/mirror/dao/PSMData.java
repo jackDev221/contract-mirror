@@ -19,4 +19,5 @@ public class PSMData extends BaseContractData{
     private BigInteger tin;
     private BigInteger tout;
     private String quota;
+    private BigInteger[] infos;
 }

@@ -5,12 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
-import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve4PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.PSMEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
+import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.BaseFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
@@ -18,6 +18,7 @@ import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve4Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
+import org.tron.sunio.contract_mirror.mirror.dao.PSMTotalData;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 
 
@@ -33,6 +34,9 @@ public class ContractFactoryManager {
 
     @Autowired
     private CMPool cmPool;
+
+    @Autowired
+    private PSMTotalData psmTotalData;
 
     private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
     private Map<String, String> v1FactorySigMap;
@@ -52,7 +56,7 @@ public class ContractFactoryManager {
         psmSigMap = PSMEvent.getSigMap();
     }
 
-    public boolean initFactoryMap(List<ContractInfo> contractInfoList, IContractsCollectHelper iContractsCollectHelper) {
+    public boolean initFactoryMap(List<ContractInfo> contractInfoList, IContractsCollectHelper iContractsCollectHelper, Map<String, String> polyInfos) {
         log.info("ContractFactoryManager.initFactoryMap: create Factory!");
         initSigMaps();
         if (ObjectUtil.isNull(contractInfoList) || contractInfoList.size() == 0) {
@@ -82,7 +86,7 @@ public class ContractFactoryManager {
                             2,
                             curve2PoolSigMap
                     ));
-
+                    break;
                 case CONTRACT_CURVE_3POOL:
                     iContractsCollectHelper.addContract(new Curve3Pool(
                             contractInfo.getAddress(),
@@ -90,6 +94,7 @@ public class ContractFactoryManager {
                             3,
                             curve2PoolSigMap
                     ));
+                    break;
 
                 case CONTRACT_CURVE_4POOL:
                     iContractsCollectHelper.addContract(new Curve4Pool(
@@ -97,13 +102,20 @@ public class ContractFactoryManager {
                             tronChainHelper,
                             curve4PoolSigMap
                     ));
-
-                case CONTRACT_PSM:
+                    break;
+                case CONTRACT_PSM_USDT:
+                case CONTRACT_PSM_USDC:
+                case CONTRACT_PSM_USDJ:
+                case CONTRACT_PSM_TUSD:
                     iContractsCollectHelper.addContract(new PSM(
+                            contractInfo.getContractType(),
                             contractInfo.getAddress(),
+                            polyInfos.getOrDefault(contractInfo.getAddress(), ContractMirrorConst.EMPTY_ADDRESS),
                             tronChainHelper,
+                            psmTotalData,
                             psmSigMap
                     ));
+                    break;
                 default:
                     break;
             }
