@@ -51,6 +51,12 @@ public interface ContractMirrorConst {
     String METHOD_OWNER = "owner";
     String METHOD_FUTURE_OWNER = "future_owner";
     String METHOD_TRANSFER_OWNERSHIP_DEADLINE = "transfer_ownership_deadline";
-
-
+    //PSM
+    String METHOD_GEM_JOIN = "gemJoin";
+    String METHOD_USDD = "usdd";
+    String METHOD_USDDJOIN = "usddJoin";
+    String METHOD_VAT = "vat";
+    String METHOD_TIN = "tin";
+    String METHOD_TOUT = "tout";
+    String METHOD_QUOTA = "quota";
 }

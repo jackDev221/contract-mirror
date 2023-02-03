@@ -28,7 +28,13 @@ import static org.tron.sunio.contract_mirror.event_decode.events.PSMEvent.EVENT_
 import static org.tron.sunio.contract_mirror.event_decode.events.PSMEvent.EVENT_NAME_FILE_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.PSMEvent.EVENT_NAME_SELL_GEM;
 import static org.tron.sunio.contract_mirror.event_decode.events.PSMEvent.EVENT_NAME_SELL_GEM_BODY;
-import static org.tron.sunio.contract_mirror.mirror.enums.ContractType.CONTRACT_PSM_USDT;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_GEM_JOIN;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_QUOTA;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TIN;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOUT;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_USDD;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_USDDJOIN;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_VAT;
 
 @Slf4j
 public class PSM extends BaseContract {
@@ -153,6 +159,22 @@ public class PSM extends BaseContract {
 
     @Override
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
+        switch (method) {
+            case METHOD_GEM_JOIN:
+                return (T) this.getVarPsmData().getGemJoin();
+            case METHOD_USDD:
+                return (T) this.getVarPsmData().getUsdd();
+            case METHOD_USDDJOIN:
+                return (T) this.getVarPsmData().getUsddJoin();
+            case METHOD_VAT:
+                return (T) this.getVarPsmData().getVat();
+            case METHOD_TIN:
+                return (T) this.getVarPsmData().getTin();
+            case METHOD_TOUT:
+                return (T) this.getVarPsmData().getTout();
+            case METHOD_QUOTA:
+                return (T) this.getVarPsmData().getQuota();
+        }
         return null;
     }
 
