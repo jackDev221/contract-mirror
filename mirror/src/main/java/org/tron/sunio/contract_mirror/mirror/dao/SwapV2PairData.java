@@ -22,8 +22,8 @@ public class SwapV2PairData extends BaseContractData {
     private BigInteger reserve1;
     private BigInteger kLast;
     private long blockTimestampLast;
-    private long price0CumulativeLast;
-    private long price1CumulativeLast;
+    private BigInteger price0CumulativeLast;
+    private BigInteger price1CumulativeLast;
     private long unlocked;
     private BigInteger trxBalance;
     private BigInteger lpTotalSupply;

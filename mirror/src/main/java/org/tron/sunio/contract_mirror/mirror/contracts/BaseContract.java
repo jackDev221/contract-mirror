@@ -15,7 +15,6 @@ import org.web3j.abi.EventValues;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.abi.datatypes.Uint;
 import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Uint256;
 
@@ -92,6 +91,7 @@ public abstract class BaseContract implements IContract {
             initDataFromChain1();
             t1 = System.currentTimeMillis();
             t2 = t1 + (t1 - t0);
+            log.info("Contract:{}, type:{} finish  function initDataFromChainThread t0:{}, t1:{}, t2:{}", address, type, t0, t1, t2);
         } catch (Exception e) {
             log.error("Contract:{} type:{}, failed at function initDataFromChain:{}, init failed", address, type, e.toString());
             initFlag = INIT_FLAG_FAILED;
@@ -150,7 +150,7 @@ public abstract class BaseContract implements IContract {
     protected String getEventName(IContractEventWrap iContractEventWrap) {
         String[] topics = iContractEventWrap.getTopics();
         if (topics == null || topics.length <= 0) {
-            log.warn("Wrong log no topic, id:{}", iContractEventWrap.getUniqueId());
+            log.warn("Wrong log no topic, id: {}", iContractEventWrap.getUniqueId());
             return null;
         }
         return sigMap.getOrDefault(topics[0], "");
@@ -173,10 +173,10 @@ public abstract class BaseContract implements IContract {
         }
 
         if (iContractEventWrap.getTimeStamp() <= t2) {
-            log.error("OMG Ready contract {}:{}receive pre kafka msg, contract time:{} kafka time: {}, " +
-                    "contract need reload", type, address, iContractEventWrap.getTimeStamp(), t2);
+            log.error("OMG Ready contract {}:{}receive pre kafka msg, contract time:{} kafka time:{}, " +
+                    "contract need reload", type, address, t2, iContractEventWrap.getTimeStamp());
             this.resetReloadData();
-            return HandleResult.genHandleFailMessage("Fuccck");
+            return HandleResult.genHandleFailMessage("OMG receive pre kafka!!");
         }
         // Do handleEvent
         String eventName = getEventName(iContractEventWrap);
@@ -238,19 +238,6 @@ public abstract class BaseContract implements IContract {
             return BigInteger.ZERO;
         }
         return (BigInteger) results.get(0).getValue();
-    }
-
-    protected long callContractUint(String from, String method) {
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, this.getAddress(), method, Collections.EMPTY_LIST,
-                List.of(new TypeReference<Uint>() {
-                })
-        );
-        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() == 0) {
-            log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, method);
-            return 0;
-        }
-        return (long) results.get(0).getValue();
     }
 
     protected Address callContractAddress(String from, String method) {

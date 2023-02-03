@@ -35,12 +35,13 @@ public class SwapV2FactoryExcProcess implements IProcessor {
             try {
                 SwapFactoryExIn swapFactoryExIn = (SwapFactoryExIn) in;
                 Address pairAddress = getPairWithId(swapFactoryExIn.getId(), swapFactoryExIn.getAddress());
-                String token0 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, in.getAddress(), "token0").toString());
-                String token1 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, in.getAddress(), "token1").toString());
+                String pairAddressTron = WalletUtil.ethAddressToTron(pairAddress.toString());
+                String token0 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, pairAddressTron, "token0").toString());
+                String token1 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, pairAddressTron, "token1").toString());
                 SwapV2FactoryExOut out = new SwapV2FactoryExOut();
                 out.setOutKey(swapFactoryExIn.getOutKey());
                 out.setId(swapFactoryExIn.getId());
-                out.setAddress(WalletUtil.ethAddressToTron(pairAddress.toString()));
+                out.setAddress(pairAddressTron);
                 out.setToken0(token0);
                 out.setToken1(token1);
                 return new Pair<>(out.getOutKey(), out);

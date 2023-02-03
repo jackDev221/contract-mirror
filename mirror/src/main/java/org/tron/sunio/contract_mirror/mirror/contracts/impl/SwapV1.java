@@ -61,7 +61,7 @@ public class SwapV1 extends BaseContract {
         String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
         String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
         long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
-        long kLast = callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
+        BigInteger kLast = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
         BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
         BigInteger tokenBalance = tokenBalance(this.getAddress(), tokenAddress);
         BigInteger trxBalance = getBalance(address);
@@ -140,7 +140,7 @@ public class SwapV1 extends BaseContract {
     *
     * */
     @Override
-    public <T> T handleSpecialRequest(String method, String params) throws Exception{
+    public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_NAME:
                 return (T) this.getVarSwapV1Data().getName();
@@ -149,7 +149,7 @@ public class SwapV1 extends BaseContract {
             case METHOD_SYMBOL:
                 return (T) this.getVarSwapV1Data().getSymbol();
             case METHOD_K_LAST:
-                return (T) (Long) this.getVarSwapV1Data().getKLast();
+                return (T) this.getVarSwapV1Data().getKLast();
             case METHOD_TOTAL_SUPPLY:
                 return (T) this.getVarSwapV1Data().getLpTotalSupply();
             case METHOD_TOKEN:

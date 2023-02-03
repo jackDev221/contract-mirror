@@ -7,8 +7,8 @@ import java.math.BigInteger;
 
 @Component
 public class PSMTotalData {
-    private BigInteger totalUSDD;
-    private BigInteger totalChargedUSDD;
+    private BigInteger totalUSDD = BigInteger.valueOf(0);
+    private BigInteger totalChargedUSDD = BigInteger.valueOf(0);
 
     public synchronized void setTotalUSDD(BigInteger totalUSDD) {
         if (totalUSDD.compareTo(this.totalUSDD) > 0) {

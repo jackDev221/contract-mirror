@@ -25,6 +25,7 @@ import org.web3j.abi.datatypes.generated.Uint256;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,22 +67,18 @@ public class SwapFactoryV2 extends BaseFactory implements IContractFactory {
         triggerContractInfo.setContractAddress(this.getAddress());
         triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
         triggerContractInfo.setMethodName("feeTo");
-        List<Type> inputParameters = new ArrayList<>();
-        triggerContractInfo.setInputParameters(inputParameters);
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Address>() {
+        triggerContractInfo.setInputParameters(Collections.EMPTY_LIST);
+        List<TypeReference<?>> outputParameters = List.of(new TypeReference<Address>() {
         });
         triggerContractInfo.setOutputParameters(outputParameters);
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         if (results.size() > 0) {
-            Address feeAddress = (Address) results.get(0).getValue();
-            factoryV2Data.setFeeTo(WalletUtil.ethAddressToTron(feeAddress.toString()));
+            factoryV2Data.setFeeTo(WalletUtil.hexStringToTron((String) results.get(0).getValue()));
         }
         triggerContractInfo.setMethodName("feeToSetter()");
         results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         if (results.size() > 0) {
-            Address feeToSetterAddress = (Address) results.get(0).getValue();
-            factoryV2Data.setFeeToSetter(WalletUtil.ethAddressToTron(feeToSetterAddress.toString()));
+            factoryV2Data.setFeeToSetter(WalletUtil.hexStringToTron((String) results.get(0).getValue()));
         }
         long pairCount = getPairCount().longValue();
         factoryV2Data.setPairCount(pairCount);

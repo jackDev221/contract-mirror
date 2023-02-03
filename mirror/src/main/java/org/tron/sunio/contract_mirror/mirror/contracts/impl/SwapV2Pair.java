@@ -89,7 +89,7 @@ public class SwapV2Pair extends BaseContract {
             }
             swapV2PairData.setReserve0((BigInteger) results.get(0).getValue());
             swapV2PairData.setReserve1((BigInteger) results.get(1).getValue());
-            swapV2PairData.setBlockTimestampLast((long) results.get(2).getValue());
+            swapV2PairData.setBlockTimestampLast(((BigInteger) results.get(2).getValue()).longValue());
         } catch (Exception e) {
             log.error("SwapV2Pair :{} fail to get getReserves, size:{}", address, e.toString());
         }
@@ -103,8 +103,8 @@ public class SwapV2Pair extends BaseContract {
         String token1 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token1").toString());
         swapV2PairData.setToken1(token1);
         callReservesOnChain(swapV2PairData);
-        swapV2PairData.setPrice0CumulativeLast(callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "price0CumulativeLast()"));
-        swapV2PairData.setPrice1CumulativeLast(callContractUint(ContractMirrorConst.EMPTY_ADDRESS, "price1CumulativeLast()"));
+        swapV2PairData.setPrice0CumulativeLast(callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "price0CumulativeLast"));
+        swapV2PairData.setPrice1CumulativeLast(callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "price1CumulativeLast"));
         String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
         swapV2PairData.setName(name);
         String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
@@ -188,9 +188,9 @@ public class SwapV2Pair extends BaseContract {
             case METHOD_TOKEN1:
                 return (T) this.getVarSwapV2PairData().getToken1();
             case METHOD_PRICE0_CUMULATIVE_LAST:
-                return (T) (Long) this.getVarSwapV2PairData().getPrice0CumulativeLast();
+                return (T) this.getVarSwapV2PairData().getPrice0CumulativeLast();
             case METHOD_PRICE1_CUMULATIVE_LAST:
-                return (T) (Long) this.getVarSwapV2PairData().getPrice1CumulativeLast();
+                return (T) this.getVarSwapV2PairData().getPrice1CumulativeLast();
             case METHOD_GET_RESERVES:
                 return (T) this.getVarSwapV2PairData().getReserves();
         }
@@ -198,6 +198,7 @@ public class SwapV2Pair extends BaseContract {
     }
 
     private HandleResult handleTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleTransfer, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(EVENT_NAME_TRANSFER, EVENT_NAME_TRANSFER_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
@@ -241,6 +242,7 @@ public class SwapV2Pair extends BaseContract {
     }
 
     private HandleResult handleSync(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleSync, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(EVENT_NAME_NEW_SYNC, EVENT_NAME_NEW_SYNC_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
@@ -256,10 +258,10 @@ public class SwapV2Pair extends BaseContract {
         BigInteger reserve0Origin = swapV2PairData.getReserve0();
         BigInteger reserve1Origin = swapV2PairData.getReserve1();
         if (timeElapsed > 0 && reserve0Origin.compareTo(BigInteger.ZERO) != 0 && reserve1Origin.compareTo(BigInteger.ZERO) != 0) {
-            long price0Add = priceCumulativeLastAdd(reserve0Origin, reserve1Origin, timeElapsed);
-            long price1Add = priceCumulativeLastAdd(reserve1Origin, reserve0Origin, timeElapsed);
-            swapV2PairData.setPrice0CumulativeLast(swapV2PairData.getPrice0CumulativeLast() + price0Add);
-            swapV2PairData.setPrice1CumulativeLast(swapV2PairData.getPrice1CumulativeLast() + price1Add);
+            BigInteger price0Add = priceCumulativeLastAdd(reserve0Origin, reserve1Origin, timeElapsed);
+            BigInteger price1Add = priceCumulativeLastAdd(reserve1Origin, reserve0Origin, timeElapsed);
+            swapV2PairData.setPrice0CumulativeLast(swapV2PairData.getPrice0CumulativeLast().add(price0Add));
+            swapV2PairData.setPrice1CumulativeLast(swapV2PairData.getPrice1CumulativeLast().add(price1Add));
         }
         swapV2PairData.setReserve0(reserve0);
         swapV2PairData.setReserve1(reserve1);
@@ -268,8 +270,8 @@ public class SwapV2Pair extends BaseContract {
         return HandleResult.genHandleSuccess();
     }
 
-    private long priceCumulativeLastAdd(BigInteger reserve0, BigInteger reserve1, long timeElapsed) {
-        return reserve1.multiply(Q112).divide(reserve0).longValue() * timeElapsed;
+    private BigInteger priceCumulativeLastAdd(BigInteger reserve0, BigInteger reserve1, long timeElapsed) {
+        return reserve1.multiply(Q112).divide(reserve0).multiply(BigInteger.valueOf(timeElapsed));
     }
 
 }

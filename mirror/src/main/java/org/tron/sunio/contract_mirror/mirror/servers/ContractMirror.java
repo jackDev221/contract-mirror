@@ -83,10 +83,22 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
 
     private void readyKafka() {
         if (kafkaConfig.getConsumerEnable() && ObjectUtil.isNotNull(consumer)) {
+            int counts = 0;
             while (true) {
                 ConsumerRecords<String, String> records = kafkaConsumerPoll(KAFKA_PULL_TIMEOUT);
                 if (records.count() > 0) {
-                    break;
+                    long localTime = System.currentTimeMillis();
+                    long kafkaTime = records.iterator().next().timestamp();
+                    if (counts % 10 == 0) {
+                        log.info("Consuming past kafka message for {} times, localTIme {}, kafkaTime {}",
+                                counts, localTime, kafkaTime);
+                    }
+                    counts++;
+                    if (kafkaTime >= localTime - 1000) {
+                        log.info("Finish consuming past kafka message at {} times, localTIme {}, kafkaTime {}",
+                                counts, localTime, kafkaTime);
+                        break;
+                    }
                 } else {
                     log.info("Kafka not ready sleep 500mils");
                     TimeTool.sleep(KAFKA_READY_CHECK_INTERVAL);
@@ -106,10 +118,12 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
             return false;
         }
         if (blockInfo.getNumber() > number) {
+            log.warn("OMG local number:{}, receive number:{}, need to reload", blockInfo.getNumber(), number);
             blockInfo = null;
             return true;
         }
         if (!blockInfo.getHash().equalsIgnoreCase(hash)) {
+            log.warn("OMG local hash:{}, receive hash:{}, need to reload", blockInfo.getHash(), hash);
             blockInfo = null;
             return true;
         }
@@ -117,6 +131,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     }
 
     private void setReloadAllContract() {
+        log.warn("OMG into setReloadAllContract");
         for (BaseContract baseContract : contractHashMap.values()) {
             baseContract.resetReloadData();
         }
