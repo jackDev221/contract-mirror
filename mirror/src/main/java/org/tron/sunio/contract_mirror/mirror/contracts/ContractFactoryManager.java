@@ -84,6 +84,7 @@ public class ContractFactoryManager {
                             contractInfo.getAddress(),
                             tronChainHelper,
                             2,
+                            1,
                             curve2PoolSigMap
                     ));
                     break;
@@ -92,6 +93,7 @@ public class ContractFactoryManager {
                             contractInfo.getAddress(),
                             tronChainHelper,
                             3,
+                            2,
                             curve2PoolSigMap
                     ));
                     break;

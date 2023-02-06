@@ -67,11 +67,14 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 public class CurveBasePool extends BaseContract {
     protected int coinsCount;
     private static final BigInteger FEE_DENOMINATOR = BigInteger.TEN.pow(10);
+    private static final BigInteger PRECISION = BigInteger.TEN.pow(18);
     protected CurveBasePoolData curveBasePoolData;
+    private int feeIndex;
 
-    public CurveBasePool(String address, ContractType type, IChainHelper iChainHelper, int coinsCount, Map<String, String> sigMap) {
+    public CurveBasePool(String address, ContractType type, IChainHelper iChainHelper, int coinsCount, int feeIndex, Map<String, String> sigMap) {
         super(address, type, iChainHelper, sigMap);
         this.coinsCount = coinsCount;
+        this.feeIndex = feeIndex;
     }
 
     protected CurveBasePoolData getVarCurveBasePoolData() {
@@ -113,8 +116,8 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected void updateSupply(CurveBasePoolData curveBasePoolData, String tokenAddress) {
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(ContractMirrorConst.EMPTY_ADDRESS, this.getAddress(),
-                tokenAddress, Collections.emptyList(), List.of(new TypeReference<Uint256>() {
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(ContractMirrorConst.EMPTY_ADDRESS, tokenAddress,
+                "totalSupply", Collections.emptyList(), List.of(new TypeReference<Uint256>() {
         }));
         List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
         if (results.size() == 0) {
@@ -264,33 +267,38 @@ public class CurveBasePool extends BaseContract {
 
     private HandleResult handleEventTokenExchange(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         CurveBasePoolData curveBasePoolData = this.getVarCurveBasePoolData();
-        if (curveBasePoolData.getAdminFee().compareTo(BigInteger.ZERO) == 0) {
-            EventValues eventValues = getEventValue(EVENT_NAME_TOKEN_EXCHANGE, EVENT_NAME_TOKEN_EXCHANGE_BODY, topics, data,
-                    handleEventExtraData.getUniqueId());
-            if (ObjectUtil.isNull(eventValues)) {
-                return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventTokenExchange fail!, unique id :%s",
-                        address, type, handleEventExtraData.getUniqueId()));
-            }
-            int i = ((BigInteger) eventValues.getNonIndexedValues().get(0).getValue()).intValue();
-            BigInteger dx = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-            int j = ((BigInteger) eventValues.getNonIndexedValues().get(0).getValue()).intValue();
-            BigInteger dy = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-
-            BigInteger newIBalance = curveBasePoolData.getBalance()[i].add(dx);
-            BigInteger newJBalance = curveBasePoolData.getBalance()[j].subtract(dy);
-            curveBasePoolData.updateBalances(i, newIBalance);
-            curveBasePoolData.updateBalances(j, newJBalance);
-        } else {
-            // balances 变化无法推断，重新更新数据。TODO add dy ===>dy_admin_fee
-            updateBaseInfo(isUsing, false, isAddExchangeContracts);
-            this.isReady = false;
+        EventValues eventValues = getEventValue(EVENT_NAME_TOKEN_EXCHANGE, EVENT_NAME_TOKEN_EXCHANGE_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventTokenExchange fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
         }
+        int i = ((BigInteger) eventValues.getNonIndexedValues().get(0).getValue()).intValue();
+        BigInteger dx = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
+        int j = ((BigInteger) eventValues.getNonIndexedValues().get(0).getValue()).intValue();
+        BigInteger[] rates = new BigInteger[]{BigInteger.TEN.pow(18), BigInteger.TEN.pow(18), BigInteger.TEN.pow(30)};
+        BigInteger dy = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
+        BigInteger tmp = dy.multiply(rates[j]).divide(PRECISION);
+        BigInteger dyOri = tmp.multiply(FEE_DENOMINATOR).divide(FEE_DENOMINATOR.subtract(curveBasePoolData.getFee()));
+        BigInteger dyFee = dyOri.multiply(curveBasePoolData.getFee()).divide(FEE_DENOMINATOR);
+        BigInteger dyAdminFee = dyFee.multiply(curveBasePoolData.getAdminFee()).divide(FEE_DENOMINATOR);
+        dyAdminFee = dyAdminFee.multiply(PRECISION).divide(rates[j]);
+        BigInteger dxWFee = getAmountWFee(i, dx);
+        BigInteger newIBalance = curveBasePoolData.getBalance()[i].add(dxWFee);
+        BigInteger newJBalance = curveBasePoolData.getBalance()[j].subtract(dy).subtract(dyAdminFee);
+        curveBasePoolData.updateBalances(i, newIBalance);
+        curveBasePoolData.updateBalances(j, newJBalance);
         this.isDirty = true;
         return HandleResult.genHandleSuccess();
     }
 
+    private BigInteger getAmountWFee(int _tokenId, BigInteger dx) {
+        // 查看CurvePoolV2 feeIndex 是USDT 不是特殊收费ERC20，之后需要在添加
+        return dx;
+    }
+
+
     protected HandleResult handleEventAddLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        // TODO  暂时默认没有特殊的收费ERC20 特殊收费ERC20处理
         EventValues eventValues = getEventValue(EVENT_NAME_ADD_LIQUIDITY, EVENT_NAME_ADD_LIQUIDITY_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
@@ -300,13 +308,17 @@ public class CurveBasePool extends BaseContract {
         CurveBasePoolData curveBasePoolData = this.getVarCurveBasePoolData();
         StaticArray<Uint256> amounts = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(0);
         StaticArray<Uint256> fees = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(1);
+
         List<Uint256> amountsNew = new ArrayList<>();
         for (int i = 0; i < coinsCount; i++) {
+            BigInteger amountWFee = getAmountWFee(i, (BigInteger) amounts.getValue().get(i).getValue());
             BigInteger originBalance = curveBasePoolData.getBalance()[i];
-            BigInteger fee = fees.getValue().get(i).getValue();
-            BigInteger newBalance = originBalance.add(amounts.getValue().get(i).getValue());
-            BigInteger newFee = fee.multiply(curveBasePoolData.getAdminFee()).divide(FEE_DENOMINATOR);
-            newBalance = newBalance.subtract(newFee);
+            BigInteger newBalance = originBalance.add(amountWFee);
+            if (curveBasePoolData.getTotalSupply().compareTo(BigInteger.ZERO) > 0){
+                BigInteger fee = fees.getValue().get(i).getValue();
+                BigInteger newFee = fee.multiply(curveBasePoolData.getAdminFee()).divide(FEE_DENOMINATOR);
+                newBalance = newBalance.subtract(newFee);
+            }
             curveBasePoolData.updateBalances(i, newBalance);
             amountsNew.add(new Uint256(newBalance));
         }
