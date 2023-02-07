@@ -13,13 +13,13 @@ public class Curve4PoolEvent {
     public static final String EVENT_NAME_TOKEN_EXCHANGE_UNDERLING = "TokenExchangeUnderlying";
     public static final String EVENT_NAME_TOKEN_EXCHANGE_UNDERLING_BODY = "event TokenExchangeUnderlying(address indexed buyer, int128 sold_id,uint256 tokens_sold,int128 bought_id,uint256 tokens_bought);";
     public static final String EVENT_NAME_ADD_LIQUIDITY = "AddLiquidity";
-    public static final String EVENT_NAME_ADD_LIQUIDITY_BODY = "event AddLiquidity(address indexed provider, uint256[4] token_amounts, uint256[4] fees, uint256 invariant, uint256 token_supply);";
+    public static final String EVENT_NAME_ADD_LIQUIDITY_BODY = "event AddLiquidity(address indexed provider, uint256[2] token_amounts, uint256[2] fees, uint256 invariant, uint256 token_supply);";
     public static final String EVENT_NAME_REMOVE_LIQUIDITY = "RemoveLiquidity";
-    public static final String EVENT_NAME_REMOVE_LIQUIDITY_BODY = "event RemoveLiquidity(address indexed provider, uint256[4] token_amounts, uint256[4] fees, uint256 token_supply);";
+    public static final String EVENT_NAME_REMOVE_LIQUIDITY_BODY = "event RemoveLiquidity(address indexed provider, uint256[2] token_amounts, uint256[2] fees, uint256 token_supply);";
     public static final String EVENT_NAME_REMOVE_LIQUIDITY_ONE = "RemoveLiquidityOne";
     public static final String EVENT_NAME_REMOVE_LIQUIDITY_ONE_BODY = "event RemoveLiquidityOne(address indexed provider, uint256 token_amount, uint256 coin_amount);";
     public static final String EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE = "RemoveLiquidityImbalance";
-    public static final String EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE_BODY = "event RemoveLiquidityImbalance(address indexed provider, uint256[4] token_amounts, uint256[4] fees, uint256 invariant, uint256 token_supply);";
+    public static final String EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE_BODY = "event RemoveLiquidityImbalance(address indexed provider, uint256[2] token_amounts, uint256[2] fees, uint256 invariant, uint256 token_supply);";
     public static final String EVENT_NAME_COMMIT_NEW_ADMIN = "CommitNewAdmin";
     public static final String EVENT_NAME_COMMIT_NEW_ADMIN_BODY = "event CommitNewAdmin(uint256 indexed deadline, address indexed admin);";
     public static final String EVENT_NAME_NEW_ADMIN = "NewAdmin";

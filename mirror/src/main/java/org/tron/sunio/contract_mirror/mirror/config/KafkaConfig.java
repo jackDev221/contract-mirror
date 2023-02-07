@@ -17,7 +17,7 @@ import java.util.Properties;
 public class KafkaConfig {
     @Value("${bootstrapServers:tctest-kafka-t2-1.tc-jp1.huobiidc.com:9092}")
     private String bootstrapServers;
-    @Value("${groupId:contract_mirror_test_0}")
+    @Value("${groupId:contract_mirror_test_1}")
     private String groupId;
     @Value("${consumerTopics:[test_topicContractLog]}")
     private String[] consumerTopics;

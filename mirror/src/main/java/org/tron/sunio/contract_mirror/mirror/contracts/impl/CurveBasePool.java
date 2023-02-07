@@ -1,7 +1,12 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
+import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
@@ -16,6 +21,7 @@ import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.StaticArray;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.StaticArray2;
+import org.web3j.abi.datatypes.generated.StaticArray3;
 import org.web3j.abi.datatypes.generated.Uint256;
 
 import java.math.BigInteger;
@@ -26,28 +32,17 @@ import java.util.List;
 import java.util.Map;
 
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_ADD_LIQUIDITY;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_ADD_LIQUIDITY_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_COMMIT_NEW_ADMIN;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_COMMIT_NEW_ADMIN_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_COMMIT_NEW_FEE;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_COMMIT_NEW_FEE_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_NEW_ADMIN;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_NEW_ADMIN_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_NEW_FEE;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_NEW_FEE_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_NEW_FEE_CONVERTER;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_NEW_FEE_CONVERTER_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_RAMP_A;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_RAMP_A_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_ONE;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_STOP_RAMP_A;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_STOP_RAMP_A_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_TOKEN_EXCHANGE;
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_TOKEN_EXCHANGE_BODY;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_ADMIN_ACTIONS_DEADLINE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_ADMIN_FEE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE;
@@ -68,6 +63,8 @@ public class CurveBasePool extends BaseContract {
     protected int coinsCount;
     private static final BigInteger FEE_DENOMINATOR = BigInteger.TEN.pow(10);
     private static final BigInteger PRECISION = BigInteger.TEN.pow(18);
+    @Getter
+    @Setter
     protected CurveBasePoolData curveBasePoolData;
     private int feeIndex;
 
@@ -265,22 +262,40 @@ public class CurveBasePool extends BaseContract {
         return null;
     }
 
-    private HandleResult handleEventTokenExchange(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+    public HandleResult handleEventTokenExchange(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        String txId = "";
+        if (ObjectUtil.isNotEmpty(handleEventExtraData)) {
+            txId = handleEventExtraData.getUniqueId();
+        }
+        log.info("Start {}:{} handleEventTokenExchange: {}, info: {} ", address, type, txId, this.getCurveBasePoolData());
+        log.info("input: {} {}", topics, data);
         CurveBasePoolData curveBasePoolData = this.getVarCurveBasePoolData();
-        EventValues eventValues = getEventValue(EVENT_NAME_TOKEN_EXCHANGE, EVENT_NAME_TOKEN_EXCHANGE_BODY, topics, data,
-                handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_TOKEN_EXCHANGE_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_TOKEN_EXCHANGE_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_TOKEN_EXCHANGE, body, topics, data,
+                txId);
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventTokenExchange fail!, unique id :%s",
-                    address, type, handleEventExtraData.getUniqueId()));
+                    address, type, txId));
         }
         int i = ((BigInteger) eventValues.getNonIndexedValues().get(0).getValue()).intValue();
         BigInteger dx = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-        int j = ((BigInteger) eventValues.getNonIndexedValues().get(0).getValue()).intValue();
+        int j = ((BigInteger) eventValues.getNonIndexedValues().get(2).getValue()).intValue();
         BigInteger[] rates = new BigInteger[]{BigInteger.TEN.pow(18), BigInteger.TEN.pow(18), BigInteger.TEN.pow(30)};
-        BigInteger dy = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-        BigInteger tmp = dy.multiply(rates[j]).divide(PRECISION);
-        BigInteger dyOri = tmp.multiply(FEE_DENOMINATOR).divide(FEE_DENOMINATOR.subtract(curveBasePoolData.getFee()));
+        BigInteger dy = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
+//        BigInteger tmp = dy.multiply(rates[j]).divide(PRECISION);
+//        BigInteger dyOri = tmp.multiply(FEE_DENOMINATOR).divide(FEE_DENOMINATOR.subtract(curveBasePoolData.getFee()));
+        BigInteger tmp = dy.multiply(rates[j]).multiply(FEE_DENOMINATOR);
+        BigInteger dyOri = (tmp.divide(FEE_DENOMINATOR.subtract(curveBasePoolData.getFee()))).divide(PRECISION);
+
         BigInteger dyFee = dyOri.multiply(curveBasePoolData.getFee()).divide(FEE_DENOMINATOR);
+
+//        dy = (dy.sub(dy_fee)).mul(PRECISION).div(rates[j]);
+         BigInteger dydd = (dyOri.subtract(dyFee)).multiply(PRECISION).divide(rates[j]);
+
+
         BigInteger dyAdminFee = dyFee.multiply(curveBasePoolData.getAdminFee()).divide(FEE_DENOMINATOR);
         dyAdminFee = dyAdminFee.multiply(PRECISION).divide(rates[j]);
         BigInteger dxWFee = getAmountWFee(i, dx);
@@ -289,6 +304,7 @@ public class CurveBasePool extends BaseContract {
         curveBasePoolData.updateBalances(i, newIBalance);
         curveBasePoolData.updateBalances(j, newJBalance);
         this.isDirty = true;
+        log.info("Finish {}:{} handleEventTokenExchange: {}, info: {} \n", address, type, txId, this.getCurveBasePoolData());
         return HandleResult.genHandleSuccess();
     }
 
@@ -299,7 +315,12 @@ public class CurveBasePool extends BaseContract {
 
 
     protected HandleResult handleEventAddLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues eventValues = getEventValue(EVENT_NAME_ADD_LIQUIDITY, EVENT_NAME_ADD_LIQUIDITY_BODY, topics, data,
+        log.info("{}:{} handleEventAddLiquidity:{}", address, type, handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_ADD_LIQUIDITY_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_ADD_LIQUIDITY_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_ADD_LIQUIDITY, body, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventAddLiquidity fail!, unique id :%s",
@@ -314,7 +335,7 @@ public class CurveBasePool extends BaseContract {
             BigInteger amountWFee = getAmountWFee(i, (BigInteger) amounts.getValue().get(i).getValue());
             BigInteger originBalance = curveBasePoolData.getBalance()[i];
             BigInteger newBalance = originBalance.add(amountWFee);
-            if (curveBasePoolData.getTotalSupply().compareTo(BigInteger.ZERO) > 0){
+            if (curveBasePoolData.getTotalSupply().compareTo(BigInteger.ZERO) > 0) {
                 BigInteger fee = fees.getValue().get(i).getValue();
                 BigInteger newFee = fee.multiply(curveBasePoolData.getAdminFee()).divide(FEE_DENOMINATOR);
                 newBalance = newBalance.subtract(newFee);
@@ -325,9 +346,15 @@ public class CurveBasePool extends BaseContract {
         BigInteger newTotalSupply = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
         curveBasePoolData.setTotalSupply(newTotalSupply);
         this.isDirty = true;
+        StaticArray<Uint256> amountsStatic;
+        if (coinsCount == 2) {
+            amountsStatic = new StaticArray2(Uint256.class, amountsNew);
+        } else {
+            amountsStatic = new StaticArray3(Uint256.class, amountsNew);
+        }
         String newData = FunctionEncoder.encodeConstructor(
                 Arrays.asList(
-                        new StaticArray2(Uint256.class, amountsNew),
+                        amountsStatic,
                         eventValues.getNonIndexedValues().get(1),
                         eventValues.getNonIndexedValues().get(2),
                         eventValues.getNonIndexedValues().get(3)
@@ -338,7 +365,12 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventRemoveLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues eventValues = getEventValue(EVENT_NAME_REMOVE_LIQUIDITY, EVENT_NAME_REMOVE_LIQUIDITY_BODY, topics, data,
+        log.info("{}:{} handleEventRemoveLiquidity:{}", address, type, handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_REMOVE_LIQUIDITY, body, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventRemoveLiquidity fail!, unique id :%s",
@@ -356,9 +388,15 @@ public class CurveBasePool extends BaseContract {
         BigInteger newTotalSupply = (BigInteger) eventValues.getNonIndexedValues().get(2).getValue();
         curveBasePoolData.setTotalSupply(newTotalSupply);
         this.isDirty = true;
+        StaticArray<Uint256> amountsStatic;
+        if (coinsCount == 2) {
+            amountsStatic = new StaticArray2(Uint256.class, amountsNew);
+        } else {
+            amountsStatic = new StaticArray3(Uint256.class, amountsNew);
+        }
         String newData = FunctionEncoder.encodeConstructor(
                 Arrays.asList(
-                        new StaticArray2(Uint256.class, amountsNew),
+                        amountsStatic,
                         eventValues.getNonIndexedValues().get(1),
                         eventValues.getNonIndexedValues().get(2)
                 )
@@ -367,6 +405,7 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventRemoveLiquidityOne(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("{}:{} handleEventRemoveLiquidityOne:{}", address, type, handleEventExtraData.getUniqueId());
         updateBaseInfo(isUsing, false, isAddExchangeContracts);
         this.isReady = false;
         this.isDirty = true;
@@ -374,7 +413,12 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventRemoveLiquidityImbalance(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues eventValues = getEventValue(EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE, EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE_BODY,
+        log.info("{}:{} handleEventRemoveLiquidityImbalance:{}", address, type, handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE, body,
                 topics, data, handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventRemoveLiquidityImbalance fail!, unique id :%s",
@@ -396,9 +440,15 @@ public class CurveBasePool extends BaseContract {
         BigInteger newTotalSupply = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
         curveBasePoolData.setTotalSupply(newTotalSupply);
         this.isDirty = true;
+        StaticArray<Uint256> amountsStatic;
+        if (coinsCount == 2) {
+            amountsStatic = new StaticArray2(Uint256.class, amountsNew);
+        } else {
+            amountsStatic = new StaticArray3(Uint256.class, amountsNew);
+        }
         String newData = FunctionEncoder.encodeConstructor(
                 Arrays.asList(
-                        new StaticArray2(Uint256.class, amountsNew),
+                        amountsStatic,
                         eventValues.getNonIndexedValues().get(1),
                         eventValues.getNonIndexedValues().get(2),
                         eventValues.getNonIndexedValues().get(3)
@@ -408,7 +458,12 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventCommitNewAdmin(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues eventValues = getEventValue(EVENT_NAME_COMMIT_NEW_ADMIN, EVENT_NAME_COMMIT_NEW_ADMIN_BODY, topics, data,
+        log.info("{}:{} handleEventCommitNewAdmin:{}", address, type, handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_COMMIT_NEW_ADMIN_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_COMMIT_NEW_ADMIN_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_COMMIT_NEW_ADMIN, body, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventCommitNewAdmin fail!, unique id :%s",
@@ -424,7 +479,12 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventNewAdmin(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues eventValues = getEventValue(EVENT_NAME_NEW_ADMIN, EVENT_NAME_NEW_ADMIN_BODY, topics, data,
+        log.info("{}:{} handleEventNewAdmin:{}", address, type, handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_NEW_ADMIN_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_NEW_ADMIN_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_NEW_ADMIN, body, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventNewAdmin fail!, unique id :%s",
@@ -439,7 +499,12 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventNewFeeConverter(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues eventValues = getEventValue(EVENT_NAME_NEW_FEE_CONVERTER, EVENT_NAME_NEW_FEE_CONVERTER_BODY, topics, data,
+        log.info("{}:{} handleEventNewFeeConverter:{}", address, type, handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_NEW_FEE_CONVERTER_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_NEW_FEE_CONVERTER_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_NEW_FEE_CONVERTER, body, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventNewFeeConverter fail!, unique id :%s",
@@ -453,7 +518,12 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventCommitNewFee(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues eventValues = getEventValue(EVENT_NAME_COMMIT_NEW_FEE, EVENT_NAME_COMMIT_NEW_FEE_BODY, topics, data,
+        log.info("{}:{} handleEventCommitNewFee:{}", address, type, handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_COMMIT_NEW_FEE_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_COMMIT_NEW_FEE_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_COMMIT_NEW_FEE, body, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventCommitNewFee fail!, unique id :%s",
@@ -471,7 +541,12 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventNewFee(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues eventValues = getEventValue(EVENT_NAME_NEW_FEE, EVENT_NAME_NEW_FEE_BODY, topics, data,
+        log.info("{}:{} handleEventNewFee:{}", address, type, handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_NEW_FEE_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_NEW_FEE_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_NEW_FEE, body, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventNewFee fail!, unique id :%s",
@@ -488,7 +563,12 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventRampA(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues eventValues = getEventValue(EVENT_NAME_RAMP_A, EVENT_NAME_RAMP_A_BODY, topics, data,
+        log.info("{}:{} handleEventRampA:{}", address, type, handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_RAMP_A_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_RAMP_A_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_RAMP_A, body, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventRampA fail!, unique id :%s",
@@ -508,7 +588,12 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventStopRampA(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        EventValues eventValues = getEventValue(EVENT_NAME_STOP_RAMP_A, EVENT_NAME_STOP_RAMP_A_BODY, topics, data,
+        log.info("{}:{} handleEventStopRampA:{}", address, type, handleEventExtraData.getUniqueId());
+        String body = Curve2PoolEvent.EVENT_NAME_STOP_RAMP_A_BODY;
+        if (coinsCount == 3) {
+            body = Curve3PoolEvent.EVENT_NAME_STOP_RAMP_A_BODY;
+        }
+        EventValues eventValues = getEventValue(EVENT_NAME_STOP_RAMP_A, body, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventStopRampA fail!, unique id :%s",

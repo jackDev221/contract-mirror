@@ -5,19 +5,15 @@ import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.StaticArray;
-import org.web3j.abi.datatypes.generated.StaticArray2;
 import org.web3j.abi.datatypes.generated.Uint256;
-
-import java.math.BigInteger;
 import java.util.Arrays;
 
-import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_BODY;
-import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_SNAPSHOT_BODY;
+import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_TOKEN_EXCHANGE_BODY;
 
 public class EventUtilsTest {
     @Test
     public void testParseUtils() {
-        Event event = EventUtils.parseEventString(EVENT_NAME_SNAPSHOT_BODY);
+        Event event = EventUtils.parseEventString(EVENT_NAME_TOKEN_EXCHANGE_BODY);
         System.out.println(EventUtils.encodedEventSignature(event));
     }
 

@@ -131,7 +131,7 @@ public class ContractFactoryManager {
     }
 
     public boolean updateMirrorContracts(IContractsCollectHelper iContractsCollectHelper) {
-        log.info("ContractFactoryManager: start updateMirrorContracts");
+//        log.info("ContractFactoryManager: start updateMirrorContracts");
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
             BaseFactory baseContract = iContractFactory.getBaseContract();

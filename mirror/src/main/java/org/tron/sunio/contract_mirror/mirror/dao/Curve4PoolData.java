@@ -12,9 +12,9 @@ import java.math.BigInteger;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class Curve4PoolData extends BaseContractData {
-    private String[] coins = new String[4];
-    private BigInteger[] balances = new BigInteger[4];
-    private String[] baseCoins = new String[4];
+    private String[] coins = new String[2];
+    private BigInteger[] balances = new BigInteger[2];
+    private String[] baseCoins = new String[3];
     private String lpToken;
     private String basePool;
     private BigInteger baseVirtualPrice;
