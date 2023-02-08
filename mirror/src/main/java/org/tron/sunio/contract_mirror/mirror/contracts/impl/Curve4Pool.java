@@ -376,7 +376,7 @@ public class Curve4Pool extends BaseContract {
         List<Uint256> amountsNew = new ArrayList<>();
         for (int i = 0; i < N_COINS; i++) {
             BigInteger origin = v4Data.getBalances()[i];
-            BigInteger newBalance = origin.subtract((BigInteger) amounts.getValue().get(0).getValue());
+            BigInteger newBalance = origin.subtract((BigInteger) amounts.getValue().get(i).getValue());
             v4Data.updateBalances(i, newBalance);
             amountsNew.add(new Uint256(newBalance));
         }

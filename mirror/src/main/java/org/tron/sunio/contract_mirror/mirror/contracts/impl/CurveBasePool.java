@@ -262,40 +262,26 @@ public class CurveBasePool extends BaseContract {
         return null;
     }
 
-    public HandleResult handleEventTokenExchange(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        String txId = "";
-        if (ObjectUtil.isNotEmpty(handleEventExtraData)) {
-            txId = handleEventExtraData.getUniqueId();
-        }
-        log.info("Start {}:{} handleEventTokenExchange: {}, info: {} ", address, type, txId, this.getCurveBasePoolData());
-        log.info("input: {} {}", topics, data);
+    protected HandleResult handleEventTokenExchange(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("handleEventTokenExchange: {}, info: {} ", address, type, handleEventExtraData.getUniqueId(), this.getCurveBasePoolData());
         CurveBasePoolData curveBasePoolData = this.getVarCurveBasePoolData();
         String body = Curve2PoolEvent.EVENT_NAME_TOKEN_EXCHANGE_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_TOKEN_EXCHANGE_BODY;
         }
-        EventValues eventValues = getEventValue(EVENT_NAME_TOKEN_EXCHANGE, body, topics, data,
-                txId);
+        EventValues eventValues = getEventValue(EVENT_NAME_TOKEN_EXCHANGE, body, topics, data, handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventTokenExchange fail!, unique id :%s",
-                    address, type, txId));
+                    address, type, handleEventExtraData.getUniqueId()));
         }
         int i = ((BigInteger) eventValues.getNonIndexedValues().get(0).getValue()).intValue();
         BigInteger dx = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         int j = ((BigInteger) eventValues.getNonIndexedValues().get(2).getValue()).intValue();
         BigInteger[] rates = new BigInteger[]{BigInteger.TEN.pow(18), BigInteger.TEN.pow(18), BigInteger.TEN.pow(30)};
         BigInteger dy = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
-//        BigInteger tmp = dy.multiply(rates[j]).divide(PRECISION);
-//        BigInteger dyOri = tmp.multiply(FEE_DENOMINATOR).divide(FEE_DENOMINATOR.subtract(curveBasePoolData.getFee()));
         BigInteger tmp = dy.multiply(rates[j]).multiply(FEE_DENOMINATOR);
         BigInteger dyOri = (tmp.divide(FEE_DENOMINATOR.subtract(curveBasePoolData.getFee()))).divide(PRECISION);
-
         BigInteger dyFee = dyOri.multiply(curveBasePoolData.getFee()).divide(FEE_DENOMINATOR);
-
-//        dy = (dy.sub(dy_fee)).mul(PRECISION).div(rates[j]);
-         BigInteger dydd = (dyOri.subtract(dyFee)).multiply(PRECISION).divide(rates[j]);
-
-
         BigInteger dyAdminFee = dyFee.multiply(curveBasePoolData.getAdminFee()).divide(FEE_DENOMINATOR);
         dyAdminFee = dyAdminFee.multiply(PRECISION).divide(rates[j]);
         BigInteger dxWFee = getAmountWFee(i, dx);
@@ -304,7 +290,6 @@ public class CurveBasePool extends BaseContract {
         curveBasePoolData.updateBalances(i, newIBalance);
         curveBasePoolData.updateBalances(j, newJBalance);
         this.isDirty = true;
-        log.info("Finish {}:{} handleEventTokenExchange: {}, info: {} \n", address, type, txId, this.getCurveBasePoolData());
         return HandleResult.genHandleSuccess();
     }
 
@@ -316,6 +301,7 @@ public class CurveBasePool extends BaseContract {
 
     protected HandleResult handleEventAddLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         log.info("{}:{} handleEventAddLiquidity:{}", address, type, handleEventExtraData.getUniqueId());
+
         String body = Curve2PoolEvent.EVENT_NAME_ADD_LIQUIDITY_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_ADD_LIQUIDITY_BODY;
@@ -381,7 +367,7 @@ public class CurveBasePool extends BaseContract {
         List<Uint256> amountsNew = new ArrayList<>();
         for (int i = 0; i < coinsCount; i++) {
             BigInteger origin = curveBasePoolData.getBalance()[i];
-            BigInteger newBalance = origin.subtract((BigInteger) amounts.getValue().get(0).getValue());
+            BigInteger newBalance = origin.subtract((BigInteger) amounts.getValue().get(i).getValue());
             curveBasePoolData.updateBalances(i, newBalance);
             amountsNew.add(new Uint256(newBalance));
         }

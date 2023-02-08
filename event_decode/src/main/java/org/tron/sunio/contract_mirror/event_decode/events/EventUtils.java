@@ -33,7 +33,9 @@ public class EventUtils {
         }
         if (checkSign) {
             String encodedEventSignature = encodedEventSignature(event);
-            if (!topics.get(0).equals(encodedEventSignature)) {
+            encodedEventSignature = encodedEventSignature.startsWith("0x") ? encodedEventSignature.substring(2) : encodedEventSignature;
+            String sig = topics.get(0).startsWith("0x") ? topics.get(0).substring(2) : topics.get(0);
+            if (!sig.equals(encodedEventSignature)) {
                 return null;
             }
         }

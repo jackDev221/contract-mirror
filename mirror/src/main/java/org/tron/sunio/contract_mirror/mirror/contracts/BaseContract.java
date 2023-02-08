@@ -281,7 +281,7 @@ public abstract class BaseContract implements IContract {
 
     private HandleEventExtraData genEventExtraData(IContractEventWrap iContractEventWrap) {
         return HandleEventExtraData.builder()
-                .timeStamp(iContractEventWrap.getTimeStamp())
+                .timeStamp(iContractEventWrap.getTimeStamp() / 1000)
                 .UniqueId(iContractEventWrap.getUniqueId())
                 .build();
 

@@ -1,6 +1,8 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
@@ -36,6 +38,8 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 public class SwapV1 extends BaseContract {
 
     private String tokenAddress;
+    @Getter
+    @Setter
     private SwapV1Data swapV1Data;
 
     public SwapV1(String address, IChainHelper iChainHelper, String tokenAddress,
@@ -172,7 +176,7 @@ public class SwapV1 extends BaseContract {
         }
         SwapV1Data v1Data = this.getVarSwapV1Data();
         String from = (String) eventValues.getIndexedValues().get(0).getValue();
-        String to = (String) eventValues.getIndexedValues().get(0).getValue();
+        String to = (String) eventValues.getIndexedValues().get(1).getValue();
         BigInteger amount = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         boolean change = false;
         if (to.equalsIgnoreCase(EMPTY_TOPIC_VALUE)) {

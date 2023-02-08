@@ -1,6 +1,8 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
@@ -45,6 +47,8 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 public class SwapV2Pair extends BaseContract {
     private static final BigInteger Q112 = BigInteger.TWO.pow(112);
     private String factory;
+    @Setter
+    @Getter
     private SwapV2PairData swapV2PairData;
 
     public SwapV2Pair(String address, String factory, IChainHelper iChainHelper,
@@ -207,7 +211,7 @@ public class SwapV2Pair extends BaseContract {
         }
         SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
         String from = (String) eventValues.getIndexedValues().get(0).getValue();
-        String to = (String) eventValues.getIndexedValues().get(0).getValue();
+        String to = (String) eventValues.getIndexedValues().get(1).getValue();
         BigInteger amount = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         boolean change = false;
         if (to.equalsIgnoreCase(EMPTY_TOPIC_VALUE)) {
@@ -254,7 +258,7 @@ public class SwapV2Pair extends BaseContract {
         BigInteger reserve1 = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         //4294967296L = 2**32
         long blockTimestampLast = handleEventExtraData.getTimeStamp() % 4294967296L;
-        long timeElapsed = blockTimestampLast - handleEventExtraData.getTimeStamp();
+        long timeElapsed = blockTimestampLast - swapV2PairData.getBlockTimestampLast();
         BigInteger reserve0Origin = swapV2PairData.getReserve0();
         BigInteger reserve1Origin = swapV2PairData.getReserve1();
         if (timeElapsed > 0 && reserve0Origin.compareTo(BigInteger.ZERO) != 0 && reserve1Origin.compareTo(BigInteger.ZERO) != 0) {

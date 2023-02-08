@@ -28,9 +28,9 @@ public class ContractEventWrap implements IContractEventWrap {
     @Override
     public long getTimeStamp() {
         if (eventLogType == EventLogType.CONTRACT_EVENT_LOG) {
-            return contractEventLog.getTimeStamp() / 1000;
+            return contractEventLog.getTimeStamp();
         } else {
-            return eventWrap.getTimeStamp() / 1000;
+            return eventWrap.getTimeStamp();
         }
     }
 
