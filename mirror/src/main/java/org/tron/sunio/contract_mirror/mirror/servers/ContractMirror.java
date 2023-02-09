@@ -19,6 +19,7 @@ import org.tron.sunio.contract_mirror.mirror.config.KafkaConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.ContractFactoryManager;
 import org.tron.sunio.contract_mirror.mirror.config.ContractsMirrorConfig;
+import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsCollectHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.ContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
@@ -32,7 +33,7 @@ import java.util.concurrent.CountDownLatch;
 @Service
 @Slf4j
 @Data
-public class ContractMirror implements InitializingBean, IContractsCollectHelper {
+public class ContractMirror implements InitializingBean, IContractsCollectHelper, IContractsHelper {
     private final int EVENT_HANDLE_PERIOD = 200;
     private final int KAFKA_READY_CHECK_INTERVAL = 500;
     private final int KAFKA_PULL_TIMEOUT = 2000;
@@ -61,7 +62,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     @Override
     public void afterPropertiesSet() throws Exception {
         initKafka();
-        contractFactoryManager.initFactoryMap(config.getListContractFactory(), this, config.getPolyInfos());
+        contractFactoryManager.initFactoryMap(config.getListContractFactory(), this, this, config.getPolyInfos());
     }
 
     private void initKafka() {
@@ -107,9 +108,9 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
         }
     }
 
-    private boolean isNeedReload(String hash, long number) {
+    private boolean isNeedReload(String hash, long number, long timeStamp) {
         if (ObjectUtil.isNull(blockInfo)) {
-            blockInfo = new BlockInfo(number, hash);
+            blockInfo = new BlockInfo(number, hash, timeStamp);
             return false;
         }
         if (blockInfo.getNumber() < number) {
@@ -210,7 +211,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
                 if (ObjectUtil.isNull(contractEventWrap)) {
                     continue;
                 }
-                if (isNeedReload(contractEventWrap.getBlockHash(), contractEventWrap.getBlockNumber())) {
+                if (isNeedReload(contractEventWrap.getBlockHash(), contractEventWrap.getBlockNumber(), contractEventWrap.getTimeStamp())) {
                     setReloadAllContract();
                     needSleep = true;
                     break;
@@ -253,5 +254,11 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     @Override
     public boolean containsContract(String address) {
         return this.contractHashMap.containsKey(address);
+    }
+
+    @Override
+    public long getBlockTime() {
+        // seconds
+        return blockInfo.getTimeStamp() / 1000;
     }
 }

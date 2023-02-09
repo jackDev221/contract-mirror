@@ -3,6 +3,8 @@ package org.tron.sunio.contract_mirror.mirror.contracts;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.EventUtils;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
@@ -49,6 +51,10 @@ public abstract class BaseContract implements IContract {
     protected Map<String, String> sigMap;
     private CountDownLatch latch;
 
+    @Getter
+    @Setter
+    private IContractsHelper iContractsHelper;
+
 
     public abstract boolean initDataFromChain1();
 
@@ -73,7 +79,7 @@ public abstract class BaseContract implements IContract {
         return handleSpecialRequest(method, params);
     }
 
-    public BaseContract(String address, ContractType type, IChainHelper iChainHelper,
+    public BaseContract(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
                         final Map<String, String> sigMap) {
         this.type = type;
         this.address = address;
@@ -81,6 +87,7 @@ public abstract class BaseContract implements IContract {
         this.sigMap = sigMap;
         this.isUsing = true;
         this.initFlag = INIT_FLAG_INIT;
+        this.iContractsHelper = iContractsHelper;
     }
 
     public boolean initDataFromChainThread() {

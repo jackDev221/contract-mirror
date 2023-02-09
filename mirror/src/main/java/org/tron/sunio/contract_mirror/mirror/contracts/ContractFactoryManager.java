@@ -57,7 +57,7 @@ public class ContractFactoryManager {
         psmSigMap = PSMEvent.getSigMap();
     }
 
-    public boolean initFactoryMap(List<ContractInfo> contractInfoList, IContractsCollectHelper iContractsCollectHelper, Map<String, String> polyInfos) {
+    public boolean initFactoryMap(List<ContractInfo> contractInfoList, IContractsCollectHelper iContractsCollectHelper, IContractsHelper iContractsHelper, Map<String, String> polyInfos) {
         log.info("ContractFactoryManager.initFactoryMap: create Factory!");
         initSigMaps();
         if (ObjectUtil.isNull(contractInfoList) || contractInfoList.size() == 0) {
@@ -69,6 +69,7 @@ public class ContractFactoryManager {
                     contractFactoryHashMap.put(contractInfo.getAddress(), new SwapFactoryV1(
                             contractInfo.getAddress(),
                             tronChainHelper,
+                            iContractsHelper,
                             v1FactorySigMap
                     ));
                     break;
@@ -76,6 +77,7 @@ public class ContractFactoryManager {
                     contractFactoryHashMap.put(contractInfo.getAddress(), new SwapFactoryV2(
                             contractInfo.getAddress(),
                             tronChainHelper,
+                            iContractsHelper,
                             v2FactorySigMap
 
                     ));
@@ -84,6 +86,7 @@ public class ContractFactoryManager {
                     iContractsCollectHelper.addContract(new Curve2Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
+                            iContractsHelper,
                             2,
                             1,
                             curve2PoolSigMap
@@ -93,6 +96,7 @@ public class ContractFactoryManager {
                     iContractsCollectHelper.addContract(new Curve3Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
+                            iContractsHelper,
                             3,
                             2,
                             curve3PoolSigMap
@@ -103,6 +107,7 @@ public class ContractFactoryManager {
                     iContractsCollectHelper.addContract(new Curve4Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
+                            iContractsHelper,
                             curve4PoolSigMap
                     ));
                     break;
@@ -115,6 +120,7 @@ public class ContractFactoryManager {
                             contractInfo.getAddress(),
                             polyInfos.getOrDefault(contractInfo.getAddress(), ContractMirrorConst.EMPTY_ADDRESS),
                             tronChainHelper,
+                            iContractsHelper,
                             psmTotalData,
                             psmSigMap
                     ));

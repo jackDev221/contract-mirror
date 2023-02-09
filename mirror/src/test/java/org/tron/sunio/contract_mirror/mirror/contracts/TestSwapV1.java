@@ -17,6 +17,7 @@ public class TestSwapV1 {
         SwapV1 swapV1 = new SwapV1(
                 "TFRWUrJ4Yp8zxZn7xvyoVFfhe4iHnhLvuC",
                 null,
+                null,
                 "TQz9i4JygMCzizdVu8NE4BdqesrsHv1L93",
                 SwapV1Event.getSigMap()
         );

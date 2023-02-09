@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
+import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.web3j.abi.EventValues;
@@ -42,9 +43,9 @@ public class SwapV1 extends BaseContract {
     @Setter
     private SwapV1Data swapV1Data;
 
-    public SwapV1(String address, IChainHelper iChainHelper, String tokenAddress,
+    public SwapV1(String address, IChainHelper iChainHelper, IContractsHelper iContractsHelper, String tokenAddress,
                   final Map<String, String> sigMap) {
-        super(address, ContractType.SWAP_V1, iChainHelper, sigMap);
+        super(address, ContractType.SWAP_V1, iChainHelper, iContractsHelper, sigMap);
         this.tokenAddress = tokenAddress;
     }
 

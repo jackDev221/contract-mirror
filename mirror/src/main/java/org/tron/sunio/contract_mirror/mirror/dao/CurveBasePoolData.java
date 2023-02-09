@@ -13,7 +13,7 @@ import java.math.BigInteger;
 @EqualsAndHashCode(callSuper = false)
 public class CurveBasePoolData extends BaseContractData {
     private String[] coins;
-    private BigInteger[] balance;
+    private BigInteger[] balances;
     private String token;
     private BigInteger fee;
     private BigInteger futureFee;
@@ -32,7 +32,7 @@ public class CurveBasePoolData extends BaseContractData {
 
     public CurveBasePoolData(int count) {
         coins = new String[count];
-        balance = new BigInteger[count];
+        balances = new BigInteger[count];
     }
 
     public void updateCoins(int index, String address) {
@@ -43,9 +43,17 @@ public class CurveBasePoolData extends BaseContractData {
     }
 
     public void updateBalances(int index, BigInteger value) {
-        if (index >= balance.length) {
+        if (index >= balances.length) {
             System.out.println("Out of range!!");
         }
-        balance[index] = value;
+        balances[index] = value;
+    }
+
+    public BigInteger[] getCopyBalances() {
+        BigInteger[] result = new BigInteger[balances.length];
+        for (int i = 0; i < balances.length; i++) {
+            result[i] = new BigInteger(balances[i].toString());
+        }
+        return result;
     }
 }

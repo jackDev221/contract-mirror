@@ -16,6 +16,7 @@ public class TestCurve3 {
         Curve3Pool curve3Pool = new Curve3Pool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
                 null,
+                null,
                 3,
                 2,
                 Curve3PoolEvent.getSigMap()
@@ -25,7 +26,7 @@ public class TestCurve3 {
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
-        data.setBalance(new BigInteger[3]);
+        data.setBalances(new BigInteger[3]);
         data.updateBalances(0, new BigInteger("237527249623469474950"));
         data.updateBalances(1, new BigInteger("171670818514848090683"));
         data.updateBalances(2, new BigInteger("5912730454"));
@@ -48,9 +49,9 @@ public class TestCurve3 {
         BigInteger balance1 = new BigInteger("290662722776550821549");
         BigInteger balance2 = new BigInteger("6012709393");
         BigInteger totalSupply = new BigInteger("6178218730983441802126");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[0].compareTo(balance0) == 0, "balance0 not equal");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[1].compareTo(balance1) == 0, "balance1 not equal");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[2].compareTo(balance2) == 0, "balance2 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[0].compareTo(balance0) == 0, "balance0 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[1].compareTo(balance1) == 0, "balance1 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[2].compareTo(balance2) == 0, "balance2 not equal");
         Assert.isTrue(curve3Pool.getCurveBasePoolData().getTotalSupply().compareTo(totalSupply) == 0, "totalSupply not equal");
     }
 
@@ -58,6 +59,7 @@ public class TestCurve3 {
     public void testTokenExchange() {
         Curve3Pool curve3Pool = new Curve3Pool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
+                null,
                 null,
                 3,
                 2,
@@ -68,7 +70,7 @@ public class TestCurve3 {
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
-        data.setBalance(new BigInteger[3]);
+        data.setBalances(new BigInteger[3]);
         data.updateBalances(0, new BigInteger("329521497006893004798"));
         data.updateBalances(1, new BigInteger("290662722776550821549"));
         data.updateBalances(2, new BigInteger("6012709393"));
@@ -89,15 +91,16 @@ public class TestCurve3 {
         BigInteger balance2 = new BigInteger("6024709393");
         System.out.println(curve3Pool.getCurveBasePoolData());
         BigInteger totalSupply = new BigInteger("6178218730983441802126");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[0].compareTo(balance0) == 0, "balance0 not equal");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[1].compareTo(balance1) == 0, "balance1 not equal");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[2].compareTo(balance2) == 0, "balance2 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[0].compareTo(balance0) == 0, "balance0 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[1].compareTo(balance1) == 0, "balance1 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[2].compareTo(balance2) == 0, "balance2 not equal");
         Assert.isTrue(curve3Pool.getCurveBasePoolData().getTotalSupply().compareTo(totalSupply) == 0, "totalSupply not equal");
     }
     @Test
     public void testRemoveLiquidity() {
         Curve3Pool curve3Pool = new Curve3Pool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
+                null,
                 null,
                 3,
                 2,
@@ -108,7 +111,7 @@ public class TestCurve3 {
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
-        data.setBalance(new BigInteger[3]);
+        data.setBalances(new BigInteger[3]);
         data.updateBalances(0, new BigInteger("320183004797908118178"));
         data.updateBalances(1, new BigInteger("290662722776550821549"));
         data.updateBalances(2, new BigInteger("6024709393"));
@@ -130,9 +133,9 @@ public class TestCurve3 {
         BigInteger balance1 = new BigInteger("247416248078957405333");
         BigInteger balance2 = new BigInteger("5128318416");
         BigInteger totalSupply = new BigInteger("5258987749200220399191");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[0].compareTo(balance0) == 0, "balance0 not equal");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[1].compareTo(balance1) == 0, "balance1 not equal");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[2].compareTo(balance2) == 0, "balance2 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[0].compareTo(balance0) == 0, "balance0 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[1].compareTo(balance1) == 0, "balance1 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[2].compareTo(balance2) == 0, "balance2 not equal");
         Assert.isTrue(curve3Pool.getCurveBasePoolData().getTotalSupply().compareTo(totalSupply) == 0, "totalSupply not equal");
     }
 
@@ -140,6 +143,7 @@ public class TestCurve3 {
     public void TestRemoveLiquidityInBalance() {
         Curve3Pool curve3Pool = new Curve3Pool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
+                null,
                 null,
                 3,
                 2,
@@ -150,7 +154,7 @@ public class TestCurve3 {
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
-        data.setBalance(new BigInteger[3]);
+        data.setBalances(new BigInteger[3]);
         data.updateBalances(0, new BigInteger("272544332444876501468"));
         data.updateBalances(1, new BigInteger("247416248078957405333"));
         data.updateBalances(2, new BigInteger("5128318416"));
@@ -173,9 +177,9 @@ public class TestCurve3 {
         BigInteger balance1 = new BigInteger("247334698938961818280");
         BigInteger balance2 = new BigInteger("5127855248");
         BigInteger totalSupply = new BigInteger("5258370013366233062506");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[0].compareTo(balance0) == 0, "balance0 not equal");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[1].compareTo(balance1) == 0, "balance1 not equal");
-        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalance()[2].compareTo(balance2) == 0, "balance2 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[0].compareTo(balance0) == 0, "balance0 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[1].compareTo(balance1) == 0, "balance1 not equal");
+        Assert.isTrue(curve3Pool.getCurveBasePoolData().getBalances()[2].compareTo(balance2) == 0, "balance2 not equal");
         Assert.isTrue(curve3Pool.getCurveBasePoolData().getTotalSupply().compareTo(totalSupply) == 0, "totalSupply not equal");
     }
 }

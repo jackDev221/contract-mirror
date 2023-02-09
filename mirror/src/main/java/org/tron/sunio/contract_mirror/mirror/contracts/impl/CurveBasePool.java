@@ -1,7 +1,6 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +10,7 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
+import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
@@ -62,19 +62,23 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 public class CurveBasePool extends BaseContract {
     protected int coinsCount;
     private static final BigInteger FEE_DENOMINATOR = BigInteger.TEN.pow(10);
+    private static final BigInteger LENDING_PRECISION = BigInteger.TEN.pow(18);
     private static final BigInteger PRECISION = BigInteger.TEN.pow(18);
+    private static final BigInteger RATES_0 = BigInteger.TEN.pow(18);
+    private static final BigInteger RATES_1 = BigInteger.TEN.pow(18);
+    private static final BigInteger RATES_2 = BigInteger.TEN.pow(30);
     @Getter
     @Setter
     protected CurveBasePoolData curveBasePoolData;
     private int feeIndex;
 
-    public CurveBasePool(String address, ContractType type, IChainHelper iChainHelper, int coinsCount, int feeIndex, Map<String, String> sigMap) {
-        super(address, type, iChainHelper, sigMap);
+    public CurveBasePool(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper, int coinsCount, int feeIndex, Map<String, String> sigMap) {
+        super(address, type, iChainHelper, iContractsHelper, sigMap);
         this.coinsCount = coinsCount;
         this.feeIndex = feeIndex;
     }
 
-    protected CurveBasePoolData getVarCurveBasePoolData() {
+    public CurveBasePoolData getVarCurveBasePoolData() {
         if (ObjectUtil.isNull(curveBasePoolData)) {
             curveBasePoolData = new CurveBasePoolData(coinsCount);
             curveBasePoolData.setAddress(address);
@@ -263,7 +267,7 @@ public class CurveBasePool extends BaseContract {
     }
 
     protected HandleResult handleEventTokenExchange(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("handleEventTokenExchange: {}, info: {} ", address, type, handleEventExtraData.getUniqueId(), this.getCurveBasePoolData());
+        log.info("handleEventTokenExchange: {}, info: {} ", address, type, handleEventExtraData.getUniqueId(), this.getVarCurveBasePoolData());
         CurveBasePoolData curveBasePoolData = this.getVarCurveBasePoolData();
         String body = Curve2PoolEvent.EVENT_NAME_TOKEN_EXCHANGE_BODY;
         if (coinsCount == 3) {
@@ -277,7 +281,7 @@ public class CurveBasePool extends BaseContract {
         int i = ((BigInteger) eventValues.getNonIndexedValues().get(0).getValue()).intValue();
         BigInteger dx = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         int j = ((BigInteger) eventValues.getNonIndexedValues().get(2).getValue()).intValue();
-        BigInteger[] rates = new BigInteger[]{BigInteger.TEN.pow(18), BigInteger.TEN.pow(18), BigInteger.TEN.pow(30)};
+        BigInteger[] rates = getRates();
         BigInteger dy = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
         BigInteger tmp = dy.multiply(rates[j]).multiply(FEE_DENOMINATOR);
         BigInteger dyOri = (tmp.divide(FEE_DENOMINATOR.subtract(curveBasePoolData.getFee()))).divide(PRECISION);
@@ -285,8 +289,8 @@ public class CurveBasePool extends BaseContract {
         BigInteger dyAdminFee = dyFee.multiply(curveBasePoolData.getAdminFee()).divide(FEE_DENOMINATOR);
         dyAdminFee = dyAdminFee.multiply(PRECISION).divide(rates[j]);
         BigInteger dxWFee = getAmountWFee(i, dx);
-        BigInteger newIBalance = curveBasePoolData.getBalance()[i].add(dxWFee);
-        BigInteger newJBalance = curveBasePoolData.getBalance()[j].subtract(dy).subtract(dyAdminFee);
+        BigInteger newIBalance = curveBasePoolData.getBalances()[i].add(dxWFee);
+        BigInteger newJBalance = curveBasePoolData.getBalances()[j].subtract(dy).subtract(dyAdminFee);
         curveBasePoolData.updateBalances(i, newIBalance);
         curveBasePoolData.updateBalances(j, newJBalance);
         this.isDirty = true;
@@ -296,6 +300,23 @@ public class CurveBasePool extends BaseContract {
     private BigInteger getAmountWFee(int _tokenId, BigInteger dx) {
         // 查看CurvePoolV2 feeIndex 是USDT 不是特殊收费ERC20，之后需要在添加
         return dx;
+    }
+
+
+    private BigInteger[] getRates() {
+        if (coinsCount == 2) {
+            return new BigInteger[]{RATES_0, RATES_2};
+        } else {
+            return new BigInteger[]{RATES_0, RATES_1, RATES_2};
+        }
+    }
+
+    private BigInteger[] getPrecisionMul() {
+        if (coinsCount == 2) {
+            return new BigInteger[]{BigInteger.ONE, BigInteger.TEN.pow(12)};
+        } else {
+            return new BigInteger[]{BigInteger.ONE, BigInteger.ONE, BigInteger.TEN.pow(12)};
+        }
     }
 
 
@@ -319,7 +340,7 @@ public class CurveBasePool extends BaseContract {
         List<Uint256> amountsNew = new ArrayList<>();
         for (int i = 0; i < coinsCount; i++) {
             BigInteger amountWFee = getAmountWFee(i, (BigInteger) amounts.getValue().get(i).getValue());
-            BigInteger originBalance = curveBasePoolData.getBalance()[i];
+            BigInteger originBalance = curveBasePoolData.getBalances()[i];
             BigInteger newBalance = originBalance.add(amountWFee);
             if (curveBasePoolData.getTotalSupply().compareTo(BigInteger.ZERO) > 0) {
                 BigInteger fee = fees.getValue().get(i).getValue();
@@ -366,7 +387,7 @@ public class CurveBasePool extends BaseContract {
         StaticArray<Uint256> amounts = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(0);
         List<Uint256> amountsNew = new ArrayList<>();
         for (int i = 0; i < coinsCount; i++) {
-            BigInteger origin = curveBasePoolData.getBalance()[i];
+            BigInteger origin = curveBasePoolData.getBalances()[i];
             BigInteger newBalance = origin.subtract((BigInteger) amounts.getValue().get(i).getValue());
             curveBasePoolData.updateBalances(i, newBalance);
             amountsNew.add(new Uint256(newBalance));
@@ -415,7 +436,7 @@ public class CurveBasePool extends BaseContract {
         StaticArray<Uint256> fees = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(1);
         List<Uint256> amountsNew = new ArrayList<>();
         for (int i = 0; i < coinsCount; i++) {
-            BigInteger originBalance = curveBasePoolData.getBalance()[i];
+            BigInteger originBalance = curveBasePoolData.getBalances()[i];
             BigInteger fee = fees.getValue().get(i).getValue();
             BigInteger newBalance = originBalance.subtract(amounts.getValue().get(i).getValue());
             BigInteger newFee = fee.multiply(curveBasePoolData.getAdminFee()).divide(FEE_DENOMINATOR);
@@ -595,4 +616,260 @@ public class CurveBasePool extends BaseContract {
         isDirty = true;
         return HandleResult.genHandleSuccess();
     }
+
+    private BigInteger[] xp() {
+        BigInteger[] result = getRates();
+        BigInteger[] balances = this.getVarCurveBasePoolData().getBalances();
+        for (int i = 0; i < coinsCount; i++) {
+            result[i] = result[i].multiply(balances[i]).divide(LENDING_PRECISION);
+        }
+        return result;
+    }
+
+    private BigInteger[] xpMem(BigInteger[] balances) {
+        BigInteger[] result = getRates();
+        for (int i = 0; i < coinsCount; i++) {
+            result[i] = result[i].multiply(balances[i]).divide(LENDING_PRECISION);
+        }
+        return result;
+    }
+
+    protected BigInteger getD(BigInteger[] xp, BigInteger amp) throws Exception {
+        if (xp == null || xp.length != coinsCount) {
+            throw new Exception("N_COINS not eq xp.length");
+        }
+        BigInteger s = BigInteger.ZERO;
+        for (int j = 0; j < coinsCount; j++) {
+            s = s.add(xp[j]);
+        }
+
+        if (s.compareTo(BigInteger.ZERO) == 0) {
+            return BigInteger.ZERO;
+        }
+        BigInteger dPre;
+        BigInteger d = new BigInteger(s.toString());
+        BigInteger ann = amp.multiply(BigInteger.valueOf(coinsCount));
+        for (int i = 0; i < 255; i++) {
+            BigInteger dp = d;
+            for (int k = 0; k < coinsCount; k++) {
+                dp = dp.multiply(d).divide(xp[k].multiply(BigInteger.valueOf(coinsCount)));
+            }
+            dPre = d;
+            BigInteger tmp = (ann.multiply(s)).add(dp.multiply(BigInteger.valueOf(coinsCount))).multiply(d);
+            tmp = tmp.divide(ann.subtract(BigInteger.ONE)).multiply(d);
+            d = tmp.add(BigInteger.valueOf(coinsCount + 1)).multiply(dp);
+
+            if (d.compareTo(dPre) > 0) {
+                if (d.subtract(dPre).compareTo(BigInteger.ONE) <= 1) {
+                    break;
+                }
+            } else {
+                if (dPre.subtract(d).compareTo(BigInteger.ONE) <= 1) {
+                    break;
+                }
+            }
+
+        }
+        return d;
+    }
+
+    public BigInteger a() {
+        CurveBasePoolData curveBasePoolData = this.getVarCurveBasePoolData();
+        BigInteger t1 = curveBasePoolData.getFutureATime();
+        BigInteger a1 = curveBasePoolData.getFutureA();
+        long blocTime = this.getIContractsHelper().getBlockTime();
+        if (blocTime < t1.longValue()) {
+            BigInteger a0 = curveBasePoolData.getInitialA();
+            BigInteger t0 = curveBasePoolData.getInitialATime();
+            BigInteger tCast = BigInteger.valueOf(blocTime).subtract(t0);
+            BigInteger tCastMax = t1.subtract(t0);
+            if (a1.compareTo(a0) > 0) {
+                return a0.add(a1.subtract(a0).multiply(tCast).divide(tCastMax));
+            } else {
+                return a0.subtract(a0.subtract(a1).multiply(tCast).divide(tCastMax));
+            }
+
+        } else {
+            return a1;
+        }
+    }
+
+    protected BigInteger getDMem(BigInteger[] balances, BigInteger amp) throws Exception {
+        return getD(xpMem(balances), amp);
+    }
+
+    public BigInteger getVirtualPrice() throws Exception {
+        BigInteger d = getD(xp(), a());
+        BigInteger totalSupply = getVarCurveBasePoolData().getTotalSupply();
+        return d.multiply(PRECISION).divide(totalSupply);
+    }
+
+    public BigInteger calcTokenAmount(BigInteger[] amounts, boolean deposit) throws Exception {
+        BigInteger[] balances = getVarCurveBasePoolData().getCopyBalances();
+        BigInteger amp = a();
+        BigInteger d0 = getDMem(balances, amp);
+        for (int i = 0; i < coinsCount; i++) {
+            if (deposit) {
+                balances[i] = balances[i].add(amounts[i]);
+            } else {
+                balances[i] = balances[i].subtract(amounts[i]);
+            }
+        }
+        BigInteger d1 = getDMem(balances, amp);
+        BigInteger tokenAmount = getVarCurveBasePoolData().getTotalSupply();
+        BigInteger diff;
+        if (deposit) {
+            diff = d1.subtract(d0);
+        } else {
+            diff = d0.subtract(d1);
+        }
+        return diff.multiply(tokenAmount).divide(d0);
+    }
+
+    public BigInteger getY(int i, int j, BigInteger x, BigInteger[] xp_) throws Exception {
+        if (i == j) {
+            throw new Exception("same coin");
+        }
+        if (j >= coinsCount) {
+            throw new Exception("j above N_COINS");
+        }
+
+        if (i >= coinsCount) {
+            throw new Exception("i above N_COINS");
+        }
+        BigInteger amp = a();
+        BigInteger d = getD(xp_, amp);
+        BigInteger c = d;
+        BigInteger s_ = BigInteger.ZERO;
+        BigInteger nCoins = BigInteger.valueOf(coinsCount);
+        BigInteger ann = amp.multiply(nCoins);
+        BigInteger _x = BigInteger.ZERO;
+        for (int _i = 0; _i < coinsCount; _i++) {
+            if (_i == i) {
+                _x = x;
+            } else if (_i != j) {
+                _x = xp_[_i];
+            } else {
+                continue;
+            }
+            s_ = s_.add(_x);
+            c = c.multiply(d).divide(_x.multiply(nCoins));
+        }
+        c = c.multiply(d).divide(ann.multiply(nCoins));
+        BigInteger b = s_.add(d.divide(ann));
+        BigInteger yPrev = BigInteger.ZERO;
+        BigInteger y = d;
+        for (int _i = 0; _i < 255; _i++) {
+            yPrev = y;
+            y = (y.multiply(y).add(c)).divide(y.multiply(BigInteger.TWO).add(b).subtract(d));
+            if (y.compareTo(yPrev) > 0) {
+                if (y.subtract(yPrev).compareTo(BigInteger.ONE) <= 0) {
+                    break;
+                }
+            } else {
+                if (yPrev.subtract(y).compareTo(BigInteger.ONE) <= 0) {
+                    break;
+                }
+            }
+        }
+        return y;
+    }
+
+    public BigInteger getDy(int i, int j, BigInteger dx) throws Exception {
+        BigInteger[] rates = getRates();
+        BigInteger[] xp = xp();
+        BigInteger fee = getVarCurveBasePoolData().getFee();
+        BigInteger x = xp[i].add(dx.multiply(rates[i]).divide(PRECISION));
+        BigInteger y = getY(i, j, x, xp);
+        BigInteger dy = (xp[j].subtract(y).subtract(BigInteger.ONE)).multiply(PRECISION).divide(rates[j]);
+        return dy.subtract(fee.multiply(dy).divide(FEE_DENOMINATOR));
+    }
+
+    public BigInteger getDyUnderLying(int i, int j, BigInteger dx) throws Exception {
+        BigInteger[] precisions = getPrecisionMul();
+        BigInteger[] xp = xp();
+        BigInteger fee = getVarCurveBasePoolData().getFee();
+        BigInteger x = xp[i].add(dx.multiply(precisions[i]));
+        BigInteger y = getY(i, j, x, xp);
+        BigInteger dy = (xp[j].subtract(y).subtract(BigInteger.ONE)).divide(precisions[j]);
+        return dy.subtract(fee.multiply(dy).divide(FEE_DENOMINATOR));
+    }
+
+    public BigInteger getYD(BigInteger a_, int i, BigInteger[] xp, BigInteger d) throws Exception {
+        if (i >= coinsCount) {
+            throw new Exception("i above N_COINS");
+        }
+        BigInteger c = d;
+        BigInteger s_ = BigInteger.ZERO;
+        BigInteger nCoins = BigInteger.valueOf(coinsCount);
+        BigInteger ann = a_.multiply(nCoins);
+        BigInteger _x = BigInteger.ZERO;
+        for (int _i = 0; _i < coinsCount; _i++) {
+            if (_i != i) {
+                _x = xp[_i];
+            } else {
+                continue;
+            }
+            s_ = s_.add(_x);
+            c = c.multiply(d).divide(_x.multiply(nCoins));
+        }
+        c = c.multiply(d).divide(ann.multiply(nCoins));
+        BigInteger b = s_.add(d.divide(ann));
+
+        BigInteger yPrev = BigInteger.ZERO;
+        BigInteger y = d;
+
+        for (int _i = 0; _i < 255; _i++) {
+            yPrev = y;
+            y = (y.multiply(y).add(c)).divide(y.multiply(BigInteger.TWO).add(b).subtract(d));
+            if (y.compareTo(yPrev) > 0) {
+                if (y.subtract(yPrev).compareTo(BigInteger.ONE) <= 0) {
+                    break;
+                }
+            } else {
+                if (yPrev.subtract(y).compareTo(BigInteger.ONE) <= 0) {
+                    break;
+                }
+            }
+        }
+
+        return y;
+    }
+
+    private BigInteger[] localCalcWithdrawOneCoin(BigInteger _token_amount, int i) throws Exception {
+        BigInteger nCoins = BigInteger.valueOf(coinsCount);
+        BigInteger[] precisions = getPrecisionMul();
+        BigInteger amp = a();
+        CurveBasePoolData curveBasePoolData = getVarCurveBasePoolData();
+        BigInteger _fee = curveBasePoolData.getFee().multiply(nCoins).divide(BigInteger.valueOf((coinsCount - 1) * 4));
+        BigInteger total_supply = curveBasePoolData.getTotalSupply();
+
+        BigInteger[] xp = xp();
+        BigInteger d0 = getD(xp, amp);
+        BigInteger d1 = d0.subtract(_token_amount.multiply(d0).divide(total_supply));
+        BigInteger[] xpReduced = xp();
+        BigInteger newY = getYD(amp, i, xp, d1);
+        BigInteger dy0 = (xp[i].subtract(newY)).divide(precisions[i]);  // w/o fees
+
+        for (int j = 0; j < coinsCount; j++) {
+            BigInteger dxExpected = BigInteger.ZERO;
+            if (j == i) {
+                dxExpected = xp[j].multiply(d1).divide(d0).subtract(newY);
+            } else {
+                dxExpected = xp[j].subtract(xp[j].multiply(d1).divide(d0));
+            }
+            xpReduced[j] = xpReduced[j].subtract(_fee.multiply(dxExpected).divide(FEE_DENOMINATOR));
+        }
+
+        BigInteger dy = xpReduced[i].subtract(getYD(amp, i, xpReduced, d1));
+        dy = (dy.subtract(BigInteger.ONE)).divide(precisions[i]);
+        return new BigInteger[]{dy, dy0.subtract(dy)};
+    }
+
+    public BigInteger calc_withdraw_one_coin(BigInteger _token_amount, int i) throws Exception {
+        BigInteger[] res = localCalcWithdrawOneCoin(_token_amount, i);
+        return res[0];
+    }
+
+
 }

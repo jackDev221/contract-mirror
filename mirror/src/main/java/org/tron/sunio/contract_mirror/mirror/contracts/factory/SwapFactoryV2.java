@@ -7,6 +7,7 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
+import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV2Pair;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV2Data;
@@ -43,9 +44,9 @@ public class SwapFactoryV2 extends BaseFactory implements IContractFactory {
     private Map<String, String> v2PairSigMap;
     private SwapFactoryV2Data swapFactoryV2Data;
 
-    public SwapFactoryV2(String address, IChainHelper iChainHelper,
+    public SwapFactoryV2(String address, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
                          Map<String, String> sigMap) {
-        super(address, ContractType.SWAP_FACTORY_V2, iChainHelper, sigMap);
+        super(address, ContractType.SWAP_FACTORY_V2, iChainHelper, iContractsHelper, sigMap);
         v2PairSigMap = SwapV2PairEvent.getSigMap();
     }
 
@@ -130,9 +131,11 @@ public class SwapFactoryV2 extends BaseFactory implements IContractFactory {
                     pairAddress,
                     this.address,
                     this.iChainHelper,
+                    this.getIContractsHelper(),
                     v2PairSigMap
 
             );
+
             result.add(swapV2Pair);
         }
         return result;

@@ -17,6 +17,7 @@ public class TestSwapV2 {
                 "TCTwLZwUWuwc5QtfFMYUKCxauaK9DUnJn2",
                 "THomLGMLhAjMecQf9FQjbZ8a1RtwsZLrGE",
                 null,
+                null,
                 SwapV2PairEvent.getSigMap()
         );
         swapV2Pair.setReady(true);

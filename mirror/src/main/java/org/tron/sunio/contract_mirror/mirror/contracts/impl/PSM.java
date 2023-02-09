@@ -6,6 +6,7 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
+import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMData;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMTotalData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
@@ -46,8 +47,9 @@ public class PSM extends BaseContract {
     private String polyAddress;
     private PSMTotalData psmTotalData;
 
-    public PSM(ContractType type, String address, String polyAddress, IChainHelper iChainHelper, PSMTotalData psmTotalData, Map<String, String> sigMap) {
-        super(address, type, iChainHelper, sigMap);
+    public PSM(ContractType type, String address, String polyAddress, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
+               PSMTotalData psmTotalData, Map<String, String> sigMap) {
+        super(address, type, iChainHelper, iContractsHelper, sigMap);
         this.polyAddress = polyAddress;
         this.psmTotalData = psmTotalData;
     }

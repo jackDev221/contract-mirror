@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
+import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
@@ -19,8 +20,8 @@ import java.util.Map;
 public class BaseFactory extends BaseContract implements IContractFactory {
     private List<Integer> unFinshLoadSub = new ArrayList<>();
 
-    public BaseFactory(String address, ContractType type, IChainHelper iChainHelper, Map<String, String> sigMap) {
-        super(address, type, iChainHelper, sigMap);
+    public BaseFactory(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper, Map<String, String> sigMap) {
+        super(address, type, iChainHelper, iContractsHelper, sigMap);
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
+import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.Curve4PoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
@@ -60,8 +61,8 @@ public class Curve4Pool extends BaseContract {
     private static final BigInteger FEE_DENOMINATOR = BigInteger.TEN.pow(10);
     private Curve4PoolData curve4PoolData;
 
-    public Curve4Pool(String address, IChainHelper iChainHelper, Map<String, String> sigMap) {
-        super(address, ContractType.CONTRACT_CURVE_4POOL, iChainHelper, sigMap);
+    public Curve4Pool(String address, IChainHelper iChainHelper, IContractsHelper iContractsHelper, Map<String, String> sigMap) {
+        super(address, ContractType.CONTRACT_CURVE_4POOL, iChainHelper, iContractsHelper, sigMap);
     }
 
     private Curve4PoolData getVarCurve4PoolData() {

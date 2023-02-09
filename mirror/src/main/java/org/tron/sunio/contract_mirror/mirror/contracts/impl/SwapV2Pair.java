@@ -8,6 +8,7 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
+import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.tronsdk.WalletUtil;
@@ -51,9 +52,9 @@ public class SwapV2Pair extends BaseContract {
     @Getter
     private SwapV2PairData swapV2PairData;
 
-    public SwapV2Pair(String address, String factory, IChainHelper iChainHelper,
+    public SwapV2Pair(String address, String factory, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
                       Map<String, String> sigMap) {
-        super(address, ContractType.SWAP_V2_PAIR, iChainHelper, sigMap);
+        super(address, ContractType.SWAP_V2_PAIR, iChainHelper, iContractsHelper, sigMap);
         this.factory = factory;
     }
 

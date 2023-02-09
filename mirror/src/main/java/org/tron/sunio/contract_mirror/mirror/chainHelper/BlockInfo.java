@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class BlockInfo {
     private long number;
     private String hash;
+    private long timeStamp;
 }
