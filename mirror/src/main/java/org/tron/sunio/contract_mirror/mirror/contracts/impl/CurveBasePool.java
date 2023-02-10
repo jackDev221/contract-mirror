@@ -842,11 +842,11 @@ public class CurveBasePool extends BaseContract {
         BigInteger amp = a();
         CurveBasePoolData curveBasePoolData = getVarCurveBasePoolData();
         BigInteger _fee = curveBasePoolData.getFee().multiply(nCoins).divide(BigInteger.valueOf((coinsCount - 1) * 4));
-        BigInteger total_supply = curveBasePoolData.getTotalSupply();
+        BigInteger totalSupply = curveBasePoolData.getTotalSupply();
 
         BigInteger[] xp = xp();
         BigInteger d0 = getD(xp, amp);
-        BigInteger d1 = d0.subtract(_token_amount.multiply(d0).divide(total_supply));
+        BigInteger d1 = d0.subtract(_token_amount.multiply(d0).divide(totalSupply));
         BigInteger[] xpReduced = xp();
         BigInteger newY = getYD(amp, i, xp, d1);
         BigInteger dy0 = (xp[i].subtract(newY)).divide(precisions[i]);  // w/o fees

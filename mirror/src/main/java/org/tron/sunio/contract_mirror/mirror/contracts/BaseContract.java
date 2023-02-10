@@ -53,7 +53,7 @@ public abstract class BaseContract implements IContract {
 
     @Getter
     @Setter
-    private IContractsHelper iContractsHelper;
+    protected IContractsHelper iContractsHelper;
 
 
     public abstract boolean initDataFromChain1();

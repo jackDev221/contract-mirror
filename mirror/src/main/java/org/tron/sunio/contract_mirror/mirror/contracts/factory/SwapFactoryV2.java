@@ -40,7 +40,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_GET_PAIR;
 
 @Slf4j
-public class SwapFactoryV2 extends BaseFactory implements IContractFactory {
+public class SwapFactoryV2 extends BaseFactory {
     private Map<String, String> v2PairSigMap;
     private SwapFactoryV2Data swapFactoryV2Data;
 
@@ -151,20 +151,6 @@ public class SwapFactoryV2 extends BaseFactory implements IContractFactory {
     }
 
     @Override
-    public List<String> getListContractAddresses() {
-        List<String> result = new ArrayList<>();
-        long pairCount = getPairCount().longValue();
-        for (long i = 0; i < pairCount; i++) {
-            Address pairAddress = getPairWithId(i);
-            if (pairAddress.equals(Address.DEFAULT)) {
-                continue;
-            }
-            result.add(WalletUtil.ethAddressToTron(pairAddress.toString()));
-        }
-        return result;
-    }
-
-    @Override
     public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
         SwapFactoryV2Data factoryV2Data = this.getVarFactoryV2Data();
         factoryV2Data.setUsing(isUsing);
@@ -243,16 +229,6 @@ public class SwapFactoryV2 extends BaseFactory implements IContractFactory {
         } else {
             throw new RuntimeException(String.format("Token0 input %s not exist", token0));
         }
-    }
-
-    @Override
-    public String getFactoryState() {
-        SwapFactoryV2Data factoryV2Data = this.getVarFactoryV2Data();
-        if (ObjectUtil.isNotNull(factoryV2Data)) {
-            return String.format("Address:%s, Type: %s, feeTo:%s, feeToSetter:%d", this.address, this.type, factoryV2Data.getFeeTo(),
-                    factoryV2Data.getFeeToSetter());
-        }
-        return String.format("Address:%s, Type: %s not init", this.address, this.type);
     }
 
     private BigInteger getPairCount() {

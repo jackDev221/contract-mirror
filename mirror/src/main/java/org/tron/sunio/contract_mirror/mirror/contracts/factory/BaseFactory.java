@@ -64,16 +64,6 @@ public class BaseFactory extends BaseContract implements IContractFactory {
         return null;
     }
 
-    @Override
-    public List<String> getListContractAddresses() {
-        return null;
-    }
-
-    @Override
-    public String getFactoryState() {
-        return null;
-    }
-
     protected List<BaseProcessOut> getListContractsBase(CMPool cmPool, int baseCount) {
         log.info("Into BaseFactory: getListContractsBase:baseCount:{} unFinshLoadSub:{}", baseCount, unFinshLoadSub.size());
         List<BaseProcessOut> result = new ArrayList<>();

@@ -40,7 +40,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN_COUNT;
 
 @Slf4j
-public class SwapFactoryV1 extends BaseFactory implements IContractFactory {
+public class SwapFactoryV1 extends BaseFactory{
     private Map<String, String> v1SigMap;
     private SwapFactoryV1Data swapFactoryV1Data;
 
@@ -128,35 +128,6 @@ public class SwapFactoryV1 extends BaseFactory implements IContractFactory {
             result.add(swapV1);
         }
         return result;
-    }
-
-    @Override
-    public List<String> getListContractAddresses() {
-        List<String> result = new ArrayList<>();
-        long totalTokens = getTokenCount().longValue();
-        for (long i = 0; i < totalTokens; i++) {
-            Address tokenAddress = getTokenWithId(i);
-            if (tokenAddress.equals(Address.DEFAULT)) {
-                continue;
-            }
-            Address contractAddress = getExchange(tokenAddress);
-            if (contractAddress.equals(Address.DEFAULT)) {
-                continue;
-            }
-            result.add(WalletUtil.ethAddressToTron(contractAddress.toString()));
-        }
-        return result;
-    }
-
-    @Override
-    public String getFactoryState() {
-        SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
-        if (ObjectUtil.isNotNull(factoryV1Data)) {
-            return String.format("Address:%s, Type: %s, feeAddress:%s, feeToRate:%d", this.address, this.type, factoryV1Data.getFeeAddress(),
-                    factoryV1Data.getFeeToRate());
-        }
-        return String.format("Address:%s, Type: %s not init", this.address, this.type);
-
     }
 
     private BigInteger getTokenCount() {

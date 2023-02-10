@@ -9,8 +9,4 @@ public interface IContractFactory {
     BaseFactory getBaseContract();
 
     List<BaseContract> getListContracts(CMPool cmPool);
-
-    List<String> getListContractAddresses();
-
-    String getFactoryState();
 }
