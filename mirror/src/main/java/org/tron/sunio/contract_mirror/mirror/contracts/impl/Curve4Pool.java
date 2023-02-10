@@ -62,7 +62,7 @@ public class Curve4Pool extends BaseContract {
         for (int i = 0; i < BASE_N_COINS; i++) {
             // update base_coins
             TriggerContractInfo triggerContractInfo = new TriggerContractInfo(ContractMirrorConst.EMPTY_ADDRESS, address, "base_coins",
-                    List.of(new Uint256(i)), List.of(new TypeReference<Uint256>() {
+                    List.of(new Uint256(i)), List.of(new TypeReference<Address>() {
             }));
             List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
             if (results.size() == 0) {
