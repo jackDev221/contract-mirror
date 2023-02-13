@@ -28,6 +28,10 @@ public class SwapV2PairData extends BaseContractData {
     private long unlocked;
     private BigInteger trxBalance;
     private BigInteger lpTotalSupply;
+    private String token0Name;
+    private String token0Symbol;
+    private String token1Name;
+    private String token1Symbol;
 
 
     public Reserves getReserves() {

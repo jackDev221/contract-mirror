@@ -47,6 +47,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 @Slf4j
 public class SwapV2Pair extends BaseContract {
     private static final BigInteger Q112 = BigInteger.TWO.pow(112);
+    private static final BigInteger MINIMUM_LIQUIDITY = BigInteger.TEN.pow(3);
     private String factory;
     @Setter
     @Getter
@@ -114,6 +115,14 @@ public class SwapV2Pair extends BaseContract {
         swapV2PairData.setName(name);
         String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
         swapV2PairData.setSymbol(symbol);
+        String token0Name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, token0, "name");
+        swapV2PairData.setToken0Name(token0Name);
+        String token0Symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, token0, "symbol");
+        swapV2PairData.setToken0Symbol(token0Symbol);
+        String token1Name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, token1, "name");
+        swapV2PairData.setToken1Name(token1Name);
+        String token1Symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, token1, "symbol");
+        swapV2PairData.setToken1Symbol(token1Symbol);
         long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
         swapV2PairData.setDecimals(decimals);
         BigInteger kLast = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
@@ -277,6 +286,97 @@ public class SwapV2Pair extends BaseContract {
 
     private BigInteger priceCumulativeLastAdd(BigInteger reserve0, BigInteger reserve1, long timeElapsed) {
         return reserve1.multiply(Q112).divide(reserve0).multiply(BigInteger.valueOf(timeElapsed));
+    }
+
+    /**
+     * // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+     * function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
+     * require(amountIn > 0, 'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT');
+     * require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+     * uint amountInWithFee = amountIn.mul(997);
+     * uint numerator = amountInWithFee.mul(reserveOut);
+     * uint denominator = reserveIn.mul(1000).add(amountInWithFee);
+     * amountOut = numerator / denominator;
+     * }
+     * x*y=(x-a)*(y+b)
+     * => a=x*b/(y+b)
+     */
+    public BigInteger getAmountOut(String token0, String token1, BigInteger amountIn) throws Exception {
+        if (BigInteger.ZERO.compareTo(amountIn) > 0) {
+            throw new Exception("UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT ");
+        }
+        BigInteger[] reserves = getSortedReverser(token0, token1);
+        if (BigInteger.ZERO.compareTo(reserves[0]) > 0 ||
+                BigInteger.ZERO.compareTo(reserves[1]) > 0) {
+            throw new Exception("UniswapV2Library: INSUFFICIENT_LIQUIDITY ");
+        }
+        BigInteger amountInWithFee = amountIn.multiply(BigInteger.valueOf(997));
+        BigInteger numerator = amountInWithFee.multiply(reserves[1]);
+        BigInteger denominator = reserves[0].multiply(BigInteger.valueOf(1000)).add(amountInWithFee);
+        return numerator.divide(denominator);
+    }
+
+    /**
+     * // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
+     * function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
+     * require(amountOut > 0, 'UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT');
+     * require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+     * uint numerator = reserveIn.mul(amountOut).mul(1000);
+     * uint denominator = reserveOut.sub(amountOut).mul(997);
+     * amountIn = (numerator / denominator).add(1);
+     * }
+     * x*y=(x-a)*(y+b)
+     * => b=y*a/(x-a)
+     */
+
+    public BigInteger getAmountIn(String token0, String token1, BigInteger amountOut) throws Exception {
+        if (BigInteger.ZERO.compareTo(amountOut) > 0) {
+            throw new Exception("UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT ");
+        }
+        BigInteger[] reserves = getSortedReverser(token0, token1);
+        if (BigInteger.ZERO.compareTo(reserves[0]) > 0 ||
+                BigInteger.ZERO.compareTo(reserves[1]) > 0) {
+            throw new Exception("UniswapV2Library: INSUFFICIENT_LIQUIDITY ");
+        }
+        BigInteger numerator = reserves[0].multiply(amountOut).multiply(BigInteger.valueOf(1000));
+        BigInteger denominator = (reserves[1].subtract(amountOut)).multiply(BigInteger.valueOf(997));
+        return numerator.divide(denominator);
+    }
+
+    public BigInteger[] getSortedReverser(String token0, String token1) throws Exception {
+        SwapV2PairData v2PairData = this.getVarSwapV2PairData();
+        BigInteger reserve0 = new BigInteger(v2PairData.getReserve0().toString());
+        BigInteger reserve1 = new BigInteger(v2PairData.getReserve1().toString());
+        if (token0.equals(v2PairData.getToken0()) && token1.equals(v2PairData.getToken1())) {
+            return new BigInteger[]{reserve0, reserve1};
+        }
+        if (token1.equals(v2PairData.getToken0()) && token1.equals(v2PairData.getToken0())) {
+            return new BigInteger[]{reserve1, reserve0};
+        }
+        throw new Exception("Wrong inout tokens");
+    }
+
+    public BigInteger[] burn(BigInteger lpTokenAmount) {
+        SwapV2PairData v2PairData = this.getVarSwapV2PairData();
+        BigInteger totalLp = v2PairData.getLpTotalSupply();
+        if (lpTokenAmount.compareTo(BigInteger.ZERO) <= 0 ||
+                totalLp.compareTo(BigInteger.ZERO) <= 0) {
+            return new BigInteger[]{BigInteger.ZERO, BigInteger.ZERO};
+        }
+        BigInteger amount0 = lpTokenAmount.multiply(v2PairData.getReserve0()).divide(totalLp);
+        BigInteger amount1 = lpTokenAmount.multiply(v2PairData.getReserve1()).divide(totalLp);
+        return new BigInteger[]{amount0, amount1};
+    }
+
+    public BigInteger mint(BigInteger amount0, BigInteger amount1) {
+        SwapV2PairData v2PairData = this.getVarSwapV2PairData();
+        BigInteger totalLp = v2PairData.getLpTotalSupply();
+        if (totalLp.compareTo(BigInteger.ZERO) == 0) {
+            return ((amount0.multiply(amount1)).sqrt()).subtract(MINIMUM_LIQUIDITY);
+        }
+        BigInteger lp0 = amount0.multiply(totalLp).divide(v2PairData.getReserve0());
+        BigInteger lp1 = amount0.multiply(totalLp).divide(v2PairData.getReserve1());
+        return lp0.min(lp1);
     }
 
 }
