@@ -15,6 +15,8 @@ import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.BaseFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.Assemble3Pool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.Assemble4Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve4Pool;
@@ -103,6 +105,15 @@ public class ContractFactoryManager {
                     ));
                     break;
 
+                case CONTRACT_ASSEMBLE_3POOL:
+                    iContractsCollectHelper.addContract(new Assemble3Pool(
+                            contractInfo.getAddress(),
+                            tronChainHelper,
+                            iContractsHelper,
+                            new HashMap<>()
+                    ));
+                    break;
+
                 case CONTRACT_CURVE_4POOL:
                     iContractsCollectHelper.addContract(new Curve4Pool(
                             contractInfo.getAddress(),
@@ -111,6 +122,16 @@ public class ContractFactoryManager {
                             curve4PoolSigMap
                     ));
                     break;
+
+                case CONTRACT_ASSEMBLE_4POOL:
+                    iContractsCollectHelper.addContract(new Assemble4Pool(
+                            contractInfo.getAddress(),
+                            tronChainHelper,
+                            iContractsHelper,
+                            new HashMap<>()
+                    ));
+                    break;
+
                 case CONTRACT_PSM_USDT:
                 case CONTRACT_PSM_USDC:
                 case CONTRACT_PSM_USDJ:
