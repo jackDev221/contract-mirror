@@ -25,6 +25,7 @@ import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVE
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TRANSFER;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TRANSFER_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TRX_PURCHASE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_TOPIC_VALUE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_BALANCE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_DECIMALS;
@@ -65,6 +66,8 @@ public class SwapV1 extends BaseContract {
         SwapV1Data v1Data = this.getVarSwapV1Data();
         String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
         String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
+        String tokenName = callContractString(ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "name");
+        String tokenSymbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "symbol");
         long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
         BigInteger kLast = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
         BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
@@ -78,6 +81,8 @@ public class SwapV1 extends BaseContract {
         v1Data.setTrxBalance(trxBalance);
         v1Data.setLpTotalSupply(lpTotalSupply);
         v1Data.setTokenBalance(tokenBalance);
+        v1Data.setTokenName(tokenName);
+        v1Data.setTokenSymbol(tokenSymbol);
         v1Data.setReady(isReady);
         isDirty = true;
         return true;
@@ -242,4 +247,155 @@ public class SwapV1 extends BaseContract {
         log.info("TokenToToken not implements!");
         return HandleResult.genHandleFailMessage("handleTokenToToken not implements!");
     }
+
+    // return  liquidity amount Ps:not change data
+    public BigInteger addLiquidity(BigInteger trxAmount, BigInteger minLiquidity, BigInteger maxTokens,
+                                   BigInteger deadline) throws Exception {
+        if (minLiquidity.compareTo(BigInteger.ZERO) <= 0) {
+            throw new Exception("minLiquidity must greater than 0");
+        }
+        SwapV1Data v1Data = this.getVarSwapV1Data().copySelf();
+        BigInteger totalLiquidity = new BigInteger(v1Data.getLpTotalSupply().toString());
+        if (totalLiquidity.compareTo(BigInteger.ZERO) > 0) {
+            BigInteger trxReserve = v1Data.getTrxBalance();
+            BigInteger tokenReserve = v1Data.getTokenBalance();
+            BigInteger tokenAmount = (trxAmount.multiply(tokenReserve).divide(trxReserve)).add(BigInteger.ONE);
+            BigInteger liquidityMinted = trxAmount.multiply(totalLiquidity).divide(trxReserve);
+            if (maxTokens.compareTo(tokenAmount) < 0 || liquidityMinted.compareTo(minLiquidity) < 0) {
+                throw new Exception("max tokens not meet or liquidityMinted not meet minLiquidity");
+            }
+            return liquidityMinted;
+        } else {
+            return v1Data.getTrxBalance();
+        }
+    }
+
+    // return [trx, tokenBalance] Ps:not change data
+    public BigInteger[] removeLiquidity(BigInteger amount, BigInteger minTrx, BigInteger minTokens,
+                                        long deadline) throws Exception {
+        if (amount.compareTo(BigInteger.ZERO) <= 0 || deadline < iContractsHelper.getBlockTime()
+                || minTrx.compareTo(BigInteger.ZERO) <= 0 || minTokens.compareTo(BigInteger.ZERO) <= 0) {
+            throw new Exception("illegal input parameters");
+        }
+        SwapV1Data v1Data = this.getVarSwapV1Data().copySelf();
+        BigInteger totalLiquidity = new BigInteger(v1Data.getLpTotalSupply().toString());
+        if (totalLiquidity.compareTo(BigInteger.ZERO) <= 0) {
+            throw new Exception("total_liquidity must greater than 0");
+        }
+
+        BigInteger tokenReserve = v1Data.getTokenBalance();
+        BigInteger trxReserve = v1Data.getTrxBalance();
+        BigInteger trxAmount = amount.multiply(trxReserve).divide(totalLiquidity);
+        BigInteger tokenAmount = amount.multiply(tokenReserve).divide(totalLiquidity);
+        if (trxAmount.compareTo(minTrx) < 0 || tokenAmount.compareTo(minTokens) < 0) {
+            throw new Exception("minToken or minTrx not meet");
+        }
+        return new BigInteger[]{trxAmount, tokenAmount};
+    }
+
+    public BigInteger trxToTokenInput(BigInteger trxSold, BigInteger minToken) throws Exception {
+        SwapV1Data swapV1Data = this.getVarSwapV1Data().copySelf();
+        BigInteger tokensBought = getInputPrice(trxSold, swapV1Data.getTrxBalance(), swapV1Data.getTokenBalance());
+        if (tokensBought.compareTo(minToken) < 0) {
+            throw new Exception("tokensBought < minToken");
+        }
+        return tokensBought;
+    }
+
+    public BigInteger trxToTokenOutput(BigInteger tokenBought, BigInteger maxTrx) throws Exception {
+        SwapV1Data swapV1Data = this.getVarSwapV1Data().copySelf();
+        BigInteger trxSold = getOutputPrice(tokenBought, swapV1Data.getTrxBalance(), swapV1Data.getTokenBalance());
+        if (trxSold.compareTo(maxTrx) < 0) {
+            throw new Exception("trxSold < maxTrx");
+        }
+        return trxSold;
+    }
+
+    public BigInteger tokenToTrxInput(BigInteger tokenSold, BigInteger minToken) throws Exception {
+        SwapV1Data swapV1Data = this.getVarSwapV1Data().copySelf();
+        BigInteger trxBought = getInputPrice(tokenSold, swapV1Data.getTokenBalance(), swapV1Data.getTrxBalance());
+        if (trxBought.compareTo(minToken) < 0) {
+            throw new Exception("trxBought < minToken");
+        }
+        return trxBought;
+    }
+
+    public BigInteger tokenToTrxOutput(BigInteger trxBought, BigInteger maxTokens) throws Exception {
+        SwapV1Data swapV1Data = this.getVarSwapV1Data().copySelf();
+        BigInteger tokensSold = getOutputPrice(trxBought, swapV1Data.getTokenBalance(), swapV1Data.getTrxBalance());
+        if (tokensSold.compareTo(maxTokens) < 0) {
+            throw new Exception("tokensSold < maxTokens");
+        }
+        return tokensSold;
+    }
+
+    public BigInteger tokenToTokenInput(BigInteger tokensSold, BigInteger minTokensBought, BigInteger minTrxBought,
+                                        String exchangeAddress) throws Exception {
+        if (exchangeAddress.equals(this.address) || exchangeAddress.equals(EMPTY_ADDRESS)) {
+            throw new Exception("illegal exchange addr");
+        }
+        BigInteger trxBought = tokenToTrxInput(tokensSold, minTrxBought);
+        BaseContract baseContract = this.iContractsHelper.getContract(exchangeAddress);
+        if (ObjectUtil.isNull(baseContract)) {
+            throw new Exception(String.format("Get no %s contract instance", exchangeAddress));
+        }
+        if (baseContract instanceof SwapV1) {
+            SwapV1 swapV1 = (SwapV1) baseContract;
+
+            BigInteger tokensBought = swapV1.trxToTokenInput(trxBought, minTokensBought);
+            return tokensBought;
+        } else {
+            throw new Exception(String.format("Get %s contract instance not SwapV1"));
+        }
+    }
+
+    public BigInteger tokenToTokenOutput(BigInteger tokensBought, BigInteger maxTokenSold, BigInteger minTrxSold,
+                                         String exchangeAddress) throws Exception {
+        if (exchangeAddress.equals(this.address) || exchangeAddress.equals(EMPTY_ADDRESS)) {
+            throw new Exception("illegal exchange addr");
+        }
+        BaseContract baseContract = this.iContractsHelper.getContract(exchangeAddress);
+        if (ObjectUtil.isNull(baseContract)) {
+            throw new Exception(String.format("Get no %s contract instance", exchangeAddress));
+        }
+        if (baseContract instanceof SwapV1) {
+            SwapV1 swapV1 = (SwapV1) baseContract;
+
+            BigInteger trxBought = swapV1.trxToTokenOutput(tokensBought, minTrxSold);
+            BigInteger tokenSold = trxToTokenOutput(trxBought, maxTokenSold);
+            return tokenSold;
+        } else {
+            throw new Exception(String.format("Get %s contract instance not SwapV1"));
+        }
+    }
+
+
+    // x*y=(x-a)*(y+b)
+    //  => b=y*a/(x-a)
+    public static BigInteger getOutputPrice(BigInteger outputAmount, BigInteger inputReserve,
+                                            BigInteger outputReserve) throws Exception {
+        if (outputAmount.compareTo(BigInteger.ZERO) <= 0 || inputReserve.compareTo(BigInteger.ZERO) <= 0) {
+            throw new Exception("Wrong input");
+        }
+        BigInteger numerator = inputReserve.multiply(outputAmount).multiply(BigInteger.valueOf(1000));
+        BigInteger denominator = (outputReserve.subtract(outputAmount)).multiply(BigInteger.valueOf(997));
+        return (numerator.divide(denominator)).add(BigInteger.ONE);
+    }
+
+    // x*y=(x-a)*(y+b)
+    // => a=x*b/(y+b)
+    public static BigInteger getInputPrice(BigInteger inputAmount, BigInteger inputReserve,
+                                           BigInteger outputReserve) throws Exception {
+
+        if (inputReserve.compareTo(BigInteger.ZERO) <= 0 || outputReserve.compareTo(BigInteger.ZERO) <= 0) {
+            throw new Exception("Wrong input");
+        }
+
+        BigInteger input_amount_with_fee = inputAmount.multiply(BigInteger.valueOf(997));
+        BigInteger numerator = input_amount_with_fee.multiply(outputReserve);
+        BigInteger denominator = inputReserve.multiply(BigInteger.valueOf(1000)).add(input_amount_with_fee);
+        return numerator.divide(denominator);
+    }
+
+
 }

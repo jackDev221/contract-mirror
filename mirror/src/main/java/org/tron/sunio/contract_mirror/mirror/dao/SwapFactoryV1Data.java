@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,4 +24,9 @@ public class SwapFactoryV1Data extends BaseContractData {
     private Map<String, String> exchangeToTokenMap = new HashMap<>();
     @JsonIgnore
     private Map<String, String> tokenToExchangeMap = new HashMap<>();
+
+    public SwapFactoryV1Data copySelf() {
+        String jsonString = GsonUtil.objectToGson(this);
+        return GsonUtil.gsonToObject(jsonString, SwapFactoryV1Data.class);
+    }
 }

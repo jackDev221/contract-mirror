@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 
 import java.math.BigInteger;
 
@@ -20,4 +21,9 @@ public class PSMData extends BaseContractData{
     private BigInteger tout;
     private String quota;
     private BigInteger[] infos;
+
+    public PSMData copySelf() {
+        String jsonString = GsonUtil.objectToGson(this);
+        return GsonUtil.gsonToObject(jsonString, PSMData.class);
+    }
 }

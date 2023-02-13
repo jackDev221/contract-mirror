@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 
 import java.math.BigInteger;
 
@@ -55,5 +56,10 @@ public class CurveBasePoolData extends BaseContractData {
             result[i] = new BigInteger(balances[i].toString());
         }
         return result;
+    }
+
+    public CurveBasePoolData copySelf() {
+        String jsonString = GsonUtil.objectToGson(this);
+        return GsonUtil.gsonToObject(jsonString, CurveBasePoolData.class);
     }
 }

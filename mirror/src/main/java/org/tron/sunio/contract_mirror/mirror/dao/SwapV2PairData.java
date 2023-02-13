@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 
 import java.math.BigInteger;
 
@@ -44,5 +45,10 @@ public class SwapV2PairData extends BaseContractData {
             this.reserve1 = reserve1;
             this.blockTimestampLast = blockTimestampLast;
         }
+    }
+
+    public SwapV2PairData copySelf() {
+        String jsonString = GsonUtil.objectToGson(this);
+        return GsonUtil.gsonToObject(jsonString, SwapV2PairData.class);
     }
 }

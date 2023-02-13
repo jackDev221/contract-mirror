@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 
 import java.math.BigInteger;
 
@@ -31,5 +32,10 @@ public class Curve4PoolData extends BaseContractData {
             System.out.println("Out of range!!");
         }
         baseCoins[index] = address;
+    }
+
+    public Curve4PoolData copySelf() {
+        String jsonString = GsonUtil.objectToGson(this);
+        return GsonUtil.gsonToObject(jsonString, Curve4PoolData.class);
     }
 }

@@ -4,12 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class AssemblePoolData extends BaseContractData{
+public class AssemblePoolData extends BaseContractData {
     private String pool;
     private String token;
     private String basePool;
@@ -29,5 +30,10 @@ public class AssemblePoolData extends BaseContractData{
             System.out.println("Out of range!!");
         }
         baseCoins[index] = address;
+    }
+
+    public AssemblePoolData copySelf() {
+        String jsonString = GsonUtil.objectToGson(this);
+        return GsonUtil.gsonToObject(jsonString, AssemblePoolData.class);
     }
 }

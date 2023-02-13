@@ -221,8 +221,8 @@ public abstract class BaseContract implements IContract {
         this.updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
     }
 
-    protected String callContractString(String from, String method) {
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, this.getAddress(), method,
+    protected String callContractString(String from, String contract, String method) {
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, method,
                 Collections.EMPTY_LIST, List.of(new TypeReference<Utf8String>() {
         })
         );
@@ -232,6 +232,10 @@ public abstract class BaseContract implements IContract {
             return "";
         }
         return results.get(0).getValue().toString();
+    }
+
+    protected String callContractString(String from, String method) {
+        return callContractString(from, this.getAddress(), method);
     }
 
     protected BigInteger callContractU256(String from, String method) {
