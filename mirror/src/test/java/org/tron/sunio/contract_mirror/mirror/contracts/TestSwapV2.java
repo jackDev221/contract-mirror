@@ -1,10 +1,13 @@
 package org.tron.sunio.contract_mirror.mirror.contracts;
 
 import cn.hutool.core.lang.Assert;
+import net.minidev.json.writer.BeansMapper;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.BeanUtils;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV2Pair;
+import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 import org.tron.sunio.contract_mirror.mirror.utils.EventLogUtils;
 
@@ -65,7 +68,5 @@ public class TestSwapV2 {
         Assert.isTrue(res.getBlockTimestampLast() == blockTimestampLast, "blockTimestampLast not equal");
         Assert.isTrue(res.getPrice0CumulativeLast().compareTo(price0CumulativeLast) == 0, "price0CumulativeLast not equal");
         Assert.isTrue(res.getPrice1CumulativeLast().compareTo(price1CumulativeLast) == 0, "price1CumulativeLast not equal");
-        ;
-
     }
 }

@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
+import org.springframework.beans.BeanUtils;
 
 import java.math.BigInteger;
 
@@ -52,7 +52,8 @@ public class SwapV2PairData extends BaseContractData {
     }
 
     public SwapV2PairData copySelf() {
-        String jsonString = GsonUtil.objectToGson(this);
-        return GsonUtil.gsonToObject(jsonString, SwapV2PairData.class);
+        SwapV2PairData res = new SwapV2PairData();
+        BeanUtils.copyProperties(this, res);
+        return res;
     }
 }

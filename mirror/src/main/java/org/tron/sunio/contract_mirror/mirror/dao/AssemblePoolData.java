@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
+import org.springframework.beans.BeanUtils;
 
 @Data
 @NoArgsConstructor
@@ -33,7 +33,8 @@ public class AssemblePoolData extends BaseContractData {
     }
 
     public AssemblePoolData copySelf() {
-        String jsonString = GsonUtil.objectToGson(this);
-        return GsonUtil.gsonToObject(jsonString, AssemblePoolData.class);
+        AssemblePoolData res = new AssemblePoolData();
+        BeanUtils.copyProperties(this, res);
+        return res;
     }
 }

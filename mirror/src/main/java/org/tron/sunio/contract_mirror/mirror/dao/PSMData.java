@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
+import org.springframework.beans.BeanUtils;
 
 import java.math.BigInteger;
 
@@ -12,7 +12,7 @@ import java.math.BigInteger;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class PSMData extends BaseContractData{
+public class PSMData extends BaseContractData {
     private String gemJoin;
     private String usdd;
     private String usddJoin;
@@ -23,7 +23,8 @@ public class PSMData extends BaseContractData{
     private BigInteger[] infos;
 
     public PSMData copySelf() {
-        String jsonString = GsonUtil.objectToGson(this);
-        return GsonUtil.gsonToObject(jsonString, PSMData.class);
+        PSMData res = new PSMData();
+        BeanUtils.copyProperties(this, res);
+        return res;
     }
 }
