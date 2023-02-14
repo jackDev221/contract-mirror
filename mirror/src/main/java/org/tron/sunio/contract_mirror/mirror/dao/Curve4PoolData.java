@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.BeanUtils;
+import org.tron.sunio.contract_mirror.mirror.tools.DeepCopyUtils;
 
 @Data
 @NoArgsConstructor
@@ -33,8 +33,6 @@ public class Curve4PoolData extends BaseContractData {
     }
 
     public Curve4PoolData copySelf() {
-        Curve4PoolData res = new Curve4PoolData();
-        BeanUtils.copyProperties(this, res);
-        return res;
+        return DeepCopyUtils.deepCopy(this, Curve4PoolData.class);
     }
 }

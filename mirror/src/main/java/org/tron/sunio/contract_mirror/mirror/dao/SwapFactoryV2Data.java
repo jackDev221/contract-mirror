@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.BeanUtils;
+import org.tron.sunio.contract_mirror.mirror.tools.DeepCopyUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,8 +24,6 @@ public class SwapFactoryV2Data extends BaseContractData {
     private Map<Integer, String> pairsMap = new HashMap<>();
 
     public SwapFactoryV2Data copySelf() {
-        SwapFactoryV2Data res = new SwapFactoryV2Data();
-        BeanUtils.copyProperties(this, res);
-        return res;
+        return DeepCopyUtils.deepCopy(this, SwapFactoryV2Data.class);
     }
 }

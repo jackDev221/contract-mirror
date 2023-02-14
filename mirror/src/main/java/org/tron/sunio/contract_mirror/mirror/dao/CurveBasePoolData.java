@@ -4,7 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.BeanUtils;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
+import org.tron.sunio.contract_mirror.mirror.tools.DeepCopyUtils;
 
 import java.math.BigInteger;
 
@@ -78,14 +79,10 @@ public class CurveBasePoolData extends BaseContractData {
     }
 
     public CurveBasePoolData copySelf() {
-        CurveBasePoolData res = new CurveBasePoolData();
-        BeanUtils.copyProperties(this, res);
-        return res;
+        return DeepCopyUtils.deepCopy(this, CurveBasePoolData.class);
     }
 
     public BigInteger[] copyBalances() {
-        BigInteger[] res = new BigInteger[this.balances.length];
-        BeanUtils.copyProperties(balances, res);
-        return res;
+        return DeepCopyUtils.deepCopy(this.balances, BigInteger[].class);
     }
 }

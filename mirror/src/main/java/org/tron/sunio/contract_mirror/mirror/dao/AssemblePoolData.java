@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
+import org.tron.sunio.contract_mirror.mirror.tools.DeepCopyUtils;
 
 @Data
 @NoArgsConstructor
@@ -37,8 +39,6 @@ public class AssemblePoolData extends BaseContractData {
     }
 
     public AssemblePoolData copySelf() {
-        AssemblePoolData res = new AssemblePoolData();
-        BeanUtils.copyProperties(this, res);
-        return res;
+        return DeepCopyUtils.deepCopy(this, AssemblePoolData.class);
     }
 }

@@ -1,4 +1,4 @@
-package org.tron.sunio.contract_mirror.mirror.contracts;
+package org.tron.sunio.contract_mirror.mirror.contracts.event;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.util.Assert;

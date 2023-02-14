@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.BeanUtils;
+import org.tron.sunio.contract_mirror.mirror.tools.DeepCopyUtils;
 
 import java.math.BigInteger;
 
@@ -25,8 +25,6 @@ public class SwapV1Data extends BaseContractData {
     private String tokenSymbol;
 
     public SwapV1Data copySelf() {
-        SwapV1Data res = new SwapV1Data();
-        BeanUtils.copyProperties(this, res);
-        return res;
+        return DeepCopyUtils.deepCopy(this, SwapV1Data.class);
     }
 }

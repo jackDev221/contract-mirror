@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.BeanUtils;
+import org.tron.sunio.contract_mirror.mirror.tools.DeepCopyUtils;
 
 import java.math.BigInteger;
 
@@ -52,8 +52,6 @@ public class SwapV2PairData extends BaseContractData {
     }
 
     public SwapV2PairData copySelf() {
-        SwapV2PairData res = new SwapV2PairData();
-        BeanUtils.copyProperties(this, res);
-        return res;
+        return DeepCopyUtils.deepCopy(this, SwapV2PairData.class);
     }
 }

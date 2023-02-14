@@ -1,4 +1,4 @@
-package org.tron.sunio.contract_mirror.mirror.contracts;
+package org.tron.sunio.contract_mirror.mirror.contracts.event;
 
 import cn.hutool.core.lang.Assert;
 import net.minidev.json.writer.BeansMapper;

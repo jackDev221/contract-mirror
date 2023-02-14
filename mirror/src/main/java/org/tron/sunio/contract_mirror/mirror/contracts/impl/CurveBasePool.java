@@ -614,7 +614,7 @@ public class CurveBasePool extends BaseContract {
     private BigInteger[] xpMem(BigInteger[] balances) {
         BigInteger[] result = getRates();
         for (int i = 0; i < coinsCount; i++) {
-            result[i] = result[i].multiply(balances[i]).divide(LENDING_PRECISION);
+            result[i] = result[i].multiply(balances[i]).divide(PRECISION);
         }
         return result;
     }
@@ -641,15 +641,13 @@ public class CurveBasePool extends BaseContract {
             }
             dPre = d;
             BigInteger tmp = (ann.multiply(s)).add(dp.multiply(BigInteger.valueOf(coinsCount))).multiply(d);
-            tmp = tmp.divide(ann.subtract(BigInteger.ONE)).multiply(d);
-            d = tmp.add(BigInteger.valueOf(coinsCount + 1)).multiply(dp);
-
+            d = tmp.divide(ann.subtract(BigInteger.ONE).multiply(d).add(BigInteger.valueOf(coinsCount + 1).multiply(dp)));
             if (d.compareTo(dPre) > 0) {
-                if (d.subtract(dPre).compareTo(BigInteger.ONE) <= 1) {
+                if (d.subtract(dPre).compareTo(BigInteger.ONE) <= 0) {
                     break;
                 }
             } else {
-                if (dPre.subtract(d).compareTo(BigInteger.ONE) <= 1) {
+                if (dPre.subtract(d).compareTo(BigInteger.ONE) <= 0) {
                     break;
                 }
             }
@@ -1046,6 +1044,4 @@ public class CurveBasePool extends BaseContract {
         poolData.setTotalSupply(tokenSupply.subtract(token_amount));
         return token_amount;
     }
-
-
 }

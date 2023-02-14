@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.BeanUtils;
+import org.tron.sunio.contract_mirror.mirror.tools.DeepCopyUtils;
 
 import java.math.BigInteger;
 
@@ -23,8 +23,6 @@ public class PSMData extends BaseContractData {
     private BigInteger[] infos;
 
     public PSMData copySelf() {
-        PSMData res = new PSMData();
-        BeanUtils.copyProperties(this, res);
-        return res;
+        return DeepCopyUtils.deepCopy(this, PSMData.class);
     }
 }
