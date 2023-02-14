@@ -819,11 +819,10 @@ public class CurveBasePool extends BaseContract {
         return y;
     }
 
-    private BigInteger[] localCalcWithdrawOneCoin(BigInteger _token_amount, int i) throws Exception {
+    private BigInteger[] localCalcWithdrawOneCoin(BigInteger _token_amount, int i, CurveBasePoolData curveBasePoolData) throws Exception {
         BigInteger nCoins = BigInteger.valueOf(coinsCount);
         BigInteger[] precisions = getPrecisionMul();
         BigInteger amp = a();
-        CurveBasePoolData curveBasePoolData = getVarCurveBasePoolData();
         BigInteger _fee = curveBasePoolData.getFee().multiply(nCoins).divide(BigInteger.valueOf((coinsCount - 1) * 4));
         BigInteger totalSupply = curveBasePoolData.getTotalSupply();
 
@@ -849,8 +848,8 @@ public class CurveBasePool extends BaseContract {
         return new BigInteger[]{dy, dy0.subtract(dy)};
     }
 
-    public BigInteger calc_withdraw_one_coin(BigInteger _token_amount, int i) throws Exception {
-        BigInteger[] res = localCalcWithdrawOneCoin(_token_amount, i);
+    public BigInteger calc_withdraw_one_coin(BigInteger _token_amount, int i, CurveBasePoolData curveBasePoolData) throws Exception {
+        BigInteger[] res = localCalcWithdrawOneCoin(_token_amount, i, curveBasePoolData);
         return res[0];
     }
 
@@ -978,12 +977,12 @@ public class CurveBasePool extends BaseContract {
 
     public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount,
                                              CurveBasePoolData poolData) throws Exception {
-        BigInteger[] calRes = localCalcWithdrawOneCoin(_token_amount, i);
+        BigInteger[] calRes = localCalcWithdrawOneCoin(_token_amount, i, poolData);
         if (calRes[0].compareTo(min_amount) < 0) {
             new Exception("Not enough coins removed");
         }
         poolData.getBalances()[i] = poolData.getBalances()[i].subtract(calRes[0].add(calRes[1].multiply(
-                poolData.getAdminFee().divide(FEE_DENOMINATOR))));
+                poolData.getAdminFee()).divide(FEE_DENOMINATOR)));
         poolData.setTotalSupply(poolData.getTotalSupply().subtract(_token_amount));
         return calRes[0];
     }
