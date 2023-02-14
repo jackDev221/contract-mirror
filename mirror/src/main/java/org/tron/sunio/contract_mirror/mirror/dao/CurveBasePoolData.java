@@ -14,6 +14,8 @@ import java.math.BigInteger;
 @EqualsAndHashCode(callSuper = false)
 public class CurveBasePoolData extends BaseContractData {
     private String[] coins;
+    private String[] coinNames;
+    private String[] coinSymbols;
     private BigInteger[] balances;
     private String token;
     private BigInteger fee;
@@ -33,7 +35,10 @@ public class CurveBasePoolData extends BaseContractData {
 
     public CurveBasePoolData(int count) {
         coins = new String[count];
+        coinNames = new String[count];
+        coinSymbols = new String[count];
         balances = new BigInteger[count];
+
     }
 
     public void updateCoins(int index, String address) {
@@ -41,6 +46,20 @@ public class CurveBasePoolData extends BaseContractData {
             System.out.println("Out of range!!");
         }
         coins[index] = address;
+    }
+
+    public void updateCoinNames(int index, String name) {
+        if (index >= coinNames.length) {
+            System.out.println("Out of range!!");
+        }
+        coinNames[index] = name;
+    }
+
+    public void updateCoinSymbols(int index, String symbol) {
+        if (index >= coinSymbols.length) {
+            System.out.println("Out of range!!");
+        }
+        coinSymbols[index] = symbol;
     }
 
     public void updateBalances(int index, BigInteger value) {

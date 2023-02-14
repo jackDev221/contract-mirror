@@ -1,7 +1,6 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
-import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
@@ -43,6 +42,7 @@ import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_ONE;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_STOP_RAMP_A;
 import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent.EVENT_NAME_TOKEN_EXCHANGE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_ADMIN_ACTIONS_DEADLINE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_ADMIN_FEE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE;
@@ -67,7 +67,6 @@ public class CurveBasePool extends BaseContract {
     private static final BigInteger RATES_0 = BigInteger.TEN.pow(18);
     private static final BigInteger RATES_1 = BigInteger.TEN.pow(18);
     private static final BigInteger RATES_2 = BigInteger.TEN.pow(30);
-    @Getter
     @Setter
     protected CurveBasePoolData curveBasePoolData;
     private int feeIndex;
@@ -78,7 +77,7 @@ public class CurveBasePool extends BaseContract {
         this.feeIndex = feeIndex;
     }
 
-    public CurveBasePoolData getVarCurveBasePoolData() {
+    private CurveBasePoolData getVarCurveBasePoolData() {
         if (ObjectUtil.isNull(curveBasePoolData)) {
             curveBasePoolData = new CurveBasePoolData(coinsCount);
             curveBasePoolData.setAddress(address);
@@ -90,42 +89,28 @@ public class CurveBasePool extends BaseContract {
         return curveBasePoolData;
     }
 
+    public CurveBasePoolData getCurveBasePoolData() {
+        return getVarCurveBasePoolData().copySelf();
+    }
+
     protected void updateCoinsAndBalance(CurveBasePoolData curveBasePoolData) {
         for (int i = 0; i < coinsCount; i++) {
-            // update coins string
-            TriggerContractInfo triggerContractInfo = new TriggerContractInfo(ContractMirrorConst.EMPTY_ADDRESS, address,
-                    "coins", List.of(new Uint256(i)), List.of(new TypeReference<Address>() {
-            })
-            );
-            List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-            if (results.size() == 0) {
-                log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, "coins");
-            } else {
-                curveBasePoolData.updateCoins(i, WalletUtil.hexStringToTron((String) results.get(0).getValue()));
+            String coinAddress = callContractTronAddressWithIndex(ContractMirrorConst.EMPTY_ADDRESS, "coins", BigInteger.valueOf(i));
+            curveBasePoolData.updateCoins(i, coinAddress);
+            if (!coinAddress.equalsIgnoreCase(EMPTY_ADDRESS)) {
+                String name = callContractString(EMPTY_ADDRESS, coinAddress, "name");
+                String symbol = callContractString(EMPTY_ADDRESS, coinAddress, "symbol");
+                curveBasePoolData.updateCoinNames(i, name);
+                curveBasePoolData.updateCoinSymbols(i, symbol);
             }
-            // update coins balance
-            triggerContractInfo = new TriggerContractInfo(ContractMirrorConst.EMPTY_ADDRESS, address, "balances",
-                    List.of(new Uint256(i)), List.of(new TypeReference<Uint256>() {
-            }));
-            results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-            if (results.size() == 0) {
-                log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, "balances");
-            } else {
-                curveBasePoolData.updateBalances(i, (BigInteger) results.get(0).getValue());
-            }
+            BigInteger balance = callContractU256WithIndex(ContractMirrorConst.EMPTY_ADDRESS, address, "balances", BigInteger.valueOf(i));
+            curveBasePoolData.updateBalances(i, balance);
         }
     }
 
     protected void updateSupply(CurveBasePoolData curveBasePoolData, String tokenAddress) {
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(ContractMirrorConst.EMPTY_ADDRESS, tokenAddress,
-                "totalSupply", Collections.emptyList(), List.of(new TypeReference<Uint256>() {
-        }));
-        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() == 0) {
-            log.error("Get contract:{} type:{} , token: {} function: totalSupply() result len is zero", this.address, this.type, tokenAddress);
-        } else {
-            curveBasePoolData.setTotalSupply((BigInteger) results.get(0).getValue());
-        }
+        BigInteger totalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "totalSupply");
+        curveBasePoolData.setTotalSupply(totalSupply);
     }
 
     @Override
@@ -869,6 +854,197 @@ public class CurveBasePool extends BaseContract {
     public BigInteger calc_withdraw_one_coin(BigInteger _token_amount, int i) throws Exception {
         BigInteger[] res = localCalcWithdrawOneCoin(_token_amount, i);
         return res[0];
+    }
+
+    public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy) throws Exception {
+        CurveBasePoolData poolData = this.getCurveBasePoolData();
+        return exchange(i, j, dx, min_dy, poolData);
+    }
+
+    public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, CurveBasePoolData poolData) throws Exception {
+        BigInteger[] rates = getRates();
+        BigInteger[] oldBalances = poolData.copyBalances();
+        BigInteger[] xp = xpMem(oldBalances);
+        BigInteger dxWFee = getAmountWFee(i, dx);
+        BigInteger x = xp[i].add(dxWFee.multiply(rates[i]).divide(PRECISION));
+        BigInteger y = getY(i, j, x, xp);
+        BigInteger dy = xp[j].subtract(y).subtract(BigInteger.ONE);
+        BigInteger dyFee = dy.multiply(poolData.getFee()).divide(FEE_DENOMINATOR);
+        dy = (dy.subtract(dyFee)).multiply(PRECISION).divide(rates[j]);
+        if (dy.compareTo(min_dy) < 0) {
+            throw new Exception("Exchange resulted in fewer coins than expected");
+        }
+        BigInteger dyAminFee = dyFee.multiply(poolData.getAdminFee()).divide(FEE_DENOMINATOR);
+        dyAminFee = dyAminFee.multiply(PRECISION).divide(rates[j]);
+
+        poolData.updateBalances(i, oldBalances[i].add(dxWFee));
+        poolData.updateBalances(j, oldBalances[j].subtract(dy).subtract(dyAminFee));
+        return dy;
+    }
+
+    public BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount) throws Exception {
+        CurveBasePoolData poolData = this.getCurveBasePoolData();
+        return addLiquidity(amounts, minMintAmount, poolData);
+    }
+
+    public BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount,
+                                   CurveBasePoolData poolData) throws Exception {
+        BigInteger amp = a();
+        BigInteger tokenSupply = poolData.getTotalSupply();
+        // Initial invariant
+        BigInteger d0 = BigInteger.ZERO;
+        BigInteger[] oldBalances = poolData.copyBalances();
+        if (tokenSupply.compareTo(BigInteger.ZERO) > 0) {
+            d0 = getDMem(oldBalances, amp);
+        }
+        BigInteger[] newBalances = new BigInteger[coinsCount];
+
+        for (int i = 0; i < coinsCount; i++) {
+            BigInteger inAmount = amounts[i];
+            if (tokenSupply.compareTo(BigInteger.ZERO) <= 0) {
+                throw new Exception("in_amount must gt 0");
+            }
+            inAmount = getAmountWFee(i, amounts[i]);
+            newBalances[i] = oldBalances[i].add(inAmount);
+        }
+
+
+        BigInteger d1 = getDMem(newBalances, amp);
+        if (d1.compareTo(d0) <= 0) {
+            throw new Exception("D1 must gt D0");
+        }
+        BigInteger mintAmount;
+        BigInteger[] fees = new BigInteger[coinsCount];
+        BigInteger d2 = d1;
+
+        if (tokenSupply.compareTo(BigInteger.ZERO) > 0) {
+            BigInteger _fee = poolData.getFee().multiply(BigInteger.valueOf(coinsCount)).divide(BigInteger.valueOf((coinsCount - 1) * 4));
+            BigInteger _admin_fee = poolData.getAdminFee();
+            for (int i = 0; i < coinsCount; i++) {
+                BigInteger idealBalance = d1.multiply(oldBalances[i]).divide(d0);
+                BigInteger difference = BigInteger.ZERO;
+
+                if (idealBalance.compareTo(newBalances[i]) > 0) {
+                    difference = idealBalance.subtract(newBalances[i]);
+                } else {
+                    difference = newBalances[i].subtract(idealBalance);
+                }
+                fees[i] = _fee.multiply(difference).divide(FEE_DENOMINATOR);
+                poolData.getBalances()[i] = newBalances[i].subtract(fees[i].multiply(_admin_fee).divide(FEE_DENOMINATOR));
+                newBalances[i] = newBalances[i].subtract(fees[i]);
+            }
+
+            d2 = getDMem(newBalances, amp);
+        } else {
+            poolData.setBalances(newBalances);
+        }
+        if (tokenSupply.compareTo(BigInteger.ZERO) == 0) {
+            mintAmount = d1;
+        } else {
+            mintAmount = tokenSupply.multiply(d2.subtract(d0)).divide(d0);
+        }
+
+        if (mintAmount.compareTo(minMintAmount) < 0) {
+            throw new Exception("Slippage screwed you");
+        }
+        poolData.setTotalSupply(poolData.getTotalSupply().add(mintAmount));
+        return mintAmount;
+    }
+
+    public BigInteger[] removeLiquidity(BigInteger _amount, BigInteger[] minAmounts) throws Exception {
+        CurveBasePoolData poolData = this.getCurveBasePoolData();
+        return removeLiquidity(_amount, minAmounts, poolData);
+    }
+
+    public BigInteger[] removeLiquidity(BigInteger _amount, BigInteger[] minAmounts,
+                                        CurveBasePoolData poolData) throws Exception {
+        BigInteger tokenSupply = poolData.getTotalSupply();
+        BigInteger[] amounts = new BigInteger[coinsCount];
+        BigInteger[] fees = new BigInteger[coinsCount];
+        for (int i = 0; i < coinsCount; i++) {
+            BigInteger value = poolData.getBalances()[i].multiply(_amount).divide(tokenSupply);
+            if (value.compareTo(minAmounts[i]) < 0) {
+                throw new Exception("Withdrawal resulted in fewer coins than expected");
+            }
+            amounts[i] = value;
+            poolData.getBalances()[i] = poolData.getBalances()[i].subtract(value);
+        }
+        poolData.setTotalSupply(poolData.getTotalSupply().subtract(_amount));
+        return amounts;
+    }
+
+    public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount) throws Exception {
+        CurveBasePoolData poolData = this.getCurveBasePoolData();
+        return removeLiquidityOneCoin(_token_amount, i, min_amount, poolData);
+    }
+
+    public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount,
+                                             CurveBasePoolData poolData) throws Exception {
+        BigInteger[] calRes = localCalcWithdrawOneCoin(_token_amount, i);
+        if (calRes[0].compareTo(min_amount) < 0) {
+            new Exception("Not enough coins removed");
+        }
+        poolData.getBalances()[i] = poolData.getBalances()[i].subtract(calRes[0].add(calRes[1].multiply(
+                poolData.getAdminFee().divide(FEE_DENOMINATOR))));
+        poolData.setTotalSupply(poolData.getTotalSupply().subtract(_token_amount));
+        return calRes[0];
+    }
+
+    public BigInteger removeLiquidityImbalance(BigInteger[] amounts, BigInteger max_burn_amount) throws Exception {
+        CurveBasePoolData poolData = this.getCurveBasePoolData();
+        return removeLiquidityImbalance(amounts, max_burn_amount, poolData);
+    }
+
+    public BigInteger removeLiquidityImbalance(BigInteger[] amounts, BigInteger max_burn_amount,
+                                               CurveBasePoolData poolData) throws Exception {
+        BigInteger tokenSupply = poolData.getTotalSupply();
+        if (tokenSupply.compareTo(BigInteger.ZERO) == 0) {
+            throw new Exception("zero total supply");
+        }
+        BigInteger _fee = poolData.getFee().multiply(BigInteger.valueOf(coinsCount))
+                .divide(BigInteger.valueOf((coinsCount - 1) * 4));
+
+        BigInteger _admin_fee = poolData.getAdminFee();
+        BigInteger amp = a();
+        BigInteger[] old_balances = poolData.getBalances();
+        BigInteger[] new_balances = poolData.copyBalances();
+        BigInteger D0 = getDMem(old_balances, amp);
+
+        for (int i = 0; i < coinsCount; i++) {
+            new_balances[i] = new_balances[i].subtract(amounts[i]);
+        }
+        BigInteger D1 = getDMem(new_balances, amp);
+        // uint256[] memory fees =  new uint256[](N_COINS);
+        BigInteger[] fees = new BigInteger[coinsCount];
+
+        for (int i = 0; i < coinsCount; i++) {
+            BigInteger ideal_balance = D1.multiply(old_balances[i]).divide(D0);
+            BigInteger difference;
+            if (ideal_balance.compareTo(new_balances[i]) > 0) {
+                difference = ideal_balance.subtract(new_balances[i]);
+            } else {
+                difference = new_balances[i].subtract(ideal_balance);
+            }
+            fees[i] = _fee.multiply(difference).divide(FEE_DENOMINATOR);
+            poolData.getBalances()[i] = new_balances[i].subtract((fees[i].multiply(_admin_fee).divide(FEE_DENOMINATOR)));
+            new_balances[i] = new_balances[i].subtract(fees[i]);
+        }
+        BigInteger token_amount;
+        {
+            BigInteger D2 = getDMem(new_balances, amp);
+            token_amount = (D0.subtract(D2)).multiply(tokenSupply).divide(D0);
+            if (token_amount.compareTo(BigInteger.ZERO) == 0) {
+                throw new Exception("zero tokens burned");
+            }
+
+            token_amount = token_amount.add(BigInteger.ONE);
+        }
+        if (token_amount.compareTo(max_burn_amount) > 0) {
+            throw new Exception("Slippage screwed you");
+        }
+
+        poolData.setTotalSupply(tokenSupply.subtract(token_amount));
+        return token_amount;
     }
 
 

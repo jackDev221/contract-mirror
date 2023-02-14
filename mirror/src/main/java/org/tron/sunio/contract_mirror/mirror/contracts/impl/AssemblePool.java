@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_BASE_COINS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_BASE_LP;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_BASE_POOL;
@@ -41,8 +42,8 @@ public class AssemblePool extends BaseContract {
     private int coinSize;
     private int baseCoinSize;
 
-    public AssemblePool(String address, int coinSize, int baseCoinSize, IChainHelper iChainHelper, IContractsHelper iContractsHelper, Map<String, String> sigMap) {
-        super(address, ContractType.CONTRACT_CURVE_4POOL, iChainHelper, iContractsHelper, sigMap);
+    public AssemblePool(String address, ContractType type, int coinSize, int baseCoinSize, IChainHelper iChainHelper, IContractsHelper iContractsHelper, Map<String, String> sigMap) {
+        super(address, type, iChainHelper, iContractsHelper, sigMap);
         this.coinSize = coinSize;
         this.baseCoinSize = baseCoinSize;
     }
@@ -56,8 +57,12 @@ public class AssemblePool extends BaseContract {
             poolData.setUsing(true);
             poolData.setReady(false);
             poolData.setAddExchangeContracts(false);
-            poolData.setBaseCoins(new String[3]);
-            poolData.setCoins(new String[2]);
+            poolData.setBaseCoins(new String[baseCoinSize]);
+            poolData.setBaseCoinNames(new String[baseCoinSize]);
+            poolData.setBaseCoinSymbols(new String[baseCoinSize]);
+            poolData.setCoins(new String[coinSize]);
+            poolData.setCoinNames(new String[coinSize]);
+            poolData.setCoinSymbols(new String[coinSize]);
         }
         return poolData;
     }
@@ -65,33 +70,27 @@ public class AssemblePool extends BaseContract {
     private void updateCoinsAndBalance(AssemblePoolData poolData) {
         int maxSize = coinSize > baseCoinSize ? coinSize : baseCoinSize;
         for (int i = 0; i < maxSize; i++) {
-
-            // update base_coins
-            TriggerContractInfo triggerContractInfo = new TriggerContractInfo(ContractMirrorConst.EMPTY_ADDRESS, address, "base_coins",
-                    List.of(new Uint256(i)), List.of(new TypeReference<Address>() {
-            }));
             if (i < baseCoinSize) {
+                String baseCoins = callContractTronAddressWithIndex(ContractMirrorConst.EMPTY_ADDRESS, "base_coins", BigInteger.valueOf(i));
+                poolData.updateBaseCoins(i, baseCoins);
 
-                List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-                if (results.size() == 0) {
-                    log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, "base_coins");
-                } else {
-                    poolData.updateBaseCoins(i, WalletUtil.hexStringToTron((String) results.get(0).getValue()));
-                }
             }
-
             if (i < coinSize) {
-                // update coins string
-                triggerContractInfo = new TriggerContractInfo(ContractMirrorConst.EMPTY_ADDRESS, address,
-                        "coins", List.of(new Uint256(i)), List.of(new TypeReference<Address>() {
-                })
-                );
-                List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-                if (results.size() == 0) {
-                    log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, "coins");
-                } else {
-                    poolData.updateCoins(i, WalletUtil.hexStringToTron((String) results.get(0).getValue()));
-                }
+                String coins = callContractTronAddressWithIndex(ContractMirrorConst.EMPTY_ADDRESS, "coins", BigInteger.valueOf(i));
+                poolData.updateCoins(i, coins);
+            }
+        }
+    }
+
+    private void updateCoinsInfo(int count, String method, String[] coins, String[] names, String[] symbols) {
+        for (int i = 0; i < count; i++) {
+            String coinAddress = callContractTronAddressWithIndex(ContractMirrorConst.EMPTY_ADDRESS, method, BigInteger.valueOf(i));
+            coins[i] = coinAddress;
+            if (!coinAddress.equalsIgnoreCase(EMPTY_ADDRESS)) {
+                String name = callContractString(EMPTY_ADDRESS, coinAddress, "name");
+                String symbol = callContractString(EMPTY_ADDRESS, coinAddress, "symbol");
+                names[i] = name;
+                symbols[i] = symbol;
             }
         }
     }
@@ -99,7 +98,9 @@ public class AssemblePool extends BaseContract {
     @Override
     public boolean initDataFromChain1() {
         AssemblePoolData curve4PoolData = this.getVarPoolData();
-        updateCoinsAndBalance(curve4PoolData);
+//        updateCoinsAndBalance(curve4PoolData);
+        updateCoinsInfo(coinSize, "coins", curve4PoolData.getCoins(), curve4PoolData.getCoinNames(), curve4PoolData.getCoinSymbols());
+        updateCoinsInfo(baseCoinSize, "base_coins", curve4PoolData.getBaseCoins(), curve4PoolData.getBaseCoinNames(), curve4PoolData.getBaseCoinSymbols());
         String basePool = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "base_pool").toString());
         curve4PoolData.setBasePool(basePool);
         String baseLp = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "base_lp").toString());

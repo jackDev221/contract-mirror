@@ -16,7 +16,11 @@ public class AssemblePoolData extends BaseContractData {
     private String basePool;
     private String baseLp;
     private String[] coins;
+    private String[] coinNames;
+    private String[] coinSymbols;
     private String[] baseCoins;
+    private String[] baseCoinNames;
+    private String[] baseCoinSymbols;
 
     public void updateCoins(int index, String address) {
         if (index >= coins.length) {

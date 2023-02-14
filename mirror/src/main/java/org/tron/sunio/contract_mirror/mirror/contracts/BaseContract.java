@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_STATUS;
 
 @Data
@@ -238,8 +239,8 @@ public abstract class BaseContract implements IContract {
         return callContractString(from, this.getAddress(), method);
     }
 
-    protected BigInteger callContractU256(String from, String method) {
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, this.getAddress(), method, Collections.EMPTY_LIST,
+    protected BigInteger callContractU256(String from, String contract, String method) {
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, method, Collections.EMPTY_LIST,
                 List.of(new TypeReference<Uint256>() {
                 })
         );
@@ -251,8 +252,33 @@ public abstract class BaseContract implements IContract {
         return (BigInteger) results.get(0).getValue();
     }
 
+    protected BigInteger callContractU256WithIndex(String from, String method, BigInteger index) {
+        return callContractU256WithIndex(from, this.getAddress(), method, index);
+    }
+
+    protected BigInteger callContractU256WithIndex(String from, String contract, String method, BigInteger index) {
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, method, List.of(new Uint256(index)),
+                List.of(new TypeReference<Uint256>() {
+                })
+        );
+        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() == 0) {
+            log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, method);
+            return BigInteger.ZERO;
+        }
+        return (BigInteger) results.get(0).getValue();
+    }
+
+    protected BigInteger callContractU256(String from, String method) {
+        return callContractU256(from, this.getAddress(), method);
+    }
+
     protected Address callContractAddress(String from, String method) {
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, this.getAddress(), method, Collections.EMPTY_LIST,
+        return callContractAddress(from, this.getAddress(), method);
+    }
+
+    protected Address callContractAddress(String from, String contract, String method) {
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, method, Collections.EMPTY_LIST,
                 List.of(new TypeReference<Address>() {
                 })
         );
@@ -262,6 +288,40 @@ public abstract class BaseContract implements IContract {
             return Address.DEFAULT;
         }
         return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
+    }
+
+    protected String callContractTronAddress(String from, String method) {
+        return callContractTronAddress(from, method);
+    }
+
+    protected String callContractTronAddress(String from, String contract, String method, BigInteger index) {
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, method, List.of(new Uint256(index)),
+                List.of(new TypeReference<Address>() {
+                })
+        );
+        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() == 0) {
+            log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, method);
+            return EMPTY_ADDRESS;
+        }
+        return WalletUtil.hexStringToTron((String) results.get(0).getValue());
+    }
+
+    protected String callContractTronAddressWithIndex(String from, String method, BigInteger index) {
+        return callContractTronAddressWithIndex(from, this.getAddress(), method, index);
+    }
+
+    protected String callContractTronAddressWithIndex(String from, String contract, String method, BigInteger index) {
+        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, method, List.of(new Uint256(index)),
+                List.of(new TypeReference<Address>() {
+                })
+        );
+        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
+        if (results.size() == 0) {
+            log.error("Get contract:{} type:{} , function:{} result len is zero", this.address, this.type, method);
+            return EMPTY_ADDRESS;
+        }
+        return WalletUtil.hexStringToTron((String) results.get(0).getValue());
     }
 
     protected BigInteger tokenBalance(String from, String contract) {
@@ -275,7 +335,6 @@ public abstract class BaseContract implements IContract {
         }
         return (BigInteger) results.get(0).getValue();
     }
-
 
     protected BigInteger getBalance(String address) {
         return iChainHelper.balance(address);
