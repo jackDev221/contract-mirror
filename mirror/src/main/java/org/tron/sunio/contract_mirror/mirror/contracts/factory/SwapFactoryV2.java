@@ -1,6 +1,7 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.factory;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
@@ -37,6 +38,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 @Slf4j
 public class SwapFactoryV2 extends BaseFactory {
     private Map<String, String> v2PairSigMap;
+    @Setter
     private SwapFactoryV2Data swapFactoryV2Data;
 
     public SwapFactoryV2(String address, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
@@ -54,6 +56,10 @@ public class SwapFactoryV2 extends BaseFactory {
             swapFactoryV2Data.setType(this.type);
         }
         return swapFactoryV2Data;
+    }
+
+    public SwapFactoryV2Data getSwapFactoryV2Data() {
+        return getVarFactoryV2Data().copySelf();
     }
 
     @Override

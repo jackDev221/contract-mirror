@@ -80,17 +80,17 @@ public class SwapV1 extends BaseContract {
         String tokenName = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "name");
         String tokenSymbol = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "symbol");
         long decimals = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "decimals").longValue();
-        BigInteger kLast = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "kLast");
         BigInteger lpTotalSupply = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "totalSupply");
         BigInteger tokenBalance = CallContractUtil.tokenBalance(iChainHelper, this.getAddress(), tokenAddress);
         BigInteger trxBalance = getBalance(address);
+        BigInteger kLast = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "kLast");
         isReady = false;
         v1Data.setName(name);
         v1Data.setSymbol(symbol);
         v1Data.setDecimals(decimals);
-        v1Data.setKLast(kLast);
         v1Data.setTrxBalance(trxBalance);
         v1Data.setLpTotalSupply(lpTotalSupply);
+        v1Data.setKLast(kLast);
         v1Data.setTokenBalance(tokenBalance);
         v1Data.setTokenName(tokenName);
         v1Data.setTokenSymbol(tokenSymbol);
@@ -242,7 +242,7 @@ public class SwapV1 extends BaseContract {
         BigInteger tokenBalance = (BigInteger) eventValues.getIndexedValues().get(2).getValue();
         BigInteger trxNew = v1Data.getTrxBalance().add(trx);
         BigInteger tokenBalanceNew = v1Data.getTokenBalance().add(tokenBalance);
-        if (isFeeOn()) {
+        if (isFeeOn(v1Data)) {
             BigInteger kLast = tokenBalanceNew.multiply(tokenBalanceNew).sqrt();
             v1Data.setKLast(kLast);
         }
@@ -265,7 +265,7 @@ public class SwapV1 extends BaseContract {
         BigInteger tokenBalance = (BigInteger) eventValues.getIndexedValues().get(2).getValue();
         BigInteger trxNew = v1Data.getTrxBalance().subtract(trx);
         BigInteger tokenBalanceNew = v1Data.getTokenBalance().subtract(tokenBalance);
-        if (isFeeOn()) {
+        if (isFeeOn(v1Data)) {
             BigInteger kLast = tokenBalanceNew.multiply(tokenBalanceNew).sqrt();
             v1Data.setKLast(kLast);
         }
@@ -323,9 +323,9 @@ public class SwapV1 extends BaseContract {
         return HandleResult.genHandleFailMessage("handleTokenToToken not implements!");
     }
 
-    private boolean isFeeOn() {
+    private boolean isFeeOn(SwapV1Data v1Data) {
         boolean feeOn = false;
-        BaseContract baseContract = this.iContractsHelper.getContract(swapV1Data.getFactory());
+        BaseContract baseContract = this.iContractsHelper.getContract(v1Data.getFactory());
         if (ObjectUtil.isNotNull(baseContract) && (baseContract instanceof SwapFactoryV1)) {
             SwapFactoryV1Data factoryV1Data = ((SwapFactoryV1) baseContract).getSwapFactoryV1Data();
             feeOn = !(factoryV1Data.getFeeTo().equalsIgnoreCase(EMPTY_ADDRESS));
@@ -353,7 +353,7 @@ public class SwapV1 extends BaseContract {
             feeOn = mintFee(trxReserve, tokenReserve, swapV1Data);
             swapV1Data.setTrxBalance(trxReserve.add(trxAmount));
             swapV1Data.setTokenBalance(tokenReserve.add(tokenAmount));
-            swapV1Data.setLpTotalSupply(totalLiquidity.add(minLiquidity));
+            swapV1Data.setLpTotalSupply(totalLiquidity.add(liquidityMinted));
 
         } else {
             swapV1Data.setTokenBalance(maxTokens);
@@ -366,7 +366,8 @@ public class SwapV1 extends BaseContract {
             }
             liquidityMinted = swapV1Data.getTrxBalance();
         }
-        if (feeOn) {
+        if (feeOn && swapV1Data.getKLast().compareTo(BigInteger.ZERO) > 0) {
+            // 默认线上合约都是有值的，0值是针对老版本的v1 不包含kLast
             swapV1Data.setKLast(swapV1Data.getTrxBalance().multiply(swapV1Data.getTokenBalance()));
         }
         return liquidityMinted;
@@ -398,55 +399,60 @@ public class SwapV1 extends BaseContract {
         v1Data.setTokenBalance(v1Data.getTokenBalance().subtract(tokenAmount));
         v1Data.setLpTotalSupply(v1Data.getLpTotalSupply().subtract(amount));
 
-        if (feeOn) {
+        if (feeOn && swapV1Data.getKLast().compareTo(BigInteger.ZERO) > 0) {
+            // 默认线上合约都是有值的，0值是针对老版本的v1 不包含kLast
             v1Data.setKLast(v1Data.getTrxBalance().multiply(v1Data.getTokenBalance()));
         }
 
         return new BigInteger[]{trxAmount, tokenAmount};
     }
 
-    public BigInteger trxToTokenInput(BigInteger trxSold, BigInteger minToken) throws Exception {
-        SwapV1Data swapV1Data = this.getVarSwapV1Data().copySelf();
-        BigInteger tokensBought = getInputPrice(trxSold, swapV1Data.getTrxBalance(), swapV1Data.getTokenBalance());
-        if (tokensBought.compareTo(minToken) < 0) {
+    public BigInteger trxToTokenInput(BigInteger trxSold, BigInteger minToken, SwapV1Data swapV1Data) throws Exception {
+        BigInteger tokenBought = getInputPrice(trxSold, swapV1Data.getTrxBalance(), swapV1Data.getTokenBalance());
+        if (tokenBought.compareTo(minToken) < 0) {
             throw new Exception("tokensBought < minToken");
         }
-        return tokensBought;
+        swapV1Data.setTrxBalance(swapV1Data.getTrxBalance().add(trxSold));
+        swapV1Data.setTokenBalance(swapV1Data.getTokenBalance().subtract(tokenBought));
+        return tokenBought;
     }
 
-    public BigInteger trxToTokenOutput(BigInteger tokenBought, BigInteger maxTrx) throws Exception {
-        SwapV1Data swapV1Data = this.getVarSwapV1Data().copySelf();
+    public BigInteger trxToTokenOutput(BigInteger tokenBought, BigInteger maxTrx, SwapV1Data swapV1Data) throws Exception {
         BigInteger trxSold = getOutputPrice(tokenBought, swapV1Data.getTrxBalance(), swapV1Data.getTokenBalance());
         if (trxSold.compareTo(maxTrx) < 0) {
             throw new Exception("trxSold < maxTrx");
         }
+        swapV1Data.setTrxBalance(swapV1Data.getTrxBalance().add(trxSold));
+        swapV1Data.setTokenBalance(swapV1Data.getTokenBalance().subtract(tokenBought));
         return trxSold;
     }
 
-    public BigInteger tokenToTrxInput(BigInteger tokenSold, BigInteger minToken) throws Exception {
-        SwapV1Data swapV1Data = this.getVarSwapV1Data().copySelf();
+    public BigInteger tokenToTrxInput(BigInteger tokenSold, BigInteger minToken, SwapV1Data swapV1Data) throws Exception {
         BigInteger trxBought = getInputPrice(tokenSold, swapV1Data.getTokenBalance(), swapV1Data.getTrxBalance());
         if (trxBought.compareTo(minToken) < 0) {
             throw new Exception("trxBought < minToken");
         }
+        swapV1Data.setTrxBalance(swapV1Data.getTrxBalance().subtract(trxBought));
+        swapV1Data.setTokenBalance(swapV1Data.getTokenBalance().add(tokenSold));
         return trxBought;
     }
 
-    public BigInteger tokenToTrxOutput(BigInteger trxBought, BigInteger maxTokens) throws Exception {
-        SwapV1Data swapV1Data = this.getVarSwapV1Data().copySelf();
-        BigInteger tokensSold = getOutputPrice(trxBought, swapV1Data.getTokenBalance(), swapV1Data.getTrxBalance());
-        if (tokensSold.compareTo(maxTokens) < 0) {
+    public BigInteger tokenToTrxOutput(BigInteger trxBought, BigInteger maxTokens, SwapV1Data swapV1Data) throws Exception {
+        BigInteger tokenSold = getOutputPrice(trxBought, swapV1Data.getTokenBalance(), swapV1Data.getTrxBalance());
+        if (tokenSold.compareTo(maxTokens) < 0) {
             throw new Exception("tokensSold < maxTokens");
         }
-        return tokensSold;
+        swapV1Data.setTrxBalance(swapV1Data.getTrxBalance().subtract(trxBought));
+        swapV1Data.setTokenBalance(swapV1Data.getTokenBalance().add(tokenSold));
+        return tokenSold;
     }
 
     public BigInteger tokenToTokenInput(BigInteger tokensSold, BigInteger minTokensBought, BigInteger minTrxBought,
-                                        String exchangeAddress) throws Exception {
+                                        String exchangeAddress, SwapV1Data swapV1Data) throws Exception {
         if (exchangeAddress.equals(this.address) || exchangeAddress.equals(EMPTY_ADDRESS)) {
             throw new Exception("illegal exchange addr");
         }
-        BigInteger trxBought = tokenToTrxInput(tokensSold, minTrxBought);
+        BigInteger trxBought = tokenToTrxInput(tokensSold, minTrxBought, swapV1Data);
         BaseContract baseContract = this.iContractsHelper.getContract(exchangeAddress);
         if (ObjectUtil.isNull(baseContract)) {
             throw new Exception(String.format("Get no %s contract instance", exchangeAddress));
@@ -454,7 +460,7 @@ public class SwapV1 extends BaseContract {
         if (baseContract instanceof SwapV1) {
             SwapV1 swapV1 = (SwapV1) baseContract;
 
-            BigInteger tokensBought = swapV1.trxToTokenInput(trxBought, minTokensBought);
+            BigInteger tokensBought = swapV1.trxToTokenInput(trxBought, minTokensBought, swapV1Data);
             return tokensBought;
         } else {
             throw new Exception(String.format("Get %s contract instance not SwapV1"));
@@ -462,7 +468,7 @@ public class SwapV1 extends BaseContract {
     }
 
     public BigInteger tokenToTokenOutput(BigInteger tokensBought, BigInteger maxTokenSold, BigInteger minTrxSold,
-                                         String exchangeAddress) throws Exception {
+                                         String exchangeAddress, SwapV1Data swapV1Data) throws Exception {
         if (exchangeAddress.equals(this.address) || exchangeAddress.equals(EMPTY_ADDRESS)) {
             throw new Exception("illegal exchange addr");
         }
@@ -473,8 +479,8 @@ public class SwapV1 extends BaseContract {
         if (baseContract instanceof SwapV1) {
             SwapV1 swapV1 = (SwapV1) baseContract;
 
-            BigInteger trxBought = swapV1.trxToTokenOutput(tokensBought, minTrxSold);
-            BigInteger tokenSold = trxToTokenOutput(trxBought, maxTokenSold);
+            BigInteger trxBought = swapV1.trxToTokenOutput(tokensBought, minTrxSold, swapV1Data);
+            BigInteger tokenSold = trxToTokenOutput(trxBought, maxTokenSold, swapV1Data);
             return tokenSold;
         } else {
             throw new Exception(String.format("Get %s contract instance not SwapV1"));
@@ -509,8 +515,7 @@ public class SwapV1 extends BaseContract {
                     }
                 }
             } else {
-                kLast = BigInteger.ZERO;
-                swapV1Data.setKLast(kLast);
+                swapV1Data.setKLast(BigInteger.ZERO);
             }
         } else {
             log.warn("{} get factory contract:{} not a SwapFactoryV1 instance ", this.address, swapV1Data.getFactory());
@@ -519,7 +524,6 @@ public class SwapV1 extends BaseContract {
         return feeOn;
 
     }
-
 
     // x*y=(x-a)*(y+b)
     //  => b=y*a/(x-a)

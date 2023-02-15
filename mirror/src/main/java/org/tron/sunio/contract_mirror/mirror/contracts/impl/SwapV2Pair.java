@@ -9,6 +9,11 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
+import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
+import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
+import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV1Data;
+import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV2Data;
+import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
@@ -23,6 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_BURN_BODY;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_MINT_BODY;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_SWAP_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_SYNC_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_TRANSFER_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_BURN;
@@ -30,6 +38,7 @@ import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_SWAP;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_NEW_SYNC;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent.EVENT_NAME_TRANSFER;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_TOPIC_VALUE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_BALANCE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_DECIMALS;
@@ -50,13 +59,16 @@ public class SwapV2Pair extends BaseContract {
     private static final BigInteger MINIMUM_LIQUIDITY = BigInteger.TEN.pow(3);
     private String factory;
     @Setter
-    @Getter
     private SwapV2PairData swapV2PairData;
 
     public SwapV2Pair(String address, String factory, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
                       Map<String, String> sigMap) {
         super(address, ContractType.SWAP_V2_PAIR, iChainHelper, iContractsHelper, sigMap);
         this.factory = factory;
+    }
+
+    public SwapV2PairData getSwapV2PairData() {
+        return getVarSwapV2PairData().copySelf();
     }
 
     private SwapV2PairData getVarSwapV2PairData() {
@@ -111,17 +123,17 @@ public class SwapV2Pair extends BaseContract {
         callReservesOnChain(swapV2PairData);
         swapV2PairData.setPrice0CumulativeLast(CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "price0CumulativeLast"));
         swapV2PairData.setPrice1CumulativeLast(CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "price1CumulativeLast"));
-        String name = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address,  "name");
+        String name = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "name");
         swapV2PairData.setName(name);
-        String symbol = CallContractUtil.getString(iChainHelper,ContractMirrorConst.EMPTY_ADDRESS, address,"symbol");
+        String symbol = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "symbol");
         swapV2PairData.setSymbol(symbol);
-        String token0Name =CallContractUtil.getString(iChainHelper,ContractMirrorConst.EMPTY_ADDRESS, token0, "name");
+        String token0Name = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, token0, "name");
         swapV2PairData.setToken0Name(token0Name);
-        String token0Symbol = CallContractUtil.getString(iChainHelper,ContractMirrorConst.EMPTY_ADDRESS, token0, "symbol");
+        String token0Symbol = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, token0, "symbol");
         swapV2PairData.setToken0Symbol(token0Symbol);
-        String token1Name =CallContractUtil.getString(iChainHelper,ContractMirrorConst.EMPTY_ADDRESS, token1, "name");
+        String token1Name = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, token1, "name");
         swapV2PairData.setToken1Name(token1Name);
-        String token1Symbol = CallContractUtil.getString(iChainHelper,ContractMirrorConst.EMPTY_ADDRESS, token1, "symbol");
+        String token1Symbol = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, token1, "symbol");
         swapV2PairData.setToken1Symbol(token1Symbol);
         long decimals = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "decimals").longValue();
         swapV2PairData.setDecimals(decimals);
@@ -156,13 +168,13 @@ public class SwapV2Pair extends BaseContract {
                 result = handleTransfer(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_NEW_MINT:
-                result = handleMint(topics, data);
+                result = handleMint(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_NEW_BURN:
-                result = handleBurn(topics, data);
+                result = handleBurn(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_NEW_SWAP:
-                result = handleSwap(topics, data);
+                result = handleSwap(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_NEW_SYNC:
                 result = handleSync(topics, data, handleEventExtraData);
@@ -240,19 +252,73 @@ public class SwapV2Pair extends BaseContract {
         return HandleResult.genHandleSuccess();
     }
 
-    private HandleResult handleMint(String[] topics, String data) {
-        log.info("handleMint not implements!");
-        return HandleResult.genHandleFailMessage("handleMint not implements!");
+    private HandleResult handleMint(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleMint, topics:{} data:{} ", address, topics, data);
+        EventValues eventValues = getEventValue(EVENT_NAME_NEW_MINT, EVENT_NAME_NEW_MINT_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleTransfer fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
+        }
+        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
+        BigInteger amount0 = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+        BigInteger amount1 = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
+        boolean feeOn = isFeeOn(swapV2PairData);
+        swapV2PairData.setReserve0(swapV2PairData.getReserve0().add(amount0));
+        swapV2PairData.setReserve1(swapV2PairData.getReserve0().add(amount1));
+        if (feeOn) {
+            BigInteger kLast = swapV2PairData.getReserve0().multiply(swapV2PairData.getReserve1());
+            swapV2PairData.setKLast(kLast);
+        }
+        isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
-    private HandleResult handleBurn(String[] topics, String data) {
-        log.info("handleBurn not implements!");
-        return HandleResult.genHandleFailMessage("handleBurn not implements!");
+    private HandleResult handleBurn(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleBurn, topics:{} data:{} ", address, topics, data);
+        EventValues eventValues = getEventValue(EVENT_NAME_NEW_BURN, EVENT_NAME_NEW_BURN_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleTransfer fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
+        }
+        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
+        BigInteger amount0 = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+        BigInteger amount1 = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
+        boolean feeOn = isFeeOn(swapV2PairData);
+        swapV2PairData.setReserve0(swapV2PairData.getReserve0().subtract(amount0));
+        swapV2PairData.setReserve1(swapV2PairData.getReserve0().subtract(amount1));
+        if (feeOn) {
+            BigInteger kLast = swapV2PairData.getReserve0().multiply(swapV2PairData.getReserve1());
+            swapV2PairData.setKLast(kLast);
+        }
+        isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
-    private HandleResult handleSwap(String[] topics, String data) {
-        log.info("handleSwap not implements!");
-        return HandleResult.genHandleFailMessage("handleSwap not implements!");
+    private HandleResult handleSwap(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleSwap, topics:{} data:{} ", address, topics, data);
+        EventValues eventValues = getEventValue(EVENT_NAME_NEW_SWAP, EVENT_NAME_NEW_SWAP_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleTransfer fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
+        }
+        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
+        BigInteger amount0In = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+        BigInteger amount1In = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
+        BigInteger amount0Out = (BigInteger) eventValues.getNonIndexedValues().get(2).getValue();
+        BigInteger amount1Out = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
+        if (amount0In.compareTo(BigInteger.ZERO) > 0) {
+            swapV2PairData.setReserve0(swapV2PairData.getReserve0().add(amount0In));
+            swapV2PairData.setReserve1(swapV2PairData.getReserve1().subtract(amount1Out));
+        } else {
+            swapV2PairData.setReserve1(swapV2PairData.getReserve1().add(amount1In));
+            swapV2PairData.setReserve0(swapV2PairData.getReserve0().subtract(amount0Out));
+        }
+
+        isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
     private HandleResult handleSync(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
@@ -282,6 +348,145 @@ public class SwapV2Pair extends BaseContract {
         swapV2PairData.setBlockTimestampLast(blockTimestampLast);
         isDirty = true;
         return HandleResult.genHandleSuccess();
+    }
+
+    public BigInteger[] burn(BigInteger lpAmount, SwapV2PairData swapV2PairData) throws Exception {
+        BigInteger reserve0 = swapV2PairData.getReserve0();
+        BigInteger reserve1 = swapV2PairData.getReserve1();
+        long timeStamp = System.currentTimeMillis() / 1000;
+        boolean feeOn = mintFee(reserve0, reserve1, swapV2PairData);
+        BigInteger lpTotalSupply = swapV2PairData.getLpTotalSupply();
+        BigInteger amount1 = lpAmount.multiply(reserve0).divide(lpTotalSupply);
+        BigInteger amount0 = lpAmount.multiply(reserve1).divide(lpTotalSupply);
+
+        if (amount0.compareTo(BigInteger.ZERO) <= 0 || amount1.compareTo(BigInteger.ZERO) <= 0) {
+            throw new Exception("UniswapV2: INSUFFICIENT_LIQUIDITY_BURNED");
+        }
+
+        BigInteger balance0 = reserve0.subtract(amount0);
+        BigInteger balance1 = reserve0.subtract(amount1);
+
+        update(balance0, balance1, timeStamp, swapV2PairData);
+        if (feeOn) {
+            BigInteger kLast = swapV2PairData.getReserve0().multiply(swapV2PairData.getReserve1());
+            swapV2PairData.setKLast(kLast);
+        }
+        return new BigInteger[]{amount0, amount1};
+    }
+
+    public BigInteger mint(BigInteger amount0, BigInteger amount1, SwapV2PairData swapV2PairData) throws Exception {
+        BigInteger reserve0 = swapV2PairData.getReserve0();
+        BigInteger reserve1 = swapV2PairData.getReserve1();
+        long timeStamp = System.currentTimeMillis() / 1000;
+        boolean feeOn = mintFee(reserve0, reserve1, swapV2PairData);
+
+        BigInteger liquidity;
+
+        BigInteger lpTotalSupply = swapV2PairData.getLpTotalSupply();
+        if (lpTotalSupply.compareTo(BigInteger.ZERO) == 0) {
+            liquidity = amount0.multiply(amount1).sqrt().subtract(MINIMUM_LIQUIDITY);
+            _mint(MINIMUM_LIQUIDITY, swapV2PairData);
+        } else {
+            liquidity = (amount0.multiply(lpTotalSupply).divide(reserve0)).min(
+                    amount1.multiply(lpTotalSupply).divide(reserve1)
+            );
+        }
+        _mint(liquidity, swapV2PairData);
+        BigInteger balance0 = reserve0.add(amount0);
+        BigInteger balance1 = reserve0.add(amount1);
+        update(balance0, balance1, timeStamp, swapV2PairData);
+
+        if (feeOn) {
+            BigInteger kLast = swapV2PairData.getReserve0().multiply(swapV2PairData.getReserve1());
+            swapV2PairData.setKLast(kLast);
+        }
+        return liquidity;
+    }
+
+    public void swap(BigInteger amountIn0, BigInteger amountIn1, BigInteger amountOut0, BigInteger amountOut1,
+                     SwapV2PairData swapV2PairData) throws Exception {
+
+        if (amountIn0.compareTo(BigInteger.ZERO) > 0 && amountIn1.compareTo(BigInteger.ZERO) > 0) {
+            throw new Exception("Wrong Input");
+        }
+
+        if (amountOut0.compareTo(BigInteger.ZERO) > 0 && amountOut1.compareTo(BigInteger.ZERO) > 0) {
+            throw new Exception("Wrong Input");
+        }
+
+        BigInteger reserve0 = swapV2PairData.getReserve0();
+        BigInteger reserve1 = swapV2PairData.getReserve1();
+        long timeStamp = System.currentTimeMillis() / 1000;
+
+        BigInteger balance0;
+        BigInteger balance1;
+        if (amountIn0.compareTo(BigInteger.ZERO) > 0) {
+            balance0 = reserve0.add(amountIn0);
+            balance1 = reserve1.subtract(amountOut1);
+        } else {
+            balance1 = reserve1.add(amountIn1);
+            balance0 = reserve0.subtract(amountOut0);
+        }
+
+        update(balance0, balance1, timeStamp, swapV2PairData);
+    }
+
+    private void update(BigInteger reserve0, BigInteger reserve1, long timeStamp, SwapV2PairData swapV2PairData) {
+        long blockTimestampLast = timeStamp % 4294967296L;
+        long timeElapsed = blockTimestampLast - swapV2PairData.getBlockTimestampLast();
+        BigInteger reserve0Origin = swapV2PairData.getReserve0();
+        BigInteger reserve1Origin = swapV2PairData.getReserve1();
+        if (timeElapsed > 0 && reserve0Origin.compareTo(BigInteger.ZERO) != 0 && reserve1Origin.compareTo(BigInteger.ZERO) != 0) {
+            BigInteger price0Add = priceCumulativeLastAdd(reserve0Origin, reserve1Origin, timeElapsed);
+            BigInteger price1Add = priceCumulativeLastAdd(reserve1Origin, reserve0Origin, timeElapsed);
+            swapV2PairData.setPrice0CumulativeLast(swapV2PairData.getPrice0CumulativeLast().add(price0Add));
+            swapV2PairData.setPrice1CumulativeLast(swapV2PairData.getPrice1CumulativeLast().add(price1Add));
+        }
+        swapV2PairData.setReserve0(reserve0);
+        swapV2PairData.setReserve1(reserve1);
+        swapV2PairData.setBlockTimestampLast(blockTimestampLast);
+    }
+
+    private boolean isFeeOn(SwapV2PairData swapV2Data) {
+        boolean feeOn = false;
+        BaseContract baseContract = this.iContractsHelper.getContract(swapV2Data.getFactory());
+        if (ObjectUtil.isNotNull(baseContract) && (baseContract instanceof SwapFactoryV2)) {
+            SwapFactoryV2Data factoryV2Data = ((SwapFactoryV2) baseContract).getSwapFactoryV2Data();
+            feeOn = !(factoryV2Data.getFeeTo().equalsIgnoreCase(EMPTY_ADDRESS));
+        }
+        return feeOn;
+    }
+
+    public boolean mintFee(BigInteger reserve0, BigInteger reserve1, SwapV2PairData swapV2Data) {
+        boolean feeOn = isFeeOn(swapV2Data);
+        BigInteger kLast = swapV2Data.getKLast();
+        if (feeOn) {
+            if (kLast.compareTo(BigInteger.ZERO) != 0) {
+                BigInteger rootK = reserve0.multiply(reserve1).sqrt();
+                BigInteger rootKLast = kLast.sqrt();
+                if (rootK.compareTo(rootKLast) > 0) {
+                    BigInteger numerator = swapV2Data.getLpTotalSupply().multiply(rootK.subtract(rootKLast));
+                    BigInteger denominator = rootK.multiply(BigInteger.valueOf(5)).add(rootKLast);
+                    if (denominator.compareTo(BigInteger.ZERO) > 0) {
+                        BigInteger liquidity = numerator.divide(denominator);
+                        if (liquidity.compareTo(BigInteger.ZERO) > 0) {
+                            _mint(liquidity, swapV2Data);
+                        }
+                    }
+                }
+            }
+        } else {
+            swapV2Data.setKLast(BigInteger.ZERO);
+        }
+        return feeOn;
+    }
+
+    public void _mint(BigInteger value, SwapV2PairData swapV2Data) {
+        swapV2PairData.setLpTotalSupply(swapV2Data.getLpTotalSupply().add(value));
+    }
+
+    public void _burn(BigInteger value, SwapV2PairData swapV2Data) {
+        swapV2PairData.setLpTotalSupply(swapV2Data.getLpTotalSupply().subtract(value));
     }
 
     private BigInteger priceCumulativeLastAdd(BigInteger reserve0, BigInteger reserve1, long timeElapsed) {
