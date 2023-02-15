@@ -10,6 +10,7 @@ import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
+import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.web3j.abi.EventValues;
 
 import java.math.BigInteger;
@@ -64,14 +65,14 @@ public class SwapV1 extends BaseContract {
     @Override
     public boolean initDataFromChain1() {
         SwapV1Data v1Data = this.getVarSwapV1Data();
-        String name = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "name");
-        String symbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, "symbol");
-        String tokenName = callContractString(ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "name");
-        String tokenSymbol = callContractString(ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "symbol");
-        long decimals = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "decimals").longValue();
-        BigInteger kLast = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "kLast");
-        BigInteger lpTotalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "totalSupply");
-        BigInteger tokenBalance = tokenBalance(this.getAddress(), tokenAddress);
+        String name = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "name");
+        String symbol = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "symbol");
+        String tokenName = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "name");
+        String tokenSymbol = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "symbol");
+        long decimals = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "decimals").longValue();
+        BigInteger kLast = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "kLast");
+        BigInteger lpTotalSupply = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "totalSupply");
+        BigInteger tokenBalance = CallContractUtil.tokenBalance(iChainHelper, this.getAddress(), tokenAddress);
         BigInteger trxBalance = getBalance(address);
         isReady = false;
         v1Data.setName(name);

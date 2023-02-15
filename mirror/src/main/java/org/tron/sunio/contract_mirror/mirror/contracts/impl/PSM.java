@@ -10,6 +10,7 @@ import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMData;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMTotalData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
+import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.TypeReference;
@@ -70,17 +71,17 @@ public class PSM extends BaseContract {
     @Override
     public boolean initDataFromChain1() {
         PSMData psmData = getVarPsmData();
-        String gemJoin = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "gemJoin").toString());
+        String gemJoin = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "gemJoin");
         psmData.setGemJoin(gemJoin);
-        String usdd = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "usdd").toString());
+        String usdd = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "usdd");
         psmData.setUsdd(usdd);
-        String usddJoin = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "usddJoin").toString());
+        String usddJoin = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "usddJoin");
         psmData.setUsddJoin(usddJoin);
-        String vat = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "vat").toString());
+        String vat = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "vat");
         psmData.setVat(vat);
-        BigInteger tin = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "tin");
+        BigInteger tin = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "tin");
         psmData.setTin(tin);
-        BigInteger tout = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "tout");
+        BigInteger tout = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "tout");
         psmData.setTout(tout);
         loadInfosField(psmData);
         isDirty = true;

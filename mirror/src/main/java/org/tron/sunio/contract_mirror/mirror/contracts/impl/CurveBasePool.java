@@ -6,19 +6,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
-import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
+import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.FunctionEncoder;
-import org.web3j.abi.TypeReference;
-import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.StaticArray;
-import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.StaticArray2;
 import org.web3j.abi.datatypes.generated.StaticArray3;
 import org.web3j.abi.datatypes.generated.Uint256;
@@ -26,7 +23,6 @@ import org.web3j.abi.datatypes.generated.Uint256;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -95,21 +91,23 @@ public class CurveBasePool extends BaseContract {
 
     protected void updateCoinsAndBalance(CurveBasePoolData curveBasePoolData) {
         for (int i = 0; i < coinsCount; i++) {
-            String coinAddress = callContractTronAddressWithIndex(ContractMirrorConst.EMPTY_ADDRESS, "coins", BigInteger.valueOf(i));
+            String coinAddress = CallContractUtil.getTronAddressWithIndex(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS,
+                    address, "coins", BigInteger.valueOf(i));
             curveBasePoolData.updateCoins(i, coinAddress);
             if (!coinAddress.equalsIgnoreCase(EMPTY_ADDRESS)) {
-                String name = callContractString(EMPTY_ADDRESS, coinAddress, "name");
-                String symbol = callContractString(EMPTY_ADDRESS, coinAddress, "symbol");
+                String name = CallContractUtil.getString(iChainHelper, EMPTY_ADDRESS, coinAddress, "name");
+                String symbol = CallContractUtil.getString(iChainHelper, EMPTY_ADDRESS, coinAddress, "symbol");
                 curveBasePoolData.updateCoinNames(i, name);
                 curveBasePoolData.updateCoinSymbols(i, symbol);
             }
-            BigInteger balance = callContractU256WithIndex(ContractMirrorConst.EMPTY_ADDRESS, address, "balances", BigInteger.valueOf(i));
+            BigInteger balance = CallContractUtil.getU256WithIndex(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address,
+                    "balances", BigInteger.valueOf(i));
             curveBasePoolData.updateBalances(i, balance);
         }
     }
 
     protected void updateSupply(CurveBasePoolData curveBasePoolData, String tokenAddress) {
-        BigInteger totalSupply = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "totalSupply");
+        BigInteger totalSupply = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "totalSupply");
         curveBasePoolData.setTotalSupply(totalSupply);
     }
 
@@ -117,34 +115,34 @@ public class CurveBasePool extends BaseContract {
     public boolean initDataFromChain1() {
         CurveBasePoolData curveBasePoolData = this.getVarCurveBasePoolData();
         updateCoinsAndBalance(curveBasePoolData);
-        String token = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token").toString());
+        String token = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "token");
         curveBasePoolData.setToken(token);
         updateSupply(curveBasePoolData, token);
-        BigInteger fee = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "fee");
+        BigInteger fee = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "fee");
         curveBasePoolData.setFee(fee);
-        BigInteger futureFee = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "future_fee");
+        BigInteger futureFee = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "future_fee");
         curveBasePoolData.setFutureFee(futureFee);
-        BigInteger adminFee = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "admin_fee");
+        BigInteger adminFee = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "admin_fee");
         curveBasePoolData.setAdminFee(adminFee);
-        BigInteger futureAdminFee = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "future_admin_fee");
+        BigInteger futureAdminFee = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "future_admin_fee");
         curveBasePoolData.setFutureAdminFee(futureAdminFee);
-        BigInteger adminActionsDeadline = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "admin_actions_deadline");
+        BigInteger adminActionsDeadline = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "admin_actions_deadline");
         curveBasePoolData.setAdminActionsDeadline(adminActionsDeadline);
-        String feeConverter = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "fee_converter").toString());
+        String feeConverter = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "fee_converter");
         curveBasePoolData.setFeeConverter(feeConverter);
-        BigInteger initialA = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "initial_A");
+        BigInteger initialA = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "initial_A");
         curveBasePoolData.setInitialA(initialA);
-        BigInteger initialATime = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "initial_A_time");
+        BigInteger initialATime = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "initial_A_time");
         curveBasePoolData.setInitialATime(initialATime);
-        BigInteger futureA = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "future_A");
+        BigInteger futureA = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "future_A");
         curveBasePoolData.setFutureA(futureA);
-        BigInteger futureATime = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "future_A_time");
+        BigInteger futureATime = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "future_A_time");
         curveBasePoolData.setFutureATime(futureATime);
-        String owner = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "owner").toString());
+        String owner = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "owner");
         curveBasePoolData.setOwner(owner);
-        String futureOwner = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "future_owner").toString());
+        String futureOwner = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "future_owner");
         curveBasePoolData.setFutureOwner(futureOwner);
-        BigInteger transferOwnershipDeadline = callContractU256(ContractMirrorConst.EMPTY_ADDRESS, "transfer_ownership_deadline");
+        BigInteger transferOwnershipDeadline = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "transfer_ownership_deadline");
         curveBasePoolData.setTransferOwnershipDeadline(transferOwnershipDeadline);
         isDirty = true;
         return true;

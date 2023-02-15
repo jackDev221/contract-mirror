@@ -12,6 +12,7 @@ import org.tron.sunio.contract_mirror.mirror.pool.process.in.BaseProcessIn;
 import org.tron.sunio.contract_mirror.mirror.pool.process.in.SwapFactoryExIn;
 import org.tron.sunio.contract_mirror.mirror.pool.process.out.BaseProcessOut;
 import org.tron.sunio.contract_mirror.mirror.pool.process.out.SwapV2FactoryExOut;
+import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.TypeReference;
@@ -36,8 +37,8 @@ public class SwapV2FactoryExcProcess implements IProcessor {
                 SwapFactoryExIn swapFactoryExIn = (SwapFactoryExIn) in;
                 Address pairAddress = getPairWithId(swapFactoryExIn.getId(), swapFactoryExIn.getAddress());
                 String pairAddressTron = WalletUtil.ethAddressToTron(pairAddress.toString());
-                String token0 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, pairAddressTron, "token0").toString());
-                String token1 = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, pairAddressTron, "token1").toString());
+                String token0 = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, pairAddressTron, "token0");
+                String token1 = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, pairAddressTron, "token1");
                 SwapV2FactoryExOut out = new SwapV2FactoryExOut();
                 out.setOutKey(swapFactoryExIn.getOutKey());
                 out.setId(swapFactoryExIn.getId());

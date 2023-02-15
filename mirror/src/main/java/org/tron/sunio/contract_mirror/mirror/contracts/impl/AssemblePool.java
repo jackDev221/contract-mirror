@@ -3,17 +3,15 @@ package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
-import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.AssemblePoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
-import org.tron.sunio.tronsdk.WalletUtil;
+import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.Utils;
-import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Uint256;
 
@@ -67,28 +65,15 @@ public class AssemblePool extends BaseContract {
         return poolData;
     }
 
-    private void updateCoinsAndBalance(AssemblePoolData poolData) {
-        int maxSize = coinSize > baseCoinSize ? coinSize : baseCoinSize;
-        for (int i = 0; i < maxSize; i++) {
-            if (i < baseCoinSize) {
-                String baseCoins = callContractTronAddressWithIndex(ContractMirrorConst.EMPTY_ADDRESS, "base_coins", BigInteger.valueOf(i));
-                poolData.updateBaseCoins(i, baseCoins);
-
-            }
-            if (i < coinSize) {
-                String coins = callContractTronAddressWithIndex(ContractMirrorConst.EMPTY_ADDRESS, "coins", BigInteger.valueOf(i));
-                poolData.updateCoins(i, coins);
-            }
-        }
-    }
 
     private void updateCoinsInfo(int count, String method, String[] coins, String[] names, String[] symbols) {
         for (int i = 0; i < count; i++) {
-            String coinAddress = callContractTronAddressWithIndex(ContractMirrorConst.EMPTY_ADDRESS, method, BigInteger.valueOf(i));
+            String coinAddress = CallContractUtil.getTronAddressWithIndex(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS,
+                    address, method, BigInteger.valueOf(i));
             coins[i] = coinAddress;
             if (!coinAddress.equalsIgnoreCase(EMPTY_ADDRESS)) {
-                String name = callContractString(EMPTY_ADDRESS, coinAddress, "name");
-                String symbol = callContractString(EMPTY_ADDRESS, coinAddress, "symbol");
+                String name = CallContractUtil.getString(iChainHelper, EMPTY_ADDRESS, coinAddress, "name");
+                String symbol = CallContractUtil.getString(iChainHelper, EMPTY_ADDRESS, coinAddress, "symbol");
                 names[i] = name;
                 symbols[i] = symbol;
             }
@@ -98,16 +83,15 @@ public class AssemblePool extends BaseContract {
     @Override
     public boolean initDataFromChain1() {
         AssemblePoolData curve4PoolData = this.getVarPoolData();
-//        updateCoinsAndBalance(curve4PoolData);
         updateCoinsInfo(coinSize, "coins", curve4PoolData.getCoins(), curve4PoolData.getCoinNames(), curve4PoolData.getCoinSymbols());
         updateCoinsInfo(baseCoinSize, "base_coins", curve4PoolData.getBaseCoins(), curve4PoolData.getBaseCoinNames(), curve4PoolData.getBaseCoinSymbols());
-        String basePool = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "base_pool").toString());
+        String basePool = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "base_pool");
         curve4PoolData.setBasePool(basePool);
-        String baseLp = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "base_lp").toString());
+        String baseLp = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "base_lp");
         curve4PoolData.setBaseLp(baseLp);
-        String pool = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "pool").toString());
+        String pool = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "pool");
         curve4PoolData.setPool(pool);
-        String token = WalletUtil.ethAddressToTron(callContractAddress(ContractMirrorConst.EMPTY_ADDRESS, "token").toString());
+        String token = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "token");
         curve4PoolData.setToken(token);
         isDirty = true;
         return true;

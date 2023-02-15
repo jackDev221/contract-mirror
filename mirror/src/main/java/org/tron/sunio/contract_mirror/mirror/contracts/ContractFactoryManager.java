@@ -19,7 +19,6 @@ import org.tron.sunio.contract_mirror.mirror.contracts.impl.Assemble3Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Assemble4Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve4Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMTotalData;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
@@ -111,15 +110,6 @@ public class ContractFactoryManager {
                             tronChainHelper,
                             iContractsHelper,
                             new HashMap<>()
-                    ));
-                    break;
-
-                case CONTRACT_CURVE_4POOL:
-                    iContractsCollectHelper.addContract(new Curve4Pool(
-                            contractInfo.getAddress(),
-                            tronChainHelper,
-                            iContractsHelper,
-                            curve4PoolSigMap
                     ));
                     break;
 

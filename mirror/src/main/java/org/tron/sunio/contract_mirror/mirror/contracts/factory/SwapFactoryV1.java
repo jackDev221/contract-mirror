@@ -5,18 +5,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
-import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
-import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
-import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV1;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV1Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 import org.tron.sunio.contract_mirror.mirror.pool.process.out.BaseProcessOut;
 import org.tron.sunio.contract_mirror.mirror.pool.process.out.SwapV1FactoryExOut;
-import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
+import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.FunctionReturnDecoder;
@@ -63,37 +60,11 @@ public class SwapFactoryV1 extends BaseFactory{
     @Override
     public boolean initDataFromChain1() {
         SwapFactoryV1Data swapFactoryV1Data = getVarFactoryV1Data();
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
-        triggerContractInfo.setContractAddress(this.getAddress());
-        triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
-        triggerContractInfo.setMethodName("feeTo");
-        List<Type> inputParameters = new ArrayList<>();
-        triggerContractInfo.setInputParameters(inputParameters);
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Address>() {
-        });
-        triggerContractInfo.setOutputParameters(outputParameters);
-        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() > 0) {
-            Address feeAddress = (Address) results.get(0).getValue();
-            swapFactoryV1Data.setFeeAddress(WalletUtil.ethAddressToTron(feeAddress.toString()));
-        } else {
-            log.error("Get contract:{} type:{} , function:feeTo result len is zero", this.address, this.type);
-        }
-        // set feeToRate
-        triggerContractInfo.setMethodName("feeToRate");
-        outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Uint256>() {
-        });
-        triggerContractInfo.setOutputParameters(outputParameters);
-        results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() > 0) {
-            BigInteger feeToRate = (BigInteger) results.get(0).getValue();
-            swapFactoryV1Data.setFeeToRate(feeToRate.longValue());
-        } else {
-            log.error("Get contract:{} type:{} , function:feeToRate result len is zero", this.address, this.type);
-        }
-        long tokenCount = getTokenCount().longValue();
+        String feeTo = CallContractUtil.getTronAddress(iChainHelper, EMPTY_ADDRESS, address, "feeTo");
+        swapFactoryV1Data.setFeeAddress(feeTo);
+        long feeToRate = CallContractUtil.getU256(iChainHelper, EMPTY_ADDRESS, address, "feeToRate").longValue();
+        swapFactoryV1Data.setFeeToRate(feeToRate);
+        long tokenCount = CallContractUtil.getU256(iChainHelper, EMPTY_ADDRESS, address, "tokenCount").longValue();
         swapFactoryV1Data.setTokenCount(tokenCount);
         isDirty = true;
         return true;
@@ -110,7 +81,7 @@ public class SwapFactoryV1 extends BaseFactory{
         List<BaseContract> result = new ArrayList<>();
         SwapFactoryV1Data v1Data = this.getVarFactoryV1Data();
         long totalTokens = v1Data.getTokenCount();
-//        totalTokens = 20;
+//        totalTokens = 10;
         List<BaseProcessOut> outs = this.getListContractsBase(cmPool, (int) totalTokens);
         for (BaseProcessOut out : outs) {
             SwapV1FactoryExOut swapV1FactoryExOut = (SwapV1FactoryExOut) out;
@@ -128,69 +99,6 @@ public class SwapFactoryV1 extends BaseFactory{
             result.add(swapV1);
         }
         return result;
-    }
-
-    private BigInteger getTokenCount() {
-        List<Type> inputParameters = new ArrayList<>();
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Uint256>() {
-        });
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                ContractMirrorConst.EMPTY_ADDRESS,
-                this.getAddress(),
-                "tokenCount",
-                inputParameters,
-                outputParameters
-        );
-        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() == 0) {
-            log.error("Contract:{}, type: {} call tokenCount failed", address, type);
-            return BigInteger.ZERO;
-        }
-        return (BigInteger) results.get(0).getValue();
-    }
-
-    public Address getTokenWithId(long id) {
-        List<Type> inputParameters = new ArrayList<>();
-        inputParameters.add(new Uint256(id));
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Address>() {
-        });
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                ContractMirrorConst.EMPTY_ADDRESS,
-                this.getAddress(),
-                "getTokenWithId",
-                inputParameters,
-                outputParameters
-        );
-        triggerContractInfo.setOutputParameters(outputParameters);
-        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() > 0) {
-            return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
-        }
-        log.error("Contract:{}, type: {} call getTokenWithId:{} failed", address, type, id);
-        return Address.DEFAULT;
-    }
-
-    public Address getExchange(Address tokenAddress) {
-        List<Type> inputParameters = new ArrayList<>();
-        inputParameters.add(tokenAddress);
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Address>() {
-        });
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                ContractMirrorConst.EMPTY_ADDRESS,
-                this.getAddress(),
-                "getExchange",
-                inputParameters,
-                outputParameters
-        );
-        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() == 0) {
-            log.error("Contract:{}, type: {} call getExchange:{} failed", address, type, tokenAddress);
-            return Address.DEFAULT;
-        }
-        return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
     }
 
     @Override

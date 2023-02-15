@@ -4,29 +4,24 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
-import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
-import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
-import org.tron.sunio.contract_mirror.mirror.contracts.IContractFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV2Pair;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV2Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 import org.tron.sunio.contract_mirror.mirror.pool.process.out.BaseProcessOut;
 import org.tron.sunio.contract_mirror.mirror.pool.process.out.SwapV2FactoryExOut;
-import org.tron.sunio.contract_mirror.mirror.tools.EthUtil;
+import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.Utils;
-import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Uint256;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,24 +59,13 @@ public class SwapFactoryV2 extends BaseFactory {
     @Override
     public boolean initDataFromChain1() {
         SwapFactoryV2Data factoryV2Data = this.getVarFactoryV2Data();
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo();
-        triggerContractInfo.setContractAddress(this.getAddress());
-        triggerContractInfo.setFromAddress(ContractMirrorConst.EMPTY_ADDRESS);
-        triggerContractInfo.setMethodName("feeTo");
-        triggerContractInfo.setInputParameters(Collections.EMPTY_LIST);
-        List<TypeReference<?>> outputParameters = List.of(new TypeReference<Address>() {
-        });
-        triggerContractInfo.setOutputParameters(outputParameters);
-        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() > 0) {
-            factoryV2Data.setFeeTo(WalletUtil.hexStringToTron((String) results.get(0).getValue()));
-        }
-        triggerContractInfo.setMethodName("feeToSetter()");
-        results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() > 0) {
-            factoryV2Data.setFeeToSetter(WalletUtil.hexStringToTron((String) results.get(0).getValue()));
-        }
-        long pairCount = getPairCount().longValue();
+        String feeTo = CallContractUtil.getTronAddress(iChainHelper, EMPTY_ADDRESS, address, "feeTo");
+        factoryV2Data.setFeeTo(feeTo);
+        String feeToSetter = CallContractUtil.getTronAddress(iChainHelper, EMPTY_ADDRESS, address, "feeToSetter");
+        factoryV2Data.setFeeToSetter(feeToSetter);
+        long feeToRate = CallContractUtil.getU256(iChainHelper, EMPTY_ADDRESS, address, "feeToRate").longValue();
+        factoryV2Data.setPairCount(feeToRate);
+        long pairCount = CallContractUtil.getU256(iChainHelper, EMPTY_ADDRESS, address, "allPairsLength").longValue();
         factoryV2Data.setPairCount(pairCount);
         isDirty = true;
         return true;
@@ -92,31 +76,12 @@ public class SwapFactoryV2 extends BaseFactory {
         return this;
     }
 
-    private Address getPairWithId(long id) {
-        List<Type> inputParameters = new ArrayList<>();
-        inputParameters.add(new Uint256(id));
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Address>() {
-        });
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                ContractMirrorConst.EMPTY_ADDRESS,
-                this.getAddress(),
-                "allPairs",
-                inputParameters,
-                outputParameters
-        );
-        triggerContractInfo.setOutputParameters(outputParameters);
-        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() > 0) {
-            return new Address(EthUtil.addHexPrefix((String) results.get(0).getValue()));
-        }
-        return Address.DEFAULT;
-    }
 
     @Override
     public List<BaseContract> getListContracts(CMPool cmPool) {
         List<BaseContract> result = new ArrayList<>();
         long pairCount = this.getVarFactoryV2Data().getPairCount();
+//        pairCount = 5;
         List<BaseProcessOut> outs = this.getListContractsBase(cmPool, (int) pairCount);
         for (BaseProcessOut out : outs) {
             SwapV2FactoryExOut swapV2FactoryExOut = (SwapV2FactoryExOut) out;
@@ -229,26 +194,6 @@ public class SwapFactoryV2 extends BaseFactory {
         } else {
             throw new RuntimeException(String.format("Token0 input %s not exist", token0));
         }
-    }
-
-    private BigInteger getPairCount() {
-        List<Type> inputParameters = new ArrayList<>();
-        List<TypeReference<?>> outputParameters = new ArrayList<>();
-        outputParameters.add(new TypeReference<Uint256>() {
-        });
-        TriggerContractInfo triggerContractInfo = new TriggerContractInfo(
-                ContractMirrorConst.EMPTY_ADDRESS,
-                this.getAddress(),
-                "allPairsLength",
-                inputParameters,
-                outputParameters
-        );
-        List<Type> results = this.iChainHelper.triggerConstantContract(triggerContractInfo);
-        if (results.size() == 0) {
-            log.error("Contract:{}, type: {} call tokenCount failed", address, type);
-            return BigInteger.ZERO;
-        }
-        return (BigInteger) results.get(0).getValue();
     }
 
     private HandleResult handleCreatePair(String[] _topics, String _data) {
