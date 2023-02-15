@@ -13,19 +13,29 @@ buildscript {
     }
 }
 
+plugins {
+    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+}
+
 apply plugin: 'application'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
 
-mainClassName = 'org.tron.sunio.contract_mirror.mirror.MirrorApplication'
+mainClassName = 'org.tron.defi.contract_mirror.MirrorApplication'
 archivesBaseName = 'contract-mirror'
 version = "1.0.0"
 
 dependencies {
-    implementation project(':tronsdk')
-    implementation project(':event_decode')
-    implementation 'com.google.protobuf:protobuf-java:3.12.0'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.3'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.3'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.13.3'
+    implementation fileTree("../lib") { include '*.jar' }
+
+    implementation "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}"
+
+    implementation "org.apache.kafka:kafka-clients:${kafkaVersion}"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
 }
 
+test {
+    useJUnitPlatform()
+}

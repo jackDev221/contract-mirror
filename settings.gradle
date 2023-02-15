@@ -1,4 +1,3 @@
 rootProject.name = 'contract-mirror'
 include 'mirror'
-include 'tronsdk'
-include 'event_decode'
+include 'lib'

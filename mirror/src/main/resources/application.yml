@@ -1,0 +1,51 @@
+#contract.mirror.appName=contract mirror
+#contract.mirror.blockInterval=5000
+
+#tron
+tron:
+  feeLimit: 500000000
+  mainChain:
+    type: mainnet
+    fullNodeList:
+      - 3.129.224.33:50051
+    rpcVersion: 2
+    gatewayAddress: TFLtPoEtVJBMcj6kZPrQrwEdM3W3shxsBU
+  sideChain:
+    type: mainnet
+    fullNodeList:
+      - 3.129.224.33:50051
+    rpcVersion: 2
+    gatewayAddress: TRDepx5KoQ8oNbFVZ5sogwUxtdYmATDRgX
+    chainId: 413AF23F37DA0D48234FDD43D89931E98E1144481B
+
+#kafka
+kafka:
+  bootstrapServers: 172.22.10.171:9092
+  groupId: contract-mirror-0
+  consumerTopics:
+    - contractlog
+
+#contractList
+contract-list:
+  contracts:
+    - address: TXk8rQSAvPvBBNtqSoY6nCfsXWCSSpTVQF
+      type: SUNSWAP_FACTORY_V1
+    - address: TKWJdrQkqHisa1X8HUdHEfREvTzw4pMAaY
+      type: SUNSWAP_FACTORY_V2
+    - address: TExeaZuD5YPi747PN5yEwk3Ro9eT2jJfB6
+      type: CURVE_2POOL
+    - address: TM9gWuCdFGNMiT1qTq1bgw4tNhJbsESfjA
+      type: PSM_POOL
+      polyAddress: TLCUfs9nbxubxEE3ridvtb876ikTD7jXic
+    - address: TUcj1rpMgJCcFZULyq7uLbkmfh9xMnYTmA
+      type: PSM_POOL
+      polyAddress: TLCUfs9nbxubxEE3ridvtb876ikTD7jXic
+    - address: TY2op6AKcEkFhv8hxNJj3FBUfjManxYLSe
+      type: PSM_POOL
+      polyAddress: TLCUfs9nbxubxEE3ridvtb876ikTD7jXic
+
+# token-list
+token-list:
+  tokens:
+    TRX: T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
+    USDT: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
