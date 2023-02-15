@@ -1,6 +1,7 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.factory;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
@@ -37,8 +38,9 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN_COUNT;
 
 @Slf4j
-public class SwapFactoryV1 extends BaseFactory{
+public class SwapFactoryV1 extends BaseFactory {
     private Map<String, String> v1SigMap;
+    @Setter
     private SwapFactoryV1Data swapFactoryV1Data;
 
     public SwapFactoryV1(String address, IChainHelper iChainHelper, IContractsHelper iContractsHelper, final Map<String, String> sigMap) {
@@ -57,11 +59,15 @@ public class SwapFactoryV1 extends BaseFactory{
         return swapFactoryV1Data;
     }
 
+    public SwapFactoryV1Data getSwapFactoryV1Data() {
+        return getVarFactoryV1Data().copySelf();
+    }
+
     @Override
     public boolean initDataFromChain1() {
         SwapFactoryV1Data swapFactoryV1Data = getVarFactoryV1Data();
         String feeTo = CallContractUtil.getTronAddress(iChainHelper, EMPTY_ADDRESS, address, "feeTo");
-        swapFactoryV1Data.setFeeAddress(feeTo);
+        swapFactoryV1Data.setFeeTo(feeTo);
         long feeToRate = CallContractUtil.getU256(iChainHelper, EMPTY_ADDRESS, address, "feeToRate").longValue();
         swapFactoryV1Data.setFeeToRate(feeToRate);
         long tokenCount = CallContractUtil.getU256(iChainHelper, EMPTY_ADDRESS, address, "tokenCount").longValue();
@@ -81,19 +87,19 @@ public class SwapFactoryV1 extends BaseFactory{
         List<BaseContract> result = new ArrayList<>();
         SwapFactoryV1Data v1Data = this.getVarFactoryV1Data();
         long totalTokens = v1Data.getTokenCount();
-//        totalTokens = 10;
+//        totalTokens = 1;
         List<BaseProcessOut> outs = this.getListContractsBase(cmPool, (int) totalTokens);
         for (BaseProcessOut out : outs) {
             SwapV1FactoryExOut swapV1FactoryExOut = (SwapV1FactoryExOut) out;
-            String address = swapV1FactoryExOut.getAddress();
+            String v1Address = swapV1FactoryExOut.getAddress();
             String tokenAddress = swapV1FactoryExOut.getTokenAddress();
-            v1Data.getTokenToExchangeMap().put(tokenAddress, address);
-            v1Data.getExchangeToTokenMap().put(address, tokenAddress);
+            v1Data.getTokenToExchangeMap().put(tokenAddress, v1Address);
+            v1Data.getExchangeToTokenMap().put(v1Address, tokenAddress);
             v1Data.getIdTokenMap().put(out.getId(), tokenAddress);
-            if (address.equals(EMPTY_ADDRESS) || tokenAddress.equals(EMPTY_ADDRESS)) {
+            if (v1Address.equals(EMPTY_ADDRESS) || tokenAddress.equals(EMPTY_ADDRESS)) {
                 continue;
             }
-            SwapV1 swapV1 = new SwapV1(address,
+            SwapV1 swapV1 = new SwapV1(this.address, v1Address,
                     this.iChainHelper, this.getIContractsHelper(), tokenAddress, v1SigMap);
 
             result.add(swapV1);
@@ -148,7 +154,7 @@ public class SwapFactoryV1 extends BaseFactory{
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_FEE_TO:
-                return (T) this.getVarFactoryV1Data().getFeeAddress();
+                return (T) this.getVarFactoryV1Data().getFeeTo();
             case METHOD_FEE_TO_RATE:
                 return (T) (Long) this.getVarFactoryV1Data().getFeeToRate();
             case METHOD_TOKEN_COUNT:
@@ -223,7 +229,7 @@ public class SwapFactoryV1 extends BaseFactory{
         }
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         String feeAddress = WalletUtil.ethAddressToTron((String) eventValues.getNonIndexedValues().get(0).getValue());
-        factoryV1Data.setFeeAddress(feeAddress);
+        factoryV1Data.setFeeTo(feeAddress);
         this.isDirty = true;
         return HandleResult.genHandleSuccess();
     }

@@ -1,13 +1,14 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
-import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
+import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
+import org.tron.sunio.contract_mirror.mirror.dao.SwapFactoryV1Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
@@ -17,11 +18,13 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_ADD_LIQUIDITY;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_ADD_LIQUIDITY_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_ADMIN_FEE_MINT;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_REMOVE_LIQUIDITY;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_REMOVE_LIQUIDITY_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_SNAPSHOT;
-import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_SNAPSHOT_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TOKEN_PURCHASE;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TOKEN_PURCHASE_BODY;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TOKEN_TO_TOKEN;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TRANSFER;
 import static org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event.EVENT_NAME_TRANSFER_BODY;
@@ -36,30 +39,37 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TONE_BALANCE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOTAL_SUPPLY;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.SWAP_V1_NO_FEE;
 
 @Slf4j
 public class SwapV1 extends BaseContract {
 
     private String tokenAddress;
-    @Getter
+    private String factory;
     @Setter
     private SwapV1Data swapV1Data;
 
-    public SwapV1(String address, IChainHelper iChainHelper, IContractsHelper iContractsHelper, String tokenAddress,
+    public SwapV1(String factory, String address, IChainHelper iChainHelper, IContractsHelper iContractsHelper, String tokenAddress,
                   final Map<String, String> sigMap) {
         super(address, ContractType.SWAP_V1, iChainHelper, iContractsHelper, sigMap);
         this.tokenAddress = tokenAddress;
+        this.factory = factory;
     }
 
     private SwapV1Data getVarSwapV1Data() {
         if (ObjectUtil.isNull(swapV1Data)) {
             swapV1Data = new SwapV1Data();
+            swapV1Data.setFactory(factory);
             swapV1Data.setType(this.type);
             swapV1Data.setAddress(this.address);
             swapV1Data.setTokenAddress(this.tokenAddress);
             swapV1Data.setUsing(true);
         }
         return swapV1Data;
+    }
+
+    public SwapV1Data getSwapV1Data() {
+        return getVarSwapV1Data().copySelf();
     }
 
     @Override
@@ -111,10 +121,10 @@ public class SwapV1 extends BaseContract {
                 result = handleEventTransfer(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_TOKEN_PURCHASE:
-                result = handleTokenPurchase(topics, data);
+                result = handleTokenPurchase(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_TRX_PURCHASE:
-                result = handleTrxPurchase(topics, data);
+                result = handleTrxPurchase(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_TOKEN_TO_TOKEN:
                 result = handleTokenToToken(topics, data);
@@ -123,10 +133,10 @@ public class SwapV1 extends BaseContract {
                 result = handleEventSnapshot(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_ADD_LIQUIDITY:
-                result = handleAddLiquidity(topics, data);
+                result = handleAddLiquidity(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_REMOVE_LIQUIDITY:
-                result = handleRemoveLiquidity(topics, data);
+                result = handleRemoveLiquidity(topics, data, handleEventExtraData);
                 break;
             case EVENT_NAME_ADMIN_FEE_MINT:
                 result = handleAdminFeeMint(topics, data);
@@ -203,8 +213,25 @@ public class SwapV1 extends BaseContract {
     }
 
     private HandleResult handleEventSnapshot(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("SwapV1:{}, handleEventSnapshot, topics:{} data:{} ", address, topics, data);
-        EventValues eventValues = getEventValue(EVENT_NAME_SNAPSHOT, EVENT_NAME_SNAPSHOT_BODY, topics, data,
+//        log.info("SwapV1:{}, handleEventSnapshot, topics:{} data:{} ", address, topics, data);
+//        EventValues eventValues = getEventValue(EVENT_NAME_SNAPSHOT, EVENT_NAME_SNAPSHOT_BODY, topics, data,
+//                handleEventExtraData.getUniqueId());
+//        if (ObjectUtil.isNull(eventValues)) {
+//            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventSnapshot fail!, unique id :%s",
+//                    address, type, handleEventExtraData.getUniqueId()));
+//        }
+//        SwapV1Data v1Data = this.getVarSwapV1Data();
+//        BigInteger trx = (BigInteger) eventValues.getIndexedValues().get(1).getValue();
+//        BigInteger tokenBalance = (BigInteger) eventValues.getIndexedValues().get(2).getValue();
+//        v1Data.setTokenBalance(tokenBalance);
+//        v1Data.setTrxBalance(trx);
+//        isDirty = true;
+        return HandleResult.genHandleSuccess();
+    }
+
+    private HandleResult handleAddLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleAddLiquidity, topics:{} data:{} ", address, topics, data);
+        EventValues eventValues = getEventValue(EVENT_NAME_ADD_LIQUIDITY, EVENT_NAME_ADD_LIQUIDITY_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventSnapshot fail!, unique id :%s",
@@ -213,20 +240,39 @@ public class SwapV1 extends BaseContract {
         SwapV1Data v1Data = this.getVarSwapV1Data();
         BigInteger trx = (BigInteger) eventValues.getIndexedValues().get(1).getValue();
         BigInteger tokenBalance = (BigInteger) eventValues.getIndexedValues().get(2).getValue();
-        v1Data.setTokenBalance(tokenBalance);
-        v1Data.setTrxBalance(trx);
+        BigInteger trxNew = v1Data.getTrxBalance().add(trx);
+        BigInteger tokenBalanceNew = v1Data.getTokenBalance().add(tokenBalance);
+        if (isFeeOn()) {
+            BigInteger kLast = tokenBalanceNew.multiply(tokenBalanceNew).sqrt();
+            v1Data.setKLast(kLast);
+        }
+        v1Data.setTrxBalance(trxNew);
+        v1Data.setTokenBalance(tokenBalanceNew);
         isDirty = true;
         return HandleResult.genHandleSuccess();
     }
 
-    private HandleResult handleAddLiquidity(String[] topics, String data) {
-        log.info("handleAddLiquidity not implements!");
-        return HandleResult.genHandleFailMessage("handleAddLiquidity not implements!");
-    }
-
-    private HandleResult handleRemoveLiquidity(String[] topics, String data) {
-        log.info("handleRemoveLiquidity not implements!");
-        return HandleResult.genHandleFailMessage("handleRemoveLiquidity not implements!");
+    private HandleResult handleRemoveLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleRemoveLiquidity, topics:{} data:{} ", address, topics, data);
+        EventValues eventValues = getEventValue(EVENT_NAME_REMOVE_LIQUIDITY, EVENT_NAME_REMOVE_LIQUIDITY_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventSnapshot fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
+        }
+        SwapV1Data v1Data = this.getVarSwapV1Data();
+        BigInteger trx = (BigInteger) eventValues.getIndexedValues().get(1).getValue();
+        BigInteger tokenBalance = (BigInteger) eventValues.getIndexedValues().get(2).getValue();
+        BigInteger trxNew = v1Data.getTrxBalance().subtract(trx);
+        BigInteger tokenBalanceNew = v1Data.getTokenBalance().subtract(tokenBalance);
+        if (isFeeOn()) {
+            BigInteger kLast = tokenBalanceNew.multiply(tokenBalanceNew).sqrt();
+            v1Data.setKLast(kLast);
+        }
+        v1Data.setTrxBalance(trxNew);
+        v1Data.setTokenBalance(tokenBalanceNew);
+        isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
     private HandleResult handleAdminFeeMint(String[] topics, String data) {
@@ -234,14 +280,42 @@ public class SwapV1 extends BaseContract {
         return HandleResult.genHandleFailMessage("handleAdminFeeMint not implements!");
     }
 
-    private HandleResult handleTokenPurchase(String[] topics, String data) {
-        log.info("handleTokenPurchase not implements!");
-        return HandleResult.genHandleFailMessage("handleTokenPurchase not implements!");
+    private HandleResult handleTokenPurchase(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleTokenPurchase, topics:{} data:{} ", address, topics, data);
+        EventValues eventValues = getEventValue(EVENT_NAME_TOKEN_PURCHASE, EVENT_NAME_TOKEN_PURCHASE_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventSnapshot fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
+        }
+        SwapV1Data v1Data = this.getVarSwapV1Data();
+        BigInteger trxIn = (BigInteger) eventValues.getIndexedValues().get(1).getValue();
+        BigInteger tokenOut = (BigInteger) eventValues.getIndexedValues().get(2).getValue();
+        BigInteger trxNew = v1Data.getTrxBalance().add(trxIn);
+        BigInteger tokenBalanceNew = v1Data.getTokenBalance().subtract(tokenOut);
+        v1Data.setTrxBalance(trxNew);
+        v1Data.setTokenBalance(tokenBalanceNew);
+        isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
-    private HandleResult handleTrxPurchase(String[] topics, String data) {
-        log.info("handleTrxPurchase not implements!");
-        return HandleResult.genHandleFailMessage("handleTrxPurchase not implements!");
+    private HandleResult handleTrxPurchase(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapV1:{}, handleTrxPurchase, topics:{} data:{} ", address, topics, data);
+        EventValues eventValues = getEventValue(EVENT_NAME_TOKEN_PURCHASE, EVENT_NAME_TOKEN_PURCHASE_BODY, topics, data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventSnapshot fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
+        }
+        SwapV1Data v1Data = this.getVarSwapV1Data();
+        BigInteger tokenIn = (BigInteger) eventValues.getIndexedValues().get(1).getValue();
+        BigInteger trxOut = (BigInteger) eventValues.getIndexedValues().get(2).getValue();
+        BigInteger trxNew = v1Data.getTrxBalance().subtract(trxOut);
+        BigInteger tokenBalanceNew = v1Data.getTokenBalance().add(tokenIn);
+        v1Data.setTrxBalance(trxNew);
+        v1Data.setTokenBalance(tokenBalanceNew);
+        isDirty = true;
+        return HandleResult.genHandleSuccess();
     }
 
     private HandleResult handleTokenToToken(String[] topics, String data) {
@@ -249,48 +323,85 @@ public class SwapV1 extends BaseContract {
         return HandleResult.genHandleFailMessage("handleTokenToToken not implements!");
     }
 
+    private boolean isFeeOn() {
+        boolean feeOn = false;
+        BaseContract baseContract = this.iContractsHelper.getContract(swapV1Data.getFactory());
+        if (ObjectUtil.isNotNull(baseContract) && (baseContract instanceof SwapFactoryV1)) {
+            SwapFactoryV1Data factoryV1Data = ((SwapFactoryV1) baseContract).getSwapFactoryV1Data();
+            feeOn = !(factoryV1Data.getFeeTo().equalsIgnoreCase(EMPTY_ADDRESS));
+        }
+        return feeOn;
+    }
+
     // return  liquidity amount Ps:not change data
     public BigInteger addLiquidity(BigInteger trxAmount, BigInteger minLiquidity, BigInteger maxTokens,
-                                   BigInteger deadline) throws Exception {
+                                   SwapV1Data swapV1Data) throws Exception {
         if (minLiquidity.compareTo(BigInteger.ZERO) <= 0) {
             throw new Exception("minLiquidity must greater than 0");
         }
-        SwapV1Data v1Data = this.getVarSwapV1Data().copySelf();
-        BigInteger totalLiquidity = new BigInteger(v1Data.getLpTotalSupply().toString());
+        boolean feeOn = false;
+        BigInteger liquidityMinted;
+        BigInteger totalLiquidity = new BigInteger(swapV1Data.getLpTotalSupply().toString());
         if (totalLiquidity.compareTo(BigInteger.ZERO) > 0) {
-            BigInteger trxReserve = v1Data.getTrxBalance();
-            BigInteger tokenReserve = v1Data.getTokenBalance();
+            BigInteger trxReserve = swapV1Data.getTrxBalance();
+            BigInteger tokenReserve = swapV1Data.getTokenBalance();
             BigInteger tokenAmount = (trxAmount.multiply(tokenReserve).divide(trxReserve)).add(BigInteger.ONE);
-            BigInteger liquidityMinted = trxAmount.multiply(totalLiquidity).divide(trxReserve);
+            liquidityMinted = trxAmount.multiply(totalLiquidity).divide(trxReserve);
             if (maxTokens.compareTo(tokenAmount) < 0 || liquidityMinted.compareTo(minLiquidity) < 0) {
                 throw new Exception("max tokens not meet or liquidityMinted not meet minLiquidity");
             }
-            return liquidityMinted;
+            feeOn = mintFee(trxReserve, tokenReserve, swapV1Data);
+            swapV1Data.setTrxBalance(trxReserve.add(trxAmount));
+            swapV1Data.setTokenBalance(tokenReserve.add(tokenAmount));
+            swapV1Data.setLpTotalSupply(totalLiquidity.add(minLiquidity));
+
         } else {
-            return v1Data.getTrxBalance();
+            swapV1Data.setTokenBalance(maxTokens);
+            swapV1Data.setTrxBalance(swapV1Data.getTrxBalance().add(trxAmount));
+            swapV1Data.setLpTotalSupply(swapV1Data.getTrxBalance());
+            BaseContract baseContract = this.iContractsHelper.getContract(swapV1Data.getFactory());
+            if (ObjectUtil.isNotNull(baseContract) && (baseContract instanceof SwapFactoryV1)) {
+                SwapFactoryV1Data factoryV1Data = ((SwapFactoryV1) baseContract).getSwapFactoryV1Data();
+                feeOn = !(factoryV1Data.getFeeTo().equalsIgnoreCase(EMPTY_ADDRESS));
+            }
+            liquidityMinted = swapV1Data.getTrxBalance();
         }
+        if (feeOn) {
+            swapV1Data.setKLast(swapV1Data.getTrxBalance().multiply(swapV1Data.getTokenBalance()));
+        }
+        return liquidityMinted;
     }
 
     // return [trx, tokenBalance] Ps:not change data
     public BigInteger[] removeLiquidity(BigInteger amount, BigInteger minTrx, BigInteger minTokens,
-                                        long deadline) throws Exception {
-        if (amount.compareTo(BigInteger.ZERO) <= 0 || deadline < iContractsHelper.getBlockTime()
+                                        SwapV1Data v1Data) throws Exception {
+        if (amount.compareTo(BigInteger.ZERO) <= 0
                 || minTrx.compareTo(BigInteger.ZERO) <= 0 || minTokens.compareTo(BigInteger.ZERO) <= 0) {
             throw new Exception("illegal input parameters");
         }
-        SwapV1Data v1Data = this.getVarSwapV1Data().copySelf();
+
         BigInteger totalLiquidity = new BigInteger(v1Data.getLpTotalSupply().toString());
         if (totalLiquidity.compareTo(BigInteger.ZERO) <= 0) {
             throw new Exception("total_liquidity must greater than 0");
         }
-
         BigInteger tokenReserve = v1Data.getTokenBalance();
         BigInteger trxReserve = v1Data.getTrxBalance();
+        boolean feeOn = mintFee(trxReserve, tokenReserve, v1Data);
+
         BigInteger trxAmount = amount.multiply(trxReserve).divide(totalLiquidity);
         BigInteger tokenAmount = amount.multiply(tokenReserve).divide(totalLiquidity);
         if (trxAmount.compareTo(minTrx) < 0 || tokenAmount.compareTo(minTokens) < 0) {
             throw new Exception("minToken or minTrx not meet");
         }
+
+        v1Data.setTrxBalance(v1Data.getTrxBalance().subtract(trxAmount));
+        v1Data.setTokenBalance(v1Data.getTokenBalance().subtract(tokenAmount));
+        v1Data.setLpTotalSupply(v1Data.getLpTotalSupply().subtract(amount));
+
+        if (feeOn) {
+            v1Data.setKLast(v1Data.getTrxBalance().multiply(v1Data.getTokenBalance()));
+        }
+
         return new BigInteger[]{trxAmount, tokenAmount};
     }
 
@@ -368,6 +479,45 @@ public class SwapV1 extends BaseContract {
         } else {
             throw new Exception(String.format("Get %s contract instance not SwapV1"));
         }
+    }
+
+    public boolean mintFee(BigInteger reserve0, BigInteger reserve1, SwapV1Data swapV1Data) {
+        boolean feeOn = false;
+        BaseContract baseContract = this.iContractsHelper.getContract(swapV1Data.getFactory());
+        if (ObjectUtil.isNull(baseContract)) {
+            log.warn("{} get factory contract:{} fail", this.address, swapV1Data.getFactory());
+            return feeOn;
+        }
+        if (baseContract instanceof SwapFactoryV1) {
+            SwapFactoryV1Data factoryV1Data = ((SwapFactoryV1) baseContract).getSwapFactoryV1Data();
+            feeOn = !(factoryV1Data.getFeeTo().equalsIgnoreCase(EMPTY_ADDRESS));
+            BigInteger feeToRate = BigInteger.valueOf(factoryV1Data.getFeeToRate());
+            BigInteger kLast = swapV1Data.getKLast();
+            if (feeOn) {
+                if (kLast.compareTo(BigInteger.ZERO) != 0 && feeToRate.compareTo(SWAP_V1_NO_FEE) != 0) {
+                    BigInteger rootK = reserve0.multiply(reserve1).sqrt();
+                    BigInteger rootKLast = kLast.sqrt();
+                    if (rootK.compareTo(rootKLast) > 0) {
+                        BigInteger numerator = swapV1Data.getLpTotalSupply().multiply(rootK.subtract(rootKLast));
+                        BigInteger denominator = rootK.multiply(feeToRate).add(rootKLast);
+                        if (denominator.compareTo(BigInteger.ZERO) > 0) {
+                            BigInteger liquidity = numerator.divide(denominator);
+                            if (liquidity.compareTo(BigInteger.ZERO) > 0) {
+                                swapV1Data.setLpTotalSupply(swapV1Data.getLpTotalSupply().add(liquidity));
+                            }
+                        }
+                    }
+                }
+            } else {
+                kLast = BigInteger.ZERO;
+                swapV1Data.setKLast(kLast);
+            }
+        } else {
+            log.warn("{} get factory contract:{} not a SwapFactoryV1 instance ", this.address, swapV1Data.getFactory());
+
+        }
+        return feeOn;
+
     }
 
 

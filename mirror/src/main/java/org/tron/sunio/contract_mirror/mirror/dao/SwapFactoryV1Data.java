@@ -15,7 +15,7 @@ import java.util.Map;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class SwapFactoryV1Data extends BaseContractData {
-    private String feeAddress;
+    private String feeTo;
     private long feeToRate;
     private long tokenCount;
     @JsonIgnore
