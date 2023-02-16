@@ -213,7 +213,7 @@ public class SwapV1 extends BaseContract {
     }
 
     private HandleResult handleEventSnapshot(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-//        log.info("SwapV1:{}, handleEventSnapshot, topics:{} data:{} ", address, topics, data);
+        log.info("SwapV1:{}, handleEventSnapshot, topics:{} data:{} ", address, topics, data);
 //        EventValues eventValues = getEventValue(EVENT_NAME_SNAPSHOT, EVENT_NAME_SNAPSHOT_BODY, topics, data,
 //                handleEventExtraData.getUniqueId());
 //        if (ObjectUtil.isNull(eventValues)) {

@@ -1,7 +1,8 @@
-package org.tron.sunio.contract_mirror.mirror.contracts.event;
+package org.tron.sunio.contract_mirror.mirror.contracts.method;
 
 import cn.hutool.core.lang.Assert;
 import org.junit.jupiter.api.Test;
+import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
@@ -60,32 +61,18 @@ public class TestSwapV2 {
         v2PairData.setKLast(new BigInteger("389825490198228847251005559491322"));
         swapV2.setSwapV2PairData(v2PairData);
         System.out.println(v2PairData);
-
-        long timeStamp = 1676527995000L;
-        IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
-                "txid0",
-                new String[]{
-                        "4c209b5fc8ad50758f13e2e1088ba56a560dff690a1c6fef26394f4c03821c4f",
-                        "00000000000000000000000081839e7bccdc7d5f50419bc34209d8ae5969ef66"
-                },
-                "000000000000000000000000000000000000000000000006124fee993bc000000000000000000000000000000000000000000000000000000000000012cc8241",
-                timeStamp
-        );
-        IContractEventWrap ic2 = EventLogUtils.generateContractEvent(
-                "txid1",
-                new String[]{
-                        "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-                        "0000000000000000000000000000000000000000000000000000000000000000",
-                        "0000000000000000000000003802585d6bf577e72284ec4c5e1dc3f0043de734"
-                },
-                "0000000000000000000000000000000000000000000000000000aa0ce7af3ae2",
-                timeStamp
-        );
-        swapV2.handleEvent(ic1);
-        swapV2.handleEvent(ic2);
-        System.out.println(v2PairData);
-
         long blockTimestampLast = 1676527995;
+        try {
+            swapV2.mint(
+                    new BigInteger("112000000000000000000"),
+                    new BigInteger("315392577"),
+                    blockTimestampLast,
+                    v2PairData
+            );
+        } catch (Exception e) {
+
+        }
+        System.out.println(v2PairData);
         BigInteger reserve0 = new BigInteger("11877716889092378956451");
         BigInteger reserve1 = new BigInteger("33447711999");
         BigInteger lpSupply = new BigInteger("19828618537904864");
@@ -100,6 +87,7 @@ public class TestSwapV2 {
         Assert.isTrue(v2PairData.getPrice0CumulativeLast().compareTo(price0CumulativeLast) == 0, "price0CumulativeLast not equal");
         Assert.isTrue(v2PairData.getPrice1CumulativeLast().compareTo(price1CumulativeLast) == 0, "price1CumulativeLast not equal");
     }
+
 
     @Test
     public void testBurn() {
@@ -127,43 +115,18 @@ public class TestSwapV2 {
         v2PairData.setPrice1CumulativeLast(new BigInteger("245667873203635236345015659344243024763792542124813982"));
         v2PairData.setKLast(new BigInteger("397282453712020115841141211155549"));
         swapV2.setSwapV2PairData(v2PairData);
-        long timeStamp = 1676528367000L;
-        IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
-                "txid0",
-                new String[]{
-                        "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-                        "0000000000000000000000003802585d6bf577e72284ec4c5e1dc3f0043de734",
-                        "0000000000000000000000001b5f3d3733582322cef8ba9bf28ef190bb616f60"
-                },
-                "000000000000000000000000000000000000000000000000000039ab03dc4e1b",
-                timeStamp
-        );
-        IContractEventWrap ic2 = EventLogUtils.generateContractEvent(
-                "txid1",
-                new String[]{
-                        "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-                        "0000000000000000000000001b5f3d3733582322cef8ba9bf28ef190bb616f60",
-                        "0000000000000000000000000000000000000000000000000000000000000000"
-                },
-                "000000000000000000000000000000000000000000000000000039ab03dc4e1b",
-                timeStamp
-        );
-
-        IContractEventWrap ic3 = EventLogUtils.generateContractEvent(
-                "txid1",
-                new String[]{
-                        "dccd412f0b1252819cb1fd330b93224ca42612892bb3f4f789976e6d81936496",
-                        "00000000000000000000000081839e7bccdc7d5f50419bc34209d8ae5969ef66",
-                        "0000000000000000000000003802585d6bf577e72284ec4c5e1dc3f0043de734"
-                },
-                "0000000000000000000000000000000000000000000000020f1a6d66298e7b660000000000000000000000000000000000000000000000000000000006600876",
-                timeStamp
-        );
-        swapV2.handleEvent(ic1);
-        swapV2.handleEvent(ic2);
-        swapV2.handleEvent(ic3);
-
         long blockTimestampLast = 1676528367;
+        System.out.println(v2PairData);
+        try {
+            swapV2.burn(
+                    new BigInteger("63406666960411"),
+                    blockTimestampLast,
+                    v2PairData
+            );
+        } catch (Exception e) {
+
+        }
+        System.out.println(v2PairData);
         BigInteger reserve0 = new BigInteger("11839735098399445161789");
         BigInteger reserve1 = new BigInteger("33340755081");
         BigInteger lpSupply = new BigInteger("19765211870944453");
@@ -205,21 +168,22 @@ public class TestSwapV2 {
         v2PairData.setPrice1CumulativeLast(new BigInteger("245668559116595085188219538336661262158690150817510742"));
         v2PairData.setKLast(new BigInteger("394745708139655336245497468799909"));
         swapV2.setSwapV2PairData(v2PairData);
-        long timeStamp = 1676528913000L;
-        IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
-                "txid0",
-                new String[]{
-                        "d78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822",
-                        "00000000000000000000000081839e7bccdc7d5f50419bc34209d8ae5969ef66",
-                        "0000000000000000000000003802585d6bf577e72284ec4c5e1dc3f0043de734"
-                },
-                "000000000000000000000000000000000000000000000006046f37e5945c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012673207",
-                timeStamp
-        );
-
-        swapV2.handleEvent(ic1);
-        System.out.println(v2PairData);
         long blockTimestampLast = 1676528913;
+        System.out.println(v2PairData);
+        try {
+            swapV2.swap(
+                    new BigInteger("111000000000000000000"),
+                    new BigInteger("0"),
+                    new BigInteger("0"),
+                    new BigInteger("308752903"),
+                    blockTimestampLast,
+                    v2PairData
+            );
+        } catch (Exception e) {
+
+        }
+        System.out.println(v2PairData);
+
         BigInteger reserve0 = new BigInteger("11950735098399445161789");
         BigInteger reserve1 = new BigInteger("33032002178");
         BigInteger lpSupply = new BigInteger("19765211870944453");

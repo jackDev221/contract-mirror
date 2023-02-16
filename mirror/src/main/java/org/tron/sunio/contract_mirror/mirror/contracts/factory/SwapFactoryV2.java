@@ -87,7 +87,6 @@ public class SwapFactoryV2 extends BaseFactory {
     public List<BaseContract> getListContracts(CMPool cmPool) {
         List<BaseContract> result = new ArrayList<>();
         long pairCount = this.getVarFactoryV2Data().getPairCount();
-//        pairCount = 5;
         List<BaseProcessOut> outs = this.getListContractsBase(cmPool, (int) pairCount);
         for (BaseProcessOut out : outs) {
             SwapV2FactoryExOut swapV2FactoryExOut = (SwapV2FactoryExOut) out;
