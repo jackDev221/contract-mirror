@@ -1,32 +1,16 @@
 package org.tron.sunio.contract_mirror.mirror.dao;
 
+import lombok.Data;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 
 
+@Data
 @Component
 public class PSMTotalData {
-    private BigInteger totalUSDD = BigInteger.valueOf(0);
-    private BigInteger totalChargedUSDD = BigInteger.valueOf(0);
-
-    public synchronized void setTotalUSDD(BigInteger totalUSDD) {
-        if (totalUSDD.compareTo(this.totalUSDD) > 0) {
-            this.totalUSDD = new BigInteger(totalUSDD.toByteArray());
-        }
-    }
-
-    public synchronized void setTotalChargedUSDD(BigInteger totalChargedUSDD) {
-        if (totalChargedUSDD.compareTo(this.totalChargedUSDD) > 0) {
-            this.totalChargedUSDD = new BigInteger(totalChargedUSDD.toByteArray());
-        }
-    }
-
-    public BigInteger getTotalUSDD() {
-        return new BigInteger(this.totalUSDD.toByteArray());
-    }
-
-    public BigInteger getTotalChargedUSDD() {
-        return new BigInteger(this.totalUSDD.toByteArray());
-    }
+    // PSM 合约全加载完后会统一更新该数据，之后事件时单线程处理 不涉及多线程。
+    private boolean finishInit = false;
+    private BigInteger totalMaxSwapUSDD = BigInteger.valueOf(0);
+    private BigInteger totalSwappedUSDD = BigInteger.valueOf(0);
 }

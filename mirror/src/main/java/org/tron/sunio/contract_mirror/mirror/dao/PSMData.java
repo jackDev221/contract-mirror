@@ -13,6 +13,7 @@ import java.math.BigInteger;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class PSMData extends BaseContractData {
+    private String polyAddress;
     private String gemJoin;
     private String usdd;
     private String usddJoin;
@@ -20,7 +21,15 @@ public class PSMData extends BaseContractData {
     private BigInteger tin;
     private BigInteger tout;
     private String quota;
-    private BigInteger[] infos;
+    private boolean enable; // info[7] == 1
+    private BigInteger maxReversSwap;//info[0]
+    private boolean reverseLimitEnable; // info[8] == 1
+    private BigInteger swappedUSDD; // infos[1], USDT 已兑换 USDD 数量
+    private BigInteger totalSwappedUSDD; // infos[6], Total 已兑换（固定18位）
+    private BigInteger totalMaxSwapUSDD; // info[2]
+    private BigInteger maxSwapUSDD; // info[3]
+    private BigInteger usddBalance; // info[5]
+    private BigInteger usdBalance; //   info[4]
 
     public PSMData copySelf() {
         return DeepCopyUtils.deepCopy(this, PSMData.class);

@@ -136,6 +136,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
         for (BaseContract baseContract : contractHashMap.values()) {
             baseContract.resetReloadData();
         }
+        this.contractFactoryManager.resetPsmTotalDataState();
     }
 
     private ConsumerRecords<String, String> kafkaConsumerPoll(long millis) {

@@ -23,6 +23,8 @@ public class CallContractUtil {
     public static Type callContract(IChainHelper iChainHelper, TriggerContractInfo triggerContractInfo) {
         List<Type> results = iChainHelper.triggerConstantContract(triggerContractInfo);
         if (results.size() == 0) {
+            log.error("From:{} Contract:{} method:{} result size is zero", triggerContractInfo.getFromAddress(),
+                    triggerContractInfo.getContractAddress(), triggerContractInfo.getMethodName());
             return null;
         }
         return results.get(0);

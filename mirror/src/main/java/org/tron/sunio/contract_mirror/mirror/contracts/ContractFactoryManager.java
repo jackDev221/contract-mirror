@@ -24,6 +24,8 @@ import org.tron.sunio.contract_mirror.mirror.dao.PSMTotalData;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 
 
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,7 @@ public class ContractFactoryManager {
 
     @Autowired
     private PSMTotalData psmTotalData;
+    private List<String> psmContracts = new ArrayList<>();
 
     private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
     private Map<String, String> v1FactorySigMap;
@@ -126,6 +129,7 @@ public class ContractFactoryManager {
                 case CONTRACT_PSM_USDC:
                 case CONTRACT_PSM_USDJ:
                 case CONTRACT_PSM_TUSD:
+                    psmContracts.add(contractInfo.getAddress());
                     iContractsCollectHelper.addContract(new PSM(
                             contractInfo.getContractType(),
                             contractInfo.getAddress(),
@@ -148,7 +152,34 @@ public class ContractFactoryManager {
         return true;
     }
 
+    private void updatePsmTotalData(IContractsCollectHelper iContractsCollectHelper) {
+        if (psmTotalData.isFinishInit() || psmContracts.size() == 0) {
+            return;
+        }
+        for (String contract : psmContracts) {
+            BaseContract baseContract = iContractsCollectHelper.getContract(contract);
+            if (ObjectUtil.isNull(baseContract) || !baseContract.isReady) {
+                return;
+            }
+        }
+        PSM psm = (PSM) iContractsCollectHelper.getContract(psmContracts.get(0));
+        BigInteger[] totalInfos = psm.getTotalInfos();
+        for (String contract : psmContracts) {
+            PSM item = (PSM) iContractsCollectHelper.getContract(contract);
+            item.updateTotalInfos(totalInfos);
+        }
+        psmTotalData.setTotalMaxSwapUSDD(totalInfos[0]);
+        psmTotalData.setTotalSwappedUSDD(totalInfos[1]);
+        psmTotalData.setFinishInit(true);
+    }
+
+    public void resetPsmTotalDataState() {
+        psmTotalData.setFinishInit(false);
+    }
+
+
     public boolean updateMirrorContracts(IContractsCollectHelper iContractsCollectHelper) {
+        updatePsmTotalData(iContractsCollectHelper);
 //        log.info("ContractFactoryManager: start updateMirrorContracts");
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
