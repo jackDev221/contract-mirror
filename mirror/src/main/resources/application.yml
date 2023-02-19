@@ -7,13 +7,13 @@ tron:
   mainChain:
     type: mainnet
     fullNodeList:
-      - 3.129.224.33:50051
+      - grpc.trongrid.io:50051
     rpcVersion: 2
     gatewayAddress: TFLtPoEtVJBMcj6kZPrQrwEdM3W3shxsBU
   sideChain:
     type: mainnet
     fullNodeList:
-      - 3.129.224.33:50051
+      - grpc.trongrid.io:50051
     rpcVersion: 2
     gatewayAddress: TRDepx5KoQ8oNbFVZ5sogwUxtdYmATDRgX
     chainId: 413AF23F37DA0D48234FDD43D89931E98E1144481B
@@ -32,17 +32,17 @@ contract-list:
       type: SUNSWAP_FACTORY_V1
     - address: TKWJdrQkqHisa1X8HUdHEfREvTzw4pMAaY
       type: SUNSWAP_FACTORY_V2
-    - address: TExeaZuD5YPi747PN5yEwk3Ro9eT2jJfB6
+    - address: TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c
       type: CURVE_2POOL
     - address: TM9gWuCdFGNMiT1qTq1bgw4tNhJbsESfjA
       type: PSM_POOL
-      polyAddress: TLCUfs9nbxubxEE3ridvtb876ikTD7jXic
+      polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
     - address: TUcj1rpMgJCcFZULyq7uLbkmfh9xMnYTmA
       type: PSM_POOL
-      polyAddress: TLCUfs9nbxubxEE3ridvtb876ikTD7jXic
+      polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
     - address: TY2op6AKcEkFhv8hxNJj3FBUfjManxYLSe
       type: PSM_POOL
-      polyAddress: TLCUfs9nbxubxEE3ridvtb876ikTD7jXic
+      polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
 
 # token-list
 token-list:

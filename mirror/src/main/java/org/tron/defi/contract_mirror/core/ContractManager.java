@@ -12,7 +12,7 @@ import org.tron.defi.contract_mirror.core.graph.Node;
 import org.tron.defi.contract_mirror.core.pool.*;
 import org.tron.defi.contract_mirror.core.token.TRX;
 import org.tron.defi.contract_mirror.core.token.Token;
-import org.tron.defi.contract_mirror.utils.chain.ContractTrigger;
+import org.tron.defi.contract_mirror.utils.chain.TronContractTrigger;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,7 +22,7 @@ public class ContractManager {
     @Autowired
     ContractConfigList contractConfigList;
     @Autowired
-    ContractTrigger contractTrigger;
+    TronContractTrigger tronContractTrigger;
     @Autowired
     Graph graph;
 
@@ -134,7 +134,7 @@ public class ContractManager {
     }
 
     public Contract registerContract(Contract contract) {
-        contract.setContractTrigger(contractTrigger);
+        contract.setTronContractTrigger(tronContractTrigger);
         contract.setContractManager(this);
         Contract exist = contracts.putIfAbsent(contract.getAddress(), contract);
         return null != exist ? exist : contract;

@@ -1,18 +1,30 @@
 package org.tron.defi.contract_mirror.core.pool;
 
 import lombok.extern.slf4j.Slf4j;
+import org.tron.defi.contract.abi.ContractAbi;
+import org.tron.defi.contract.abi.pool.PsmAbi;
+import org.tron.defi.contract.log.ContractLog;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.token.TRC20;
 import org.tron.defi.contract_mirror.core.token.Token;
-import org.tron.defi.contract_mirror.dao.ContractLog;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
-import org.tron.defi.contract_mirror.utils.abi.AbiDecoder;
+import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Type;
+
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 public class PsmPool extends Pool {
     public PsmPool(String address) {
         super(address);
         type = PoolType.PSM;
+    }
+
+    @Override
+    protected ContractAbi loadAbi() {
+        return tronContractTrigger.contractAt(PsmAbi.class, getAddress());
     }
 
     @Override
@@ -39,12 +51,9 @@ public class PsmPool extends Pool {
     }
 
     private Token getUsddFromChain() {
-        final String SIGNATURE = "usdd()";
-        String result = contractTrigger.triggerConstant(getAddress(), SIGNATURE);
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        String tokenAddress = AbiDecoder.DecodeAddress(result).left;
+        List<Type> response = abi.invoke(PsmAbi.Functions.USDD, Collections.emptyList());
+        String tokenAddress
+            = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return null != contract
                ? (Token) contract
@@ -52,18 +61,12 @@ public class PsmPool extends Pool {
     }
 
     private Token getGemFromChain() {
-        final String GEM_JOIN_SIGNATURE = "gemJoin()";
-        String result = contractTrigger.triggerConstant(getAddress(), GEM_JOIN_SIGNATURE);
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        String gemJoinAddress = AbiDecoder.DecodeAddress(result).left;
-        final String GEM_SIGNATURE = "gem()";
-        result = contractTrigger.triggerConstant(gemJoinAddress, GEM_SIGNATURE);
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        String tokenAddress = AbiDecoder.DecodeAddress(result).left;
+        List<Type> response = abi.invoke(PsmAbi.Functions.GEM_JOIN, Collections.emptyList());
+        String gemJoinAddress
+            = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
+        response = abi.invoke(gemJoinAddress, PsmAbi.Functions.GEM, Collections.emptyList());
+        String tokenAddress
+            = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return null != contract
                ? (Token) contract
@@ -78,5 +81,6 @@ public class PsmPool extends Pool {
     @Override
     public void onEvent(KafkaMessage<ContractLog> kafkaMessage) {
         // TODO finish implementation
+
     }
 }

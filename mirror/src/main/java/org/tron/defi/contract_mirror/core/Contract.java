@@ -3,19 +3,27 @@ package org.tron.defi.contract_mirror.core;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import lombok.Setter;
-import org.tron.defi.contract_mirror.utils.chain.ContractTrigger;
+import org.tron.defi.contract.abi.ContractAbi;
+import org.tron.defi.contract_mirror.utils.chain.TronContractTrigger;
 
 public abstract class Contract {
     @Getter
     private final String address;
-    @Setter
-    protected ContractTrigger contractTrigger;
+    protected TronContractTrigger tronContractTrigger;
     @Setter
     protected ContractManager contractManager;
+    protected ContractAbi abi;
 
     public Contract(String address) {
         this.address = address;
     }
+
+    public void setTronContractTrigger(TronContractTrigger trigger) {
+        tronContractTrigger = trigger;
+        abi = loadAbi();
+    }
+
+    protected abstract ContractAbi loadAbi();
 
     public String run(String method) {
         throw new IllegalArgumentException("METHOD NOT EXISTS");

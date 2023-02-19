@@ -7,13 +7,13 @@ tron:
   mainChain:
     type: mainnet
     fullNodeList:
-      - 3.129.224.33:50051
+      - grpc.trongrid.io:50051
     rpcVersion: 2
     gatewayAddress: TFLtPoEtVJBMcj6kZPrQrwEdM3W3shxsBU
   sideChain:
     type: mainnet
     fullNodeList:
-      - 3.129.224.33:50051
+      - grpc.trongrid.io:50051
     rpcVersion: 2
     gatewayAddress: TRDepx5KoQ8oNbFVZ5sogwUxtdYmATDRgX
     chainId: 413AF23F37DA0D48234FDD43D89931E98E1144481B
@@ -28,30 +28,28 @@ kafka:
 #contractList
 contract-list:
   contracts:
-    - address: TXFouUxm4Qs3c1VxfQtCo4xMxbpwE3aWDM
+    - address: TXk8rQSAvPvBBNtqSoY6nCfsXWCSSpTVQF
       type: SUNSWAP_FACTORY_V1
-    - address: THomLGMLhAjMecQf9FQjbZ8a1RtwsZLrGE
+    - address: TKWJdrQkqHisa1X8HUdHEfREvTzw4pMAaY
       type: SUNSWAP_FACTORY_V2
-    - address: TH6ZjnptwVgtaTFhCJfkv3B9WVjkGW9mcr
+    - address: TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c
       type: CURVE_2POOL
-    - address: TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E
-      type: CURVE_3POOL
-    - address: TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr
+    - address: TKcEU8ekq2ZoFzLSGFYCUY6aocJBX9X31b
+      type: curve_3POOL
+    - address: TQx6CdLHqjwVmJ45ecRzodKfVumAsdoRXH
       type: CURVE_4POOL
-    - address: TF12vhGuWttHNfxsrn6XueMLvxGLVCyN12
+    - address: TM9gWuCdFGNMiT1qTq1bgw4tNhJbsESfjA
       type: PSM_POOL
-      polyAddress: TLCUfs9nbxubxEE3ridvtb876ikTD7jXic
-    - address: TFDUZ6FAtXptkY3dKHk2oRarCckyDYRkEL
+      polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
+    - address: TUcj1rpMgJCcFZULyq7uLbkmfh9xMnYTmA
       type: PSM_POOL
-      polyAddress: TLCUfs9nbxubxEE3ridvtb876ikTD7jXic
-    - address: TBJ1sR6RGj5675ZuHWGrG18tMxjo7cifJB
+      polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
+    - address: TY2op6AKcEkFhv8hxNJj3FBUfjManxYLSe
       type: PSM_POOL
-      polyAddress: TLCUfs9nbxubxEE3ridvtb876ikTD7jXic
-    - address: TAkD9tpd6MWVM3MQjrfDRGCXwiRMUGzzYh
-      type: PSM_POOL
-      polyAddress: TLCUfs9nbxubxEE3ridvtb876ikTD7jXic
+      polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
+
 # token-list
 token-list:
   tokens:
     TRX: T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
-    USDT: TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf
+    USDT: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t

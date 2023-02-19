@@ -1,11 +1,23 @@
 package org.tron.defi.contract_mirror.core.token;
 
+import org.tron.defi.contract.abi.ContractAbi;
+import org.tron.defi.contract.abi.token.TRC20Abi;
 import org.tron.defi.contract_mirror.common.ContractType;
-import org.tron.defi.contract_mirror.utils.abi.AbiDecoder;
+import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.Utf8String;
+import org.web3j.abi.datatypes.generated.Uint256;
+
+import java.util.Collections;
+import java.util.List;
 
 public class TRC20 extends Token {
     public TRC20(String address) {
         super(address);
+    }
+
+    @Override
+    public ContractAbi loadAbi() {
+        return tronContractTrigger.contractAt(TRC20Abi.class, getAddress());
     }
 
     @Override
@@ -30,22 +42,14 @@ public class TRC20 extends Token {
     }
 
     private String getSymbolFromChain() {
-        final String SIGNATURE = "symbol()";
-        String result = contractTrigger.triggerConstant(getAddress(), SIGNATURE);
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        symbol = AbiDecoder.DecodeStringFromTuple(result, 0);
+        List<Type> response = abi.invoke(TRC20Abi.Functions.SYMBOL, Collections.emptyList());
+        symbol = ((Utf8String) response.get(0)).getValue();
         return symbol;
     }
 
     private int getDecimalsFromChain() {
-        final String SIGNATURE = "decimals()";
-        String result = contractTrigger.triggerConstant(getAddress(), SIGNATURE);
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        decimals = AbiDecoder.DecodeNumber(result).left.intValue();
+        List<Type> response = abi.invoke(TRC20Abi.Functions.DECIMALS, Collections.emptyList());
+        decimals = ((Uint256) response.get(0)).getValue().intValue();
         return decimals;
     }
 }

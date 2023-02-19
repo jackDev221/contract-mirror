@@ -1,5 +1,6 @@
 package org.tron.defi.contract_mirror.core.token;
 
+import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract_mirror.common.ContractType;
 
 public class TRX extends Token {
@@ -16,6 +17,11 @@ public class TRX extends Token {
 
     public static TRX getInstance() {
         return instance;
+    }
+
+    @Override
+    protected ContractAbi loadAbi() {
+        return null;
     }
 
     @Override

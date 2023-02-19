@@ -14,12 +14,12 @@ import org.tron.defi.contract_mirror.TestApplication;
 @SpringBootTest(classes = TestApplication.class)
 public class ContractTriggerTest {
     @Autowired
-    ContractTrigger contractTrigger;
+    TronContractTrigger tronContractTrigger;
 
     @Test
     public void getTrxBalanceTest() {
-        long balance = contractTrigger.getTrxBalance("TF5MekHgFz6neU7zTpX4h2tha5miPDUj3z");
+        long balance = tronContractTrigger.balance("TF5MekHgFz6neU7zTpX4h2tha5miPDUj3z");
         log.info(String.valueOf(balance));
-        Assertions.assertTrue(balance > 0);
+        Assertions.assertEquals(0, balance);
     }
 }

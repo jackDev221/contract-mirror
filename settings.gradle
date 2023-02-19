@@ -1,3 +1,4 @@
 rootProject.name = 'contract-mirror'
 include 'mirror'
 include 'lib'
+include 'contract-abi'

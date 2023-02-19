@@ -1,6 +1,6 @@
-package org.tron.defi.contract_mirror.core.pool;
+package org.tron.defi.contract_mirror.core;
 
-import org.tron.defi.contract_mirror.dao.ContractLog;
+import org.tron.defi.contract.log.ContractLog;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
 
 public interface Synchronizable {

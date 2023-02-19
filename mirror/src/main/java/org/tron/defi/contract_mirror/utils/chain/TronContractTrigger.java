@@ -3,6 +3,9 @@ package org.tron.defi.contract_mirror.utils.chain;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.defi.contract.abi.Contract;
+import org.tron.defi.contract.abi.ContractAbi;
+import org.tron.defi.contract.abi.ContractTrigger;
 import org.tron.defi.contract_mirror.config.TronConfig;
 import org.tron.protos.Protocol.Account;
 import org.tron.protos.Protocol.Transaction.Result.code;
@@ -14,13 +17,24 @@ import org.tron.sunapi.response.TransactionResponse;
 
 @Slf4j
 @Component
-public class ContractTrigger {
+public class TronContractTrigger implements ContractTrigger {
     @Autowired
     TronConfig tronConfig;
     @Autowired
     SunNetwork sunNetwork;
 
-    public long getTrxBalance(String address) {
+    @Override
+    public ContractAbi contractAt(Class<? extends Contract> abi, String address) {
+        try {
+            return abi.getConstructor(ContractTrigger.class, String.class)
+                      .newInstance(this, address);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public long balance(String address) {
         try {
             SunNetworkResponse<Account> accountSunNetworkResponse = sunNetwork.getMainChainService()
                                                                               .getAccount(address);
@@ -33,14 +47,19 @@ public class ContractTrigger {
         return 0;
     }
 
+    @Override
+    public String trigger(String contractAddress, String functionSelector) {
+        return trigger(contractAddress, functionSelector, "");
+    }
 
-    public String triggerConstant(String contractAddress, String functionSelector, String param) {
+    @Override
+    public String trigger(String contractAddress, String functionSelector, String param) {
         try {
             TriggerConstantContractRequest constantRequest = new TriggerConstantContractRequest();
             constantRequest.setContractAddrStr(contractAddress);
             constantRequest.setMethodStr(functionSelector);
             constantRequest.setArgsStr(param);
-            constantRequest.setHex(false);
+            constantRequest.setHex(true);
             constantRequest.setFeeLimit(tronConfig.getFeeLimit());
             SunNetworkResponse<TransactionResponse> constantResponse
                 = sunNetwork.getMainChainService().triggerConstantContract(constantRequest);
@@ -58,9 +77,5 @@ public class ContractTrigger {
             log.error("trigger error", e);
             throw e;
         }
-    }
-
-    public String triggerConstant(String contractAddress, String functionSelector) {
-        return triggerConstant(contractAddress, functionSelector, "");
     }
 }

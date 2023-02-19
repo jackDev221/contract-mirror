@@ -27,11 +27,13 @@ version = "1.0.0"
 
 dependencies {
     implementation fileTree("../lib") { include '*.jar' }
+    implementation project(':contract-abi')
 
     implementation "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
     implementation "org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}"
 
     implementation "org.apache.kafka:kafka-clients:${kafkaVersion}"
+    implementation "org.web3j:abi:${web3jVersion}"
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
 }

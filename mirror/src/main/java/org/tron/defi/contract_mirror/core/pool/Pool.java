@@ -3,6 +3,7 @@ package org.tron.defi.contract_mirror.core.pool;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import org.tron.defi.contract_mirror.core.Contract;
+import org.tron.defi.contract_mirror.core.Synchronizable;
 import org.tron.defi.contract_mirror.core.token.Token;
 
 import java.util.ArrayList;

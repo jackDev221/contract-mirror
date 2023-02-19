@@ -2,6 +2,8 @@ package org.tron.defi.contract_mirror.core.factory;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.tron.defi.contract.abi.ContractAbi;
+import org.tron.defi.contract.abi.factory.SunswapV2FactoryAbi;
 import org.tron.defi.contract_mirror.common.ContractType;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.graph.Edge;
@@ -10,10 +12,15 @@ import org.tron.defi.contract_mirror.core.graph.Node;
 import org.tron.defi.contract_mirror.core.pool.Pool;
 import org.tron.defi.contract_mirror.core.pool.SunswapV2Pool;
 import org.tron.defi.contract_mirror.core.token.Token;
-import org.tron.defi.contract_mirror.utils.abi.AbiDecoder;
+import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.generated.Uint256;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -30,6 +37,11 @@ public class SunswapV2Factory extends Contract {
 
     public SunswapV2Factory(String address) {
         super(address);
+    }
+
+    @Override
+    public ContractAbi loadAbi() {
+        return tronContractTrigger.contractAt(SunswapV2FactoryAbi.class, getAddress());
     }
 
     @Override
@@ -90,23 +102,20 @@ public class SunswapV2Factory extends Contract {
         return true;
     }
 
-    public int getAllPairLen() throws RuntimeException {
+    public int getAllPairLen() {
         if (pairs.size() > 0) {
             return pairs.size();
         }
         return getAllPairLenFromChain();
     }
 
-    private int getAllPairLenFromChain() throws RuntimeException {
-        final String SIGNATURE = "allPairsLength()";
-        String result = contractTrigger.triggerConstant(getAddress(), SIGNATURE);
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        return Integer.parseInt(result, 16);
+    private int getAllPairLenFromChain() {
+        List<Type> response = abi.invoke(SunswapV2FactoryAbi.Functions.ALL_PAIRS_LENGTH,
+                                         Collections.emptyList());
+        return ((Uint256) response.get(0)).getValue().intValue();
     }
 
-    public Pool getPair(int id) throws RuntimeException {
+    public Pool getPair(int id) {
         SunswapV2Pool pair = null;
         rlock.lock();
         try {
@@ -166,20 +175,17 @@ public class SunswapV2Factory extends Contract {
     }
 
     private Pool getPairFromChain(int id) {
-        final String SIGNATURE = "allPairs(uint256)";
-        String result = contractTrigger.triggerConstant(getAddress(),
-                                                        SIGNATURE,
-                                                        String.valueOf(id));
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        String pairAddress = AbiDecoder.DecodeAddress(result).left;
+        List<Type> response = abi.invoke(SunswapV2FactoryAbi.Functions.ALL_PAIRS,
+                                         Collections.singletonList(id));
+        String pairAddress
+            = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         SunswapV2Pool pair;
         try {
             Contract contract = contractManager.getContract(pairAddress);
             pair = contract != null
                    ? (SunswapV2Pool) contract
-                   : (SunswapV2Pool) contractManager.registerContract(new SunswapV2Pool(pairAddress));
+                   :
+                   (SunswapV2Pool) contractManager.registerContract(new SunswapV2Pool(pairAddress));
         } catch (ClassCastException e) {
             log.error(e.getMessage());
             throw e;

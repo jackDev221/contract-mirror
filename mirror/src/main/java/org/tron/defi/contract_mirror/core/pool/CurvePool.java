@@ -1,15 +1,21 @@
 package org.tron.defi.contract_mirror.core.pool;
 
 import lombok.extern.slf4j.Slf4j;
+import org.tron.defi.contract.abi.ContractAbi;
+import org.tron.defi.contract.abi.pool.CurveAbi;
+import org.tron.defi.contract.log.ContractLog;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.token.TRC20;
 import org.tron.defi.contract_mirror.core.token.Token;
-import org.tron.defi.contract_mirror.dao.ContractLog;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
-import org.tron.defi.contract_mirror.utils.abi.AbiDecoder;
+import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Type;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 public class CurvePool extends Pool {
@@ -48,12 +54,9 @@ public class CurvePool extends Pool {
     }
 
     private Token getTokenFromChain(int n) {
-        final String SIGNATURE = "coins(uint256)";
-        String result = contractTrigger.triggerConstant(getAddress(), SIGNATURE, String.valueOf(n));
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        String tokenAddress = AbiDecoder.DecodeAddress(result).left;
+        List<Type> response = abi.invoke(CurveAbi.Functions.COINS, Collections.singletonList(n));
+        String tokenAddress
+            = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return contract != null
                ? (Token) contract
@@ -61,12 +64,9 @@ public class CurvePool extends Pool {
     }
 
     private Token getLpTokenFromChain() {
-        final String SIGNATURE = "token()";
-        String result = contractTrigger.triggerConstant(getAddress(), SIGNATURE);
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        String tokenAddress = AbiDecoder.DecodeAddress(result).left;
+        List<Type> response = abi.invoke(CurveAbi.Functions.TOKEN, Collections.emptyList());
+        String tokenAddress
+            = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return contract != null
                ? (Token) contract
@@ -81,5 +81,10 @@ public class CurvePool extends Pool {
     @Override
     public void onEvent(KafkaMessage<ContractLog> kafkaMessage) {
         // TODO finish implementation
+    }
+
+    @Override
+    protected ContractAbi loadAbi() {
+        return tronContractTrigger.contractAt(CurveAbi.class, getAddress());
     }
 }

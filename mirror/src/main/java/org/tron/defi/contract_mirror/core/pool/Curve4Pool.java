@@ -2,12 +2,19 @@ package org.tron.defi.contract_mirror.core.pool;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.tron.defi.contract.abi.ContractAbi;
+import org.tron.defi.contract.abi.pool.Curve4Abi;
+import org.tron.defi.contract.log.ContractLog;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.token.TRC20;
 import org.tron.defi.contract_mirror.core.token.Token;
-import org.tron.defi.contract_mirror.dao.ContractLog;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
-import org.tron.defi.contract_mirror.utils.abi.AbiDecoder;
+import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Type;
+
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 public class Curve4Pool extends Pool {
@@ -16,6 +23,11 @@ public class Curve4Pool extends Pool {
     public Curve4Pool(String address) {
         super(address);
         type = PoolType.CURVE4;
+    }
+
+    @Override
+    protected ContractAbi loadAbi() {
+        return tronContractTrigger.contractAt(Curve4Abi.class, getAddress());
     }
 
     @Override
@@ -45,12 +57,9 @@ public class Curve4Pool extends Pool {
     }
 
     private void initUnderlyingPool() throws RuntimeException {
-        final String BASE_POOL_SIGNATURE = "base_pool()";
-        String result = contractTrigger.triggerConstant(getAddress(), BASE_POOL_SIGNATURE);
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        String poolAddress = AbiDecoder.DecodeAddress(result).left;
+        List<Type> response = abi.invoke(Curve4Abi.Functions.BASE_POOL, Collections.emptyList());
+        String poolAddress
+            = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         underlyingPool = (CurvePool) contractManager.getContract(poolAddress);
         if (null == underlyingPool) {
             throw new RuntimeException(getType().name() +
@@ -65,16 +74,9 @@ public class Curve4Pool extends Pool {
         if (n > 1) {
             throw new IndexOutOfBoundsException("n = " + n);
         }
-        int i = underlyingPool.getN() + n;
-        if (tokens.size() > i) {
-            return tokens.get(i);
-        }
-        final String SIGNATURE = "coins(uint256)";
-        String result = contractTrigger.triggerConstant(getAddress(), SIGNATURE, String.valueOf(n));
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        String tokenAddress = AbiDecoder.DecodeAddress(result).left;
+        List<Type> response = abi.invoke(Curve4Abi.Functions.COINS, Collections.singletonList(n));
+        String tokenAddress
+            = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return contract != null
                ? (Token) contract
@@ -82,12 +84,9 @@ public class Curve4Pool extends Pool {
     }
 
     private Token getLpTokenFromChain() {
-        final String SIGNATURE = "lp_token()";
-        String result = contractTrigger.triggerConstant(getAddress(), SIGNATURE);
-        if (result.isEmpty()) {
-            throw new RuntimeException();
-        }
-        String tokenAddress = AbiDecoder.DecodeAddress(result).left;
+        List<Type> response = abi.invoke(Curve4Abi.Functions.LP_TOKEN, Collections.emptyList());
+        String tokenAddress
+            = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return contract != null
                ? (Token) contract
