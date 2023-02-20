@@ -52,6 +52,9 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     @Autowired
     private CMPool cmPool;
 
+    @Autowired
+    RouterServer routerServer;
+
     private KafkaConsumer<String, String> consumer;
     private KafkaProducer<String, String> producer;
 

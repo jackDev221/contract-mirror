@@ -7,15 +7,22 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.controller.request.ContractCallParams;
 import org.tron.sunio.contract_mirror.mirror.enums.ResponseEnum;
 import org.tron.sunio.contract_mirror.mirror.response.RestResultGenerator;
 import org.tron.sunio.contract_mirror.mirror.response.ResultResponse;
+import org.tron.sunio.contract_mirror.mirror.router.RoutItem;
+import org.tron.sunio.contract_mirror.mirror.router.RouterInput;
 import org.tron.sunio.contract_mirror.mirror.servers.ContractMirror;
 
+import java.math.BigInteger;
+import java.util.List;
+
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.CONTRACT_CONST_METHOD;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.CONTRACT_ROUTING;
 
 
 @RestController
@@ -50,6 +57,24 @@ public class ContractStatusController {
         }
         try {
             var res = baseContract.handRequest(method, param.getParams());
+            return RestResultGenerator.genResult(res);
+        } catch (Exception e) {
+            return RestResultGenerator.genErrorWithMessage(e.getMessage());
+        }
+    }
+
+    @GetMapping(value = CONTRACT_ROUTING)
+    public ResultResponse<Object> routerV2(@RequestParam(name = "fromToken", required = true) String fromToken,
+                                           @RequestParam(name = "toToken", required = true) String toToken,
+                                           @RequestParam(name = "fromTokenAddr", required = true) String fromTokenAddr,
+                                           @RequestParam(name = "toTokenAddr", required = true) String toTokenAddr,
+                                           @RequestParam(name = "inAmount", required = true) String inAmount,
+                                           @RequestParam(name = "fromDecimal", required = true) int fromDecimal,
+                                           @RequestParam(name = "toDecimal", required = true) int toDecimal) {
+        RouterInput routerInput = new RouterInput(fromTokenAddr, toTokenAddr, fromToken, toToken, fromDecimal, toDecimal,
+                new BigInteger(inAmount));
+        try {
+            List<RoutItem> res = contractMirror.getRouterServer().getRouter(routerInput, contractMirror.getContractHashMap());
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
             return RestResultGenerator.genErrorWithMessage(e.getMessage());

@@ -8,6 +8,7 @@ public interface ContractMirrorConst {
     String KAFKA_TOPIC_CONTRACT_LOG = "contractlog";
     String KAFKA_TOPIC_CONTRACT_EVENT_LOG = "contractevent";
     String CONTRACT_CONST_METHOD = "/contract/{address}/{method}";
+    String CONTRACT_ROUTING = "/routingInV2";
     BigInteger SWAP_V1_NO_FEE = BigInteger.TWO.pow(128).subtract(BigInteger.ONE);
 
     //Methods

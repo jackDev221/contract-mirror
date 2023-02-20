@@ -56,6 +56,7 @@ public class PSM extends BaseContract {
     @Setter
     private PSMTotalData psmTotalData;
 
+
     public PSM(ContractType type, String address, String polyAddress, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
                PSMTotalData psmTotalData, Map<String, String> sigMap) {
         super(address, type, iChainHelper, iContractsHelper, sigMap);

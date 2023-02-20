@@ -13,6 +13,7 @@ import java.math.BigInteger;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class PSMData extends BaseContractData {
+    private String tokenName;
     private String polyAddress;
     private String gemJoin;
     private String usdd;
