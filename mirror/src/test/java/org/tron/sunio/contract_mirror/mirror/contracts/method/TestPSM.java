@@ -13,7 +13,7 @@ public class TestPSM {
     public void testCalcUSDDToUSDX() {
         PSM psm = new PSM(ContractType.CONTRACT_PSM_USDC, "", "", null,
                 null, null, null);
-        BigInteger[] res = psm.calcUSDDToUSD(new BigInteger("100000000000000000000"), ContractType.CONTRACT_PSM_USDC, new BigInteger("11234567890123456"));
+        BigInteger[] res = psm.calcUSDDToUSDX(new BigInteger("100000000000000000000"), ContractType.CONTRACT_PSM_USDC, new BigInteger("11234567890123456"));
         Assert.isTrue(res[0].compareTo(new BigInteger("98889024")) == 0, "Value not equal");
         Assert.isTrue(res[1].compareTo(new BigInteger("1110975453716047803")) == 0, "Fee not eqaul");
     }

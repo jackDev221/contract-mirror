@@ -15,8 +15,8 @@ public class RoutItem {
     private List<String> roadForAddr = new ArrayList<>();
     private List<String> pool = new ArrayList<>();
     private int impact;
-    private long inUsd;
-    private long outUsd;
+    private String inUsd;
+    private String outUsd;
     private BigInteger amount;
     private double fee;
 }

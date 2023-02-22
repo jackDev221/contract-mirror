@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class PathInfo {
+public class StepInfo {
     String contract;
     String tokenName;
     String tokenAddress;

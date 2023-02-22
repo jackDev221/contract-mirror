@@ -10,15 +10,15 @@ import java.util.List;
 @NoArgsConstructor
 public class RoutNode {
     String address;
-    String name;
+    String symbol;
     String contract;
     String poolType;
     List<RoutNode> subNodes;
 
 
-    public RoutNode(String address, String name, String contract, String poolType) {
+    public RoutNode(String address, String symbol, String contract, String poolType) {
         this.address = address;
-        this.name = name;
+        this.symbol = symbol;
         this.contract = contract;
         this.poolType = poolType;
         subNodes = new ArrayList<>();

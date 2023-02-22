@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.BeanUtils;
-import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 import org.tron.sunio.contract_mirror.mirror.tools.DeepCopyUtils;
 
 @Data

@@ -3,11 +3,9 @@ package org.tron.sunio.contract_mirror.mirror.contracts.method;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.Assert;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
-import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
 import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
 import org.tron.sunio.contract_mirror.mirror.utils.ContractsHelper;
-import org.tron.sunio.contract_mirror.mirror.utils.EventLogUtils;
 
 import java.math.BigInteger;
 

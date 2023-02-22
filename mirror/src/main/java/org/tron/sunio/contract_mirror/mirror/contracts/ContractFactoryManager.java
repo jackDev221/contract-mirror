@@ -17,10 +17,12 @@ import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Assemble3Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Assemble4Pool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.BaseStableSwapPool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMTotalData;
+import org.tron.sunio.contract_mirror.mirror.dao.StableSwapPoolData;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 
 
@@ -140,6 +142,18 @@ public class ContractFactoryManager {
                             psmSigMap
                     ));
                     break;
+                case STABLE_SWAP_TUSD:
+                    iContractsCollectHelper.addContract(new BaseStableSwapPool(
+                            contractInfo.getAddress(),
+                            contractInfo.getContractType(),
+                            2,
+                            2,
+                            new BigInteger[]{new BigInteger("1000000000000000000"), new BigInteger("1000000000000000000")},
+                            new BigInteger[]{new BigInteger("1"), new BigInteger("1")},
+                            tronChainHelper,
+                            iContractsHelper,
+                            curve2PoolSigMap
+                    ));
                 default:
                     break;
             }

@@ -518,11 +518,11 @@ public class SwapV2Pair extends BaseContract {
      * x*y=(x-a)*(y+b)
      * => a=x*b/(y+b)
      */
-    public BigInteger getAmountOut(String token0, String token1, BigInteger amountIn) throws Exception {
+    public BigInteger getAmountOut(String token0, String token1, BigInteger amountIn, SwapV2PairData v2PairData) throws Exception {
         if (BigInteger.ZERO.compareTo(amountIn) > 0) {
             throw new Exception("UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT ");
         }
-        BigInteger[] reserves = getSortedReverser(token0, token1);
+        BigInteger[] reserves = getSortedReverser(token0, token1, v2PairData);
         if (BigInteger.ZERO.compareTo(reserves[0]) > 0 ||
                 BigInteger.ZERO.compareTo(reserves[1]) > 0) {
             throw new Exception("UniswapV2Library: INSUFFICIENT_LIQUIDITY ");
@@ -546,11 +546,11 @@ public class SwapV2Pair extends BaseContract {
      * => b=y*a/(x-a)
      */
 
-    public BigInteger getAmountIn(String token0, String token1, BigInteger amountOut) throws Exception {
+    public BigInteger getAmountIn(String token0, String token1, BigInteger amountOut, SwapV2PairData v2PairData) throws Exception {
         if (BigInteger.ZERO.compareTo(amountOut) > 0) {
             throw new Exception("UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT ");
         }
-        BigInteger[] reserves = getSortedReverser(token0, token1);
+        BigInteger[] reserves = getSortedReverser(token0, token1, v2PairData);
         if (BigInteger.ZERO.compareTo(reserves[0]) > 0 ||
                 BigInteger.ZERO.compareTo(reserves[1]) > 0) {
             throw new Exception("UniswapV2Library: INSUFFICIENT_LIQUIDITY ");
@@ -560,8 +560,7 @@ public class SwapV2Pair extends BaseContract {
         return numerator.divide(denominator);
     }
 
-    public BigInteger[] getSortedReverser(String token0, String token1) throws Exception {
-        SwapV2PairData v2PairData = this.getVarSwapV2PairData();
+    public BigInteger[] getSortedReverser(String token0, String token1, SwapV2PairData v2PairData) throws Exception {
         BigInteger reserve0 = new BigInteger(v2PairData.getReserve0().toString());
         BigInteger reserve1 = new BigInteger(v2PairData.getReserve1().toString());
         if (token0.equals(v2PairData.getToken0()) && token1.equals(v2PairData.getToken1())) {

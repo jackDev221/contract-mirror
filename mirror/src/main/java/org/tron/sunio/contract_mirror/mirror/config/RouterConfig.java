@@ -8,6 +8,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "router")
 public class RouterConfig {
+    public static final String ENV_MAIN = "main";
+    public static final String ENV_NILE = "nile";
+    public static final String ENV_SHASTA = "shasta";
+    private String env;
+    private String priceUrl;
     private String baseTokens;
     private String usdt;
     private String usdc;

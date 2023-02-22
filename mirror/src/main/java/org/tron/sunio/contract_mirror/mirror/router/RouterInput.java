@@ -12,9 +12,11 @@ import java.math.BigInteger;
 public class RouterInput {
     private String fromToken;
     private String toToken;
-    private String fromName;
-    private String toName;
+    private String fromTokenSymbol;
+    private String toTokenSymbol;
     private int fromDecimal;
     private int toDecimal;
     private BigInteger in;
+    private String fromPrice;
+    private String toPrice;
 }

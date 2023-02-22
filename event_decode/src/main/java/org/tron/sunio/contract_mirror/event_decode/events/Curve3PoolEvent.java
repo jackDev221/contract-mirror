@@ -10,6 +10,8 @@ public class Curve3PoolEvent {
     public static final String EVENT_NAME_TRANSFER_BODY = "event Transfer(address indexed from, address indexed to, uint256 value);";
     public static final String EVENT_NAME_TOKEN_EXCHANGE = "TokenExchange";
     public static final String EVENT_NAME_TOKEN_EXCHANGE_BODY = "event TokenExchange(address indexed buyer, int128 sold_id,uint256 tokens_sold,int128 bought_id,uint256 tokens_bought);";
+    public static final String EVENT_NAME_TOKEN_EXCHANGE_UNDERLING = "TokenExchangeUnderlying";
+    public static final String EVENT_NAME_TOKEN_EXCHANGE_UNDERLING_BODY = "event TokenExchangeUnderlying(address indexed buyer, int128 sold_id,uint256 tokens_sold,int128 bought_id,uint256 tokens_bought);";
     public static final String EVENT_NAME_ADD_LIQUIDITY = "AddLiquidity";
     public static final String EVENT_NAME_ADD_LIQUIDITY_BODY = "event AddLiquidity(address indexed provider, uint256[3] token_amounts, uint256[3] fees, uint256 invariant, uint256 token_supply);";
     public static final String EVENT_NAME_REMOVE_LIQUIDITY = "RemoveLiquidity";
@@ -37,6 +39,7 @@ public class Curve3PoolEvent {
         Map<String, String> sigMap = new HashMap<>();
         Map<String, String> eventInfoMap = new HashMap<>();
         eventInfoMap.put(EVENT_NAME_TRANSFER, EVENT_NAME_TRANSFER_BODY);
+        eventInfoMap.put(EVENT_NAME_TOKEN_EXCHANGE_UNDERLING, EVENT_NAME_TOKEN_EXCHANGE_UNDERLING_BODY);
         eventInfoMap.put(EVENT_NAME_TOKEN_EXCHANGE, EVENT_NAME_TOKEN_EXCHANGE_BODY);
         eventInfoMap.put(EVENT_NAME_ADD_LIQUIDITY, EVENT_NAME_ADD_LIQUIDITY_BODY);
         eventInfoMap.put(EVENT_NAME_REMOVE_LIQUIDITY, EVENT_NAME_REMOVE_LIQUIDITY_BODY);

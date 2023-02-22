@@ -84,4 +84,17 @@ public class CurveBasePoolData extends BaseContractData {
     public BigInteger[] copyBalances() {
         return DeepCopyUtils.deepCopy(this.balances, BigInteger[].class);
     }
+
+    public int[] getTokensIndex(String token0, String token1) {
+        int[] res = new int[]{-1, -1};
+        for (int i = 0; i < coins.length; i++) {
+            if (coins[i].equalsIgnoreCase(token0)) {
+                res[0] = i;
+            }
+            if (coins[i].equalsIgnoreCase(token1)) {
+                res[1] = i;
+            }
+        }
+        return res;
+    }
 }

@@ -333,7 +333,7 @@ public class PSM extends BaseContract {
         return convertibleAmount;
     }
 
-    public BigInteger[] calcUSDDToUSD(BigInteger input, ContractType type, BigInteger tout) {
+    public BigInteger[] calcUSDDToUSDX(BigInteger input, ContractType type, BigInteger tout) {
         BigDecimal inputD = new BigDecimal(input.multiply(BigInteger.TEN.pow(18)));
         BigInteger feeTemp = BigInteger.TEN.pow(18).add(tout);
         BigInteger value = inputD.divide(new BigDecimal(feeTemp), 0, RoundingMode.DOWN).toBigInteger();
