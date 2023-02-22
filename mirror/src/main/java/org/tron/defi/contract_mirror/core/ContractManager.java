@@ -26,6 +26,10 @@ public class ContractManager {
     @Autowired
     Graph graph;
 
+    public Contract getContract(String address) {
+        return contracts.getOrDefault(address, null);
+    }
+
     public void init() {
         initTRX();
         for (ContractConfigList.ContractConfig contractConfig : contractConfigList.getContracts()) {
@@ -48,26 +52,6 @@ public class ContractManager {
         }
     }
 
-    public void initTRX() {
-        registerContract(TRX.getInstance());
-    }
-
-    public void initSunswapV1(String address) {
-        SunswapV1Factory sunswapV1Factory
-            = (SunswapV1Factory) registerContract(new SunswapV1Factory(address));
-        if (!sunswapV1Factory.init(graph)) {
-            throw new RuntimeException("Failed to initialize v1 factory");
-        }
-    }
-
-    public void initSunswapV2(String address) {
-        SunswapV2Factory sunswapV2Factory
-            = (SunswapV2Factory) registerContract(new SunswapV2Factory(address));
-        if (!sunswapV2Factory.init(graph)) {
-            throw new RuntimeException("Failed to initialize v2 factory");
-        }
-    }
-
     public void initCurve(String address, ContractType type) {
         Pool pool;
         switch (type) {
@@ -82,12 +66,7 @@ public class ContractManager {
             default:
                 throw new IllegalArgumentException(type.name());
         }
-        if (!pool.init()) {
-            throw new RuntimeException("Failed to init " +
-                                       pool.getType() +
-                                       " " +
-                                       pool.getAddress());
-        }
+        pool.init();
         int n = pool.getTokens().size();
         for (int i = 0; i < n - 1; i++) {
             Token token0 = pool.getTokens().get(i);
@@ -101,8 +80,8 @@ public class ContractManager {
                 if (null == node1) {
                     node1 = graph.addNode(new Node(token1));
                 }
-                node0.addEdge(new Edge(node0, node1, pool));
-                node1.addEdge(new Edge(node1, node0, pool));
+                node0.addOutEdge(new Edge(node0, node1, pool));
+                node1.addOutEdge(new Edge(node1, node0, pool));
             }
         }
     }
@@ -125,12 +104,32 @@ public class ContractManager {
         if (null == node1) {
             node1 = graph.addNode(new Node(gem));
         }
-        node0.addEdge(new Edge(node0, node1, pool));
-        node1.addEdge(new Edge(node1, node0, pool));
+        node0.addOutEdge(new Edge(node0, node1, pool));
+        node1.addOutEdge(new Edge(node1, node0, pool));
     }
 
-    public Contract getContract(String address) {
-        return contracts.getOrDefault(address, null);
+    public void initSunswapV1(String address) {
+        SunswapV1Factory sunswapV1Factory
+            = (SunswapV1Factory) registerContract(new SunswapV1Factory(address));
+        try {
+            sunswapV1Factory.sync();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize v1 factory, " + e.getMessage());
+        }
+    }
+
+    public void initSunswapV2(String address) {
+        SunswapV2Factory sunswapV2Factory
+            = (SunswapV2Factory) registerContract(new SunswapV2Factory(address));
+        try {
+            sunswapV2Factory.sync();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize v2 factory, " + e.getMessage());
+        }
+    }
+
+    public void initTRX() {
+        registerContract(TRX.getInstance());
     }
 
     public Contract registerContract(Contract contract) {
@@ -138,5 +137,9 @@ public class ContractManager {
         contract.setContractManager(this);
         Contract exist = contracts.putIfAbsent(contract.getAddress(), contract);
         return null != exist ? exist : contract;
+    }
+
+    public void unregisterContract(Contract contract) {
+        contracts.remove(contract.getAddress());
     }
 }

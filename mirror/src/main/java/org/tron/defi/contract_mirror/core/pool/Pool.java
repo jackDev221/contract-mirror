@@ -2,13 +2,12 @@ package org.tron.defi.contract_mirror.core.pool;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
-import org.tron.defi.contract_mirror.core.Contract;
-import org.tron.defi.contract_mirror.core.Synchronizable;
+import org.tron.defi.contract_mirror.core.SynchronizableContract;
 import org.tron.defi.contract_mirror.core.token.Token;
 
 import java.util.ArrayList;
 
-public abstract class Pool extends Contract implements Synchronizable {
+public abstract class Pool extends SynchronizableContract {
     @Getter
     protected String name;
     @Getter
@@ -22,13 +21,6 @@ public abstract class Pool extends Contract implements Synchronizable {
         super(address);
     }
 
-    public abstract boolean init();
-
-    @Override
-    public String getContractType() {
-        return getType().name();
-    }
-
     @Override
     public Boolean isReady() {
         return null;
@@ -40,6 +32,14 @@ public abstract class Pool extends Contract implements Synchronizable {
     }
 
     @Override
+    public void sync() {
+        timestamp0 = System.currentTimeMillis();
+        getContractData();
+        timestamp1 = System.currentTimeMillis();
+        timestamp2 = 2 * timestamp1 - timestamp0;
+    }
+
+    @Override
     protected JSONObject getInfo() {
         JSONObject info = super.getInfo();
         info.put("name", getName());
@@ -47,6 +47,15 @@ public abstract class Pool extends Contract implements Synchronizable {
         info.put("lp_token", getLpToken());
         return info;
     }
+
+    @Override
+    public String getContractType() {
+        return getType().name();
+    }
+
+    public abstract void init();
+
+    protected abstract void getContractData();
 
     public void setTokens(ArrayList<Token> tokens) {
         if (tokens.size() <= 1) {

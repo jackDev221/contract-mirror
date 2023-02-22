@@ -18,19 +18,21 @@ public abstract class Contract {
         this.address = address;
     }
 
-    public void setTronContractTrigger(TronContractTrigger trigger) {
-        tronContractTrigger = trigger;
-        abi = loadAbi();
-    }
+    public abstract String getContractType();
 
     protected abstract ContractAbi loadAbi();
+
+    public String info() {
+        return getInfo().toJSONString();
+    }
 
     public String run(String method) {
         throw new IllegalArgumentException("METHOD NOT EXISTS");
     }
 
-    public String info() {
-        return getInfo().toJSONString();
+    public void setTronContractTrigger(TronContractTrigger trigger) {
+        tronContractTrigger = trigger;
+        abi = loadAbi();
     }
 
     protected JSONObject getInfo() {
@@ -39,6 +41,4 @@ public abstract class Contract {
         info.put("type", getContractType());
         return info;
     }
-
-    public abstract String getContractType();
 }

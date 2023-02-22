@@ -4,6 +4,10 @@ import lombok.Data;
 
 @Data
 public class ContractLog {
+    /*
+     * transaction execute time
+     */
+    private long timeStamp;
     /**
      * unique id of this trigger. $tx_id + "_" + $index
      */

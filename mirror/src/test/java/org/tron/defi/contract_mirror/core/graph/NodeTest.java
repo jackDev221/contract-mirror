@@ -21,7 +21,7 @@ public class NodeTest {
 
     @BeforeEach
     void setUp() {
-        dummyNode.addEdge(new Edge(dummyNode, trxNode, dummyPool));
+        dummyNode.addOutEdge(new Edge(dummyNode, trxNode, dummyPool));
     }
 
     @Test
@@ -29,19 +29,13 @@ public class NodeTest {
         Node node = new Node(new TRC20(""));
         Edge edge = new Edge(node, trxNode, dummyPool);
 
-        node.addEdge(edge);
-        ArrayList<Edge> edges = node.getEdges();
+        node.addOutEdge(edge);
+        ArrayList<Edge> edges = node.getOutEdges();
         Assertions.assertEquals(1, edges.size());
         Assertions.assertEquals(edge, edges.get(0));
 
-        node.addEdge(edge);
-        edges = node.getEdges();
+        node.addOutEdge(edge);
+        edges = node.getOutEdges();
         Assertions.assertEquals(1, edges.size());
-    }
-
-    @Test
-    public void getEdgesTest() {
-        Assertions.assertArrayEquals(dummyNode.getEdges().toArray(),
-                                     dummyNode.getEdgesUnsafe().toArray());
     }
 }

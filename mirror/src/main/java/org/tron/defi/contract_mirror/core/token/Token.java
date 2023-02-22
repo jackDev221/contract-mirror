@@ -30,11 +30,11 @@ public abstract class Token extends Contract {
         return info;
     }
 
-    public String getSymbol() {
-        return symbol;
-    }
-
     public int getDecimals() {
         return decimals;
+    }
+
+    public String getSymbol() {
+        return symbol;
     }
 }

@@ -6,8 +6,8 @@ import org.tron.defi.contract.abi.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TRC20Abi extends Contract {
-    public TRC20Abi(ContractTrigger trigger, String address) {
+public class SSPLiquidityTokenAbi extends Contract {
+    public SSPLiquidityTokenAbi(ContractTrigger trigger, String address) {
         super(trigger, address);
     }
 
@@ -23,9 +23,8 @@ public class TRC20Abi extends Contract {
     }
 
     public enum Functions implements IFunction {
-        SYMBOL("symbol", "", "string"),
-        DECIMALS("decimals", "", "uint256"),
-        BALANCE_OF("balanceOf", "address", "uint256");
+        TOTAL_SUPPLY("totalSupply", "", "uint256");
+
         private static final Map<String, Functions> signatureMap = new HashMap<>();
 
         static {

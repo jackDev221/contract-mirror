@@ -14,7 +14,8 @@ public enum ContractType {
     SUNSWAP_V2_POOL,
     // tokens
     TRX_TOKEN,
-    TRC20_TOKEN;
+    TRC20_TOKEN,
+    SSP_LP_TOKEN;
 
     public static ContractType contractType(String name) {
         for (ContractType value : ContractType.values()) {

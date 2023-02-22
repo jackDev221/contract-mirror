@@ -12,7 +12,8 @@ public class Node {
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
     private final Lock rlock = rwlock.readLock();
     private final Lock wlock = rwlock.writeLock();
-    private final ArrayList<Edge> edges = new ArrayList<>();
+    private final ArrayList<Edge> inEdges = new ArrayList<>();
+    private final ArrayList<Edge> outEdges = new ArrayList<>();
     @Getter
     private final Token token;
 
@@ -20,32 +21,94 @@ public class Node {
         this.token = token;
     }
 
-    public void addEdge(Edge edge) {
+    public int inDegree() {
+        rlock.lock();
+        int degree = inEdges.size();
+        rlock.unlock();
+        return degree;
+    }
+
+    public int outDegree() {
+        rlock.lock();
+        int degree = outEdges.size();
+        rlock.unlock();
+        return degree;
+    }
+
+    public void addInEdge(Edge edge) {
         wlock.lock();
         try {
-            for (Edge e : edges) {
+            for (Edge e : inEdges) {
                 edge.isEqual(e);
                 return;
             }
-            edges.add(edge);
+            inEdges.add(edge);
         } finally {
             wlock.unlock();
         }
     }
 
-    public ArrayList<Edge> getEdges() {
+    public void deleteInEdge(Edge edge) {
+        wlock.lock();
+        try {
+            for (Edge e : outEdges) {
+                if (edge.isEqual(e)) {
+                    outEdges.remove(e);
+                    return;
+                }
+            }
+        } finally {
+            wlock.unlock();
+        }
+    }
+
+    public void addOutEdge(Edge edge) {
+        wlock.lock();
+        try {
+            for (Edge e : outEdges) {
+                if (edge.isEqual(e)) {
+                    return;
+                }
+            }
+            outEdges.add(edge);
+        } finally {
+            wlock.unlock();
+        }
+    }
+
+    public void deleteOutEdge(Edge edge) {
+        wlock.lock();
+        try {
+            for (Edge e : outEdges) {
+                if (edge.isEqual(e)) {
+                    outEdges.remove(e);
+                    return;
+                }
+            }
+        } finally {
+            wlock.unlock();
+        }
+    }
+
+    public ArrayList<Edge> getInEdges() {
         ArrayList<Edge> currentEdges;
         rlock.lock();
         try {
-            currentEdges = new ArrayList<>(edges);
+            currentEdges = new ArrayList<>(inEdges);
         } finally {
             rlock.unlock();
         }
         return currentEdges;
     }
 
-    public ArrayList<Edge> getEdgesUnsafe() {
-        return edges;
+    public ArrayList<Edge> getOutEdges() {
+        ArrayList<Edge> currentEdges;
+        rlock.lock();
+        try {
+            currentEdges = new ArrayList<>(outEdges);
+        } finally {
+            rlock.unlock();
+        }
+        return currentEdges;
     }
 }
-
