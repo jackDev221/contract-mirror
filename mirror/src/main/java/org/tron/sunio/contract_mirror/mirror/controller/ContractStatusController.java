@@ -73,7 +73,9 @@ public class ContractStatusController {
                                            @RequestParam(name = "toDecimal", required = true) int toDecimal) {
 
         try {
-
+            if (!contractMirror.isFirstFinishLoadData()) {
+                return RestResultGenerator.genErrorWithMessage("Load contracts not finished");
+            }
             String[] prices = contractMirror.getRouterServer().getTokenPrice(fromTokenAddr, toTokenAddr, fromToken, toToken);
             RouterInput routerInput = new RouterInput(fromTokenAddr, toTokenAddr, fromToken, toToken, fromDecimal, toDecimal,
                     new BigInteger(inAmount), prices[0], prices[1]);

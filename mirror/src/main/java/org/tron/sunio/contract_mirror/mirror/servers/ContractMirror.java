@@ -54,6 +54,8 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
     @Autowired
     RouterServer routerServer;
 
+    private boolean firstFinishLoadData = false;
+
     private KafkaConsumer<String, String> consumer;
     private KafkaProducer<String, String> producer;
 
@@ -206,7 +208,7 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
                 cmPool.waitFinish();
             }
             // 工程合约更新完毕，且需要添加子合约。
-            contractFactoryManager.updateMirrorContracts(this);
+            int addContractNum = contractFactoryManager.updateMirrorContracts(this);
             boolean needSleep = false;
             ConsumerRecords<String, String> records = kafkaConsumerPoll(KAFKA_PULL_TIMEOUT);
             for (ConsumerRecord<String, String> record : records) {
@@ -237,6 +239,11 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
             }
             if (needSleep) {
                 TimeTool.sleep(config.getBlockInterval());
+            } else {
+                if (!firstFinishLoadData && unReadyContract == 0 && addContractNum == 0) {
+                    this.routerServer.initRoutNodeMap(this.contractHashMap);
+                    firstFinishLoadData = true;
+                }
             }
         } catch (Exception e) {
             log.warn("doTask error:{}", e.toString());

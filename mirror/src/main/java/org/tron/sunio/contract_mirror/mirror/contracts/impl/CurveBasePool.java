@@ -867,9 +867,18 @@ public class CurveBasePool extends AbstractCurve {
         return null;
     }
 
+    public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp) throws Exception {
+        return exchange(i, j, dx, min_dy);
+    }
+
     public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy) throws Exception {
         CurveBasePoolData poolData = this.getVarCurveBasePoolData();
         return exchange(i, j, dx, min_dy, poolData);
+    }
+
+    @Override
+    public BigInteger exchangeUnderlying(int i, int j, BigInteger _dx, BigInteger mindy, long timestamp) throws Exception {
+        return exchange(i, j, _dx, mindy, timestamp);
     }
 
     @Override

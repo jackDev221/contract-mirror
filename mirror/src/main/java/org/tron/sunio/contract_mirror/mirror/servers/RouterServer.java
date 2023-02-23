@@ -7,12 +7,14 @@ import org.springframework.stereotype.Service;
 import org.tron.sunio.contract_mirror.mirror.config.RouterConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.AbstractCurve;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.BaseStableSwapPool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.CurveBasePool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV2Pair;
 import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMData;
+import org.tron.sunio.contract_mirror.mirror.dao.StableSwapPoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
@@ -25,6 +27,7 @@ import org.tron.sunio.contract_mirror.mirror.router.RouterInput;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -162,8 +165,38 @@ public class RouterServer {
             case CONTRACT_PSM_USDJ:
             case CONTRACT_PSM_TUSD:
                 res = psmSwap(fromAddress, toAddress, amount, baseContract);
+                break;
+            case STABLE_SWAP_POOL:
+                res = stableSwapPoolSwap(fromAddress, toAddress, amount, baseContract);
+                break;
             default:
                 break;
+        }
+        return res;
+    }
+
+    private BigInteger stableSwapPoolSwap(String fromAddress, String toAddress, BigInteger amount, BaseContract baseContract) {
+        BigInteger res;
+        try {
+            BaseStableSwapPool baseStableSwapPool = (BaseStableSwapPool) baseContract;
+            StableSwapPoolData data = baseStableSwapPool.getCurveBasePoolData();
+            AbstractCurve curve = baseStableSwapPool.copySelf();
+
+            int i = data.getTokenIndex(fromAddress);
+            int j = data.getTokenIndex(toAddress);
+            if (i == -2 || j == -2) {
+                res = BigInteger.ZERO;
+            } else {
+                if (i + j == -1) {
+                    res = curve.exchange(i, j, amount, BigInteger.ZERO, System.currentTimeMillis() / 1000);
+                } else {
+                    res = curve.exchangeUnderlying(i, j, amount, BigInteger.ZERO, System.currentTimeMillis() / 1000);
+                }
+            }
+        } catch (Exception e) {
+            log.error("StableSwapPool fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
+                    fromAddress, toAddress, baseContract.getAddress(), amount, e);
+            res = BigInteger.ZERO;
         }
         return res;
     }
@@ -292,6 +325,30 @@ public class RouterServer {
                 case CONTRACT_PSM_TUSD:
                     initPSM((PSM) baseContract);
                     break;
+                case STABLE_SWAP_POOL:
+                    initStableSwapPool((BaseStableSwapPool) baseContract);
+                    break;
+            }
+        }
+    }
+
+    private void initStableSwapPool(BaseStableSwapPool baseStableSwapPool) {
+        StableSwapPoolData data = baseStableSwapPool.getCurveBasePoolData();
+        List<String> tokens = new ArrayList<>();
+        List<String> symbols = new ArrayList<>();
+        tokens.addAll(Arrays.asList(data.getCoins()));
+        tokens.addAll(Arrays.asList(data.getBaseCoins()));
+        symbols.addAll(Arrays.asList(data.getCoinSymbols()));
+        symbols.addAll(Arrays.asList(data.getBaseCoinSymbols()));
+        String poolType = (tokens.size() - 1) == 2 ? POOL_TYPE_2_POOL : POOL_TYPE_3_POOL;
+        String contract = data.getAddress();
+        for (int i = 0; i < tokens.size(); i++) {
+            if (i == 1) {
+                continue;
+            }
+            for (int j = i + 1; j < tokens.size(); j++) {
+                updateRoutNodeMap(tokens.get(i), symbols.get(i), tokens.get(j), symbols.get(j), poolType, contract);
+                updateRoutNodeMap(tokens.get(j), symbols.get(j), tokens.get(i), symbols.get(i), poolType, contract);
             }
         }
     }
@@ -333,13 +390,13 @@ public class RouterServer {
         CurveBasePoolData data = curve.getCurveBasePoolData();
         int count = data.getCoins().length;
         String poolType = count == 2 ? POOL_TYPE_2_POOL : POOL_TYPE_3_POOL;
+        String contract = data.getAddress();
         for (int i = 0; i < count; i++) {
             for (int j = i + 1; j < count; j++) {
                 String token0 = data.getCoins()[i];
                 String token1 = data.getCoins()[j];
                 String token0Symbol = data.getCoinNames()[i];
                 String token1Symbol = data.getCoinNames()[j];
-                String contract = data.getAddress();
                 updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, poolType, contract);
                 updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, poolType, contract);
             }

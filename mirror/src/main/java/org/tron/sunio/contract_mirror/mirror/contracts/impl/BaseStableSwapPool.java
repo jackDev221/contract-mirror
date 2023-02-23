@@ -146,7 +146,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     @Override
-    public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy) throws Exception {
+    public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp) throws Exception {
         return null;
     }
 
@@ -710,7 +710,7 @@ public class BaseStableSwapPool extends AbstractCurve {
             }
         } else {
             AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(basePool)).copySelf();
-            dy = curve.exchange(baseI, baseJ, dxWFee, mindy);
+            dy = curve.exchange(baseI, baseJ, dxWFee, mindy, timestamp);
         }
         return dy;
     }

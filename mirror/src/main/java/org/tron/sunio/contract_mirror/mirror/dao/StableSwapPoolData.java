@@ -94,4 +94,19 @@ public class StableSwapPoolData extends BaseContractData {
     public StableSwapPoolData copySelf() {
         return DeepCopyUtils.deepCopy(this, StableSwapPoolData.class);
     }
+
+    public int getTokenIndex(String address) {
+        if (coins[0].equalsIgnoreCase(address)) {
+            return 0;
+        }
+        if (coins[1].equalsIgnoreCase(address)) {
+            return -1;
+        }
+        for (int i = 0; i < baseCoins.length; i++) {
+            if (baseCoins[i].equalsIgnoreCase(address)) {
+                return i + 1;
+            }
+        }
+        return -2;
+    }
 }

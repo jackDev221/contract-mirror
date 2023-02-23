@@ -61,7 +61,7 @@ public class ContractFactoryManager {
         psmSigMap = PSMEvent.getSigMap();
     }
 
-    public boolean initFactoryMap(List<ContractInfo> contractInfoList,  IContractsHelper iContractsHelper) {
+    public boolean initFactoryMap(List<ContractInfo> contractInfoList, IContractsHelper iContractsHelper) {
         log.info("ContractFactoryManager.initFactoryMap: create Factory!");
         initSigMaps();
         if (ObjectUtil.isNull(contractInfoList) || contractInfoList.size() == 0) {
@@ -133,7 +133,7 @@ public class ContractFactoryManager {
                     if (ObjectUtil.isNotNull(psm)) {
                         psmContracts.add(contractInfo.getAddress());
                         iContractsHelper.addContract(psm);
-                    }else {
+                    } else {
                         log.error("Fail to create instance for address: {}, type: {}, extra: {}", contractInfo.getAddress(),
                                 contractInfo.getType(), contractInfo.getExtra());
                     }
@@ -186,9 +186,10 @@ public class ContractFactoryManager {
     }
 
 
-    public boolean updateMirrorContracts(IContractsHelper iContractsHelper) {
+    public int updateMirrorContracts(IContractsHelper iContractsHelper) {
         updatePsmTotalData(iContractsHelper);
 //        log.info("ContractFactoryManager: start updateMirrorContracts");
+        int addContracts = 0;
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
             BaseFactory baseContract = iContractFactory.getBaseContract();
@@ -197,6 +198,7 @@ public class ContractFactoryManager {
             }
             if (!iContractsHelper.containsContract(addr)) {
                 iContractsHelper.addContract(baseContract);
+                addContracts++;
             }
 
             List<BaseContract> baseContractList = iContractFactory.getListContracts(cmPool);
@@ -205,10 +207,14 @@ public class ContractFactoryManager {
                     continue;
                 }
                 iContractsHelper.addContract(baseContract1);
+                addContracts++;
             }
             baseContract.resetLoadSubContractState();
             baseContract.updateBaseInfo(baseContract.isUsing, baseContract.isReady, baseContract.isAddExchangeContracts);
         }
-        return true;
+        if (addContracts > 0) {
+            log.info("ContractFactoryManager: start updateMirrorContracts, add contracts:{}", addContracts);
+        }
+        return addContracts;
     }
 }

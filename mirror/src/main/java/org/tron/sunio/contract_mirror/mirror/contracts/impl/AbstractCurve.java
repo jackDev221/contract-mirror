@@ -30,7 +30,9 @@ public abstract class AbstractCurve extends BaseContract {
 
     public abstract BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount) throws Exception;
 
-    public abstract BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy) throws Exception;
+    public abstract BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp) throws Exception;
+
+    public abstract BigInteger exchangeUnderlying(int i, int j, BigInteger _dx, BigInteger mindy, long timestamp) throws Exception;
 
     public abstract AbstractCurve copySelf();
 
