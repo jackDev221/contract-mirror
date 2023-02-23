@@ -61,7 +61,7 @@ public class ContractFactoryManager {
         psmSigMap = PSMEvent.getSigMap();
     }
 
-    public boolean initFactoryMap(List<ContractInfo> contractInfoList, IContractsCollectHelper iContractsCollectHelper, IContractsHelper iContractsHelper) {
+    public boolean initFactoryMap(List<ContractInfo> contractInfoList,  IContractsHelper iContractsHelper) {
         log.info("ContractFactoryManager.initFactoryMap: create Factory!");
         initSigMaps();
         if (ObjectUtil.isNull(contractInfoList) || contractInfoList.size() == 0) {
@@ -87,7 +87,7 @@ public class ContractFactoryManager {
                     ));
                     break;
                 case CONTRACT_CURVE_2POOL:
-                    iContractsCollectHelper.addContract(new Curve2Pool(
+                    iContractsHelper.addContract(new Curve2Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
                             iContractsHelper,
@@ -97,7 +97,7 @@ public class ContractFactoryManager {
                     ));
                     break;
                 case CONTRACT_CURVE_3POOL:
-                    iContractsCollectHelper.addContract(new Curve3Pool(
+                    iContractsHelper.addContract(new Curve3Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
                             iContractsHelper,
@@ -108,7 +108,7 @@ public class ContractFactoryManager {
                     break;
 
                 case CONTRACT_ASSEMBLE_3POOL:
-                    iContractsCollectHelper.addContract(new Assemble3Pool(
+                    iContractsHelper.addContract(new Assemble3Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
                             iContractsHelper,
@@ -117,7 +117,7 @@ public class ContractFactoryManager {
                     break;
 
                 case CONTRACT_ASSEMBLE_4POOL:
-                    iContractsCollectHelper.addContract(new Assemble4Pool(
+                    iContractsHelper.addContract(new Assemble4Pool(
                             contractInfo.getAddress(),
                             tronChainHelper,
                             iContractsHelper,
@@ -132,7 +132,7 @@ public class ContractFactoryManager {
                     PSM psm = PSM.genInstance(contractInfo, tronChainHelper, iContractsHelper, psmTotalData, psmSigMap);
                     if (ObjectUtil.isNotNull(psm)) {
                         psmContracts.add(contractInfo.getAddress());
-                        iContractsCollectHelper.addContract(psm);
+                        iContractsHelper.addContract(psm);
                     }else {
                         log.error("Fail to create instance for address: {}, type: {}, extra: {}", contractInfo.getAddress(),
                                 contractInfo.getType(), contractInfo.getExtra());
@@ -142,7 +142,7 @@ public class ContractFactoryManager {
                     BaseStableSwapPool instance = BaseStableSwapPool.genInstance(contractInfo, tronChainHelper,
                             iContractsHelper, curve2PoolSigMap);
                     if (ObjectUtil.isNotNull(instance)) {
-                        iContractsCollectHelper.addContract(instance);
+                        iContractsHelper.addContract(instance);
                     } else {
                         log.error("Fail to create instance for address: {}, type: {}, extra: {}", contractInfo.getAddress(),
                                 contractInfo.getType(), contractInfo.getExtra());
@@ -155,25 +155,25 @@ public class ContractFactoryManager {
         log.info("ContractFactoryManager.initFactoryMap: init Factory!");
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
-            iContractsCollectHelper.addContract(iContractFactory.getBaseContract());
+            iContractsHelper.addContract(iContractFactory.getBaseContract());
         }
         return true;
     }
 
-    private void updatePsmTotalData(IContractsCollectHelper iContractsCollectHelper) {
+    private void updatePsmTotalData(IContractsHelper iContractsHelper) {
         if (psmTotalData.isFinishInit() || psmContracts.size() == 0) {
             return;
         }
         for (String contract : psmContracts) {
-            BaseContract baseContract = iContractsCollectHelper.getContract(contract);
+            BaseContract baseContract = iContractsHelper.getContract(contract);
             if (ObjectUtil.isNull(baseContract) || !baseContract.isReady) {
                 return;
             }
         }
-        PSM psm = (PSM) iContractsCollectHelper.getContract(psmContracts.get(0));
+        PSM psm = (PSM) iContractsHelper.getContract(psmContracts.get(0));
         BigInteger[] totalInfos = psm.getTotalInfos();
         for (String contract : psmContracts) {
-            PSM item = (PSM) iContractsCollectHelper.getContract(contract);
+            PSM item = (PSM) iContractsHelper.getContract(contract);
             item.updateTotalInfos(totalInfos);
         }
         psmTotalData.setTotalMaxSwapUSDD(totalInfos[0]);
@@ -186,8 +186,8 @@ public class ContractFactoryManager {
     }
 
 
-    public boolean updateMirrorContracts(IContractsCollectHelper iContractsCollectHelper) {
-        updatePsmTotalData(iContractsCollectHelper);
+    public boolean updateMirrorContracts(IContractsHelper iContractsHelper) {
+        updatePsmTotalData(iContractsHelper);
 //        log.info("ContractFactoryManager: start updateMirrorContracts");
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
@@ -195,16 +195,16 @@ public class ContractFactoryManager {
             if (!baseContract.isReady() || baseContract.isAddExchangeContracts()) {
                 continue;
             }
-            if (!iContractsCollectHelper.containsContract(addr)) {
-                iContractsCollectHelper.addContract(baseContract);
+            if (!iContractsHelper.containsContract(addr)) {
+                iContractsHelper.addContract(baseContract);
             }
 
             List<BaseContract> baseContractList = iContractFactory.getListContracts(cmPool);
             for (BaseContract baseContract1 : baseContractList) {
-                if (iContractsCollectHelper.containsContract(baseContract1.address)) {
+                if (iContractsHelper.containsContract(baseContract1.address)) {
                     continue;
                 }
-                iContractsCollectHelper.addContract(baseContract1);
+                iContractsHelper.addContract(baseContract1);
             }
             baseContract.resetLoadSubContractState();
             baseContract.updateBaseInfo(baseContract.isUsing, baseContract.isReady, baseContract.isAddExchangeContracts);

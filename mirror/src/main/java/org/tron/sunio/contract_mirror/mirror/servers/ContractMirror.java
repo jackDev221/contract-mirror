@@ -20,7 +20,6 @@ import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.ContractFactoryManager;
 import org.tron.sunio.contract_mirror.mirror.config.ContractsMirrorConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
-import org.tron.sunio.contract_mirror.mirror.contracts.IContractsCollectHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.ContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 import org.tron.sunio.contract_mirror.mirror.tools.TimeTool;
@@ -33,7 +32,7 @@ import java.util.concurrent.CountDownLatch;
 @Service
 @Slf4j
 @Data
-public class ContractMirror implements InitializingBean, IContractsCollectHelper, IContractsHelper {
+public class ContractMirror implements InitializingBean, IContractsHelper {
     private final int EVENT_HANDLE_PERIOD = 200;
     private final int KAFKA_READY_CHECK_INTERVAL = 500;
     private final int KAFKA_PULL_TIMEOUT = 2000;
@@ -65,7 +64,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     @Override
     public void afterPropertiesSet() throws Exception {
         initKafka();
-        contractFactoryManager.initFactoryMap(config.getFactoryInfos(), this, this);
+        contractFactoryManager.initFactoryMap(config.getFactoryInfos(), this);
     }
 
     private void initKafka() {
