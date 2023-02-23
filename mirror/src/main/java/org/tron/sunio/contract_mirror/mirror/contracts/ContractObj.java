@@ -25,11 +25,6 @@ public class ContractObj implements IContract{
     @Setter
     protected IContractsHelper iContractsHelper;
 
-    @Override
-    public ContractType getContractType() {
-        return this.getType();
-    }
-
     public ContractObj(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
                         final Map<String, String> sigMap) {
         this.type = type;

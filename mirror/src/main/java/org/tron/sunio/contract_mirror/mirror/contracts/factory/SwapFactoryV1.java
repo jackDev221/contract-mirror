@@ -170,7 +170,6 @@ public class SwapFactoryV1 extends BaseFactory {
         return null;
     }
 
-
     public <T> T handleCallGetTokenWithID(String params) {
         List<TypeReference<?>> outputParameters = List.of(new TypeReference<Uint256>() {
         });

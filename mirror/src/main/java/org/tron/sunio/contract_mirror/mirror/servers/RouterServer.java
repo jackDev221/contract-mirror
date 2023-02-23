@@ -298,7 +298,7 @@ public class RouterServer {
 
     private void initPSM(PSM psm) {
         PSMData data = psm.getPsmData();
-        String[] tokenInfo = getPSMTokenInfo(psm.getContractType());
+        String[] tokenInfo = getPSMTokenInfo(psm.getType());
         String token0 = data.getUsdd();
         String token1 = tokenInfo[1];
         String token0Symbol = USDD;

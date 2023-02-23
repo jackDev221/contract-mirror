@@ -9,7 +9,7 @@ public interface IContract {
 
     boolean isAddExchangeContracts();
 
-    ContractType getContractType();
+    ContractType getType();
 
     String getAddress();
 }
