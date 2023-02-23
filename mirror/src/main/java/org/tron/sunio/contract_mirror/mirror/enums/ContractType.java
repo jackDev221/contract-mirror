@@ -23,7 +23,7 @@ public enum ContractType {
     CONTRACT_ROOTER("CONTRACT_ROOTER"),
     SWAP_FACTORY_V1("SWAP_FACTORY_V1"),
     SWAP_FACTORY_V2("SWAP_FACTORY_V2"),
-    STABLE_SWAP_TUSD("STABLE_SWAP_TUSD");
+    STABLE_SWAP_POOL("STABLE_SWAP_POOL");
     private final String desc;
 
     public static ContractType find(final String desc) {

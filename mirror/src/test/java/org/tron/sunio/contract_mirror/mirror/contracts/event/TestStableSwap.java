@@ -32,8 +32,8 @@ public class TestStableSwap {
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
         data.setBalances(new BigInteger[2]);
-        data.updateBalances(0, new BigInteger("12732416934878"));
-        data.updateBalances(1, new BigInteger("2080190938224"));
+        data.updateBalances(0, new BigInteger("12732405870287"));
+        data.updateBalances(1, new BigInteger("2080201937366"));
         data.setInitialA(new BigInteger("1000"));
         data.setInitialATime(new BigInteger("0"));
         data.setFutureA(new BigInteger("1000"));
@@ -43,7 +43,8 @@ public class TestStableSwap {
         curve2Pool.setCurveBasePoolData(data);
         curve2Pool.setReady(true);
         try{
-            curve2Pool.getVirtualPrice(0);
+           BigInteger a =  curve2Pool.getVirtualPrice(0);
+           System.out.println(a);
         }catch (Exception e){
 
         }
@@ -65,11 +66,9 @@ public class TestStableSwap {
         stableSwapPoolData.setFutureATime(new BigInteger("0"));
         stableSwapPoolData.setBaseVirtualPrice(new BigInteger("314135400798783964212"));
 
-
-
         BaseStableSwapPool baseStableSwapPool = new BaseStableSwapPool(
                 "TUDmvjLmSCqxjzfY3fQWmFRvWzphWQrpQM",
-                ContractType.STABLE_SWAP_TUSD,
+                ContractType.STABLE_SWAP_POOL,
                 2,
                 2,
                 new BigInteger[]{new BigInteger("1000000000000000000"), new BigInteger("1000000000000000000")},

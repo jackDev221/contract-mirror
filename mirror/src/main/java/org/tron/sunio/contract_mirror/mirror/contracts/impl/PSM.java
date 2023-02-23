@@ -1,12 +1,15 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.TriggerContractInfo;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
+import org.tron.sunio.contract_mirror.mirror.contracts.ContractInfo;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMData;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMTotalData;
@@ -26,7 +29,6 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.tron.sunio.contract_mirror.event_decode.events.PSMEvent.EVENT_NAME_BUY_GEM;
 import static org.tron.sunio.contract_mirror.event_decode.events.PSMEvent.EVENT_NAME_BUY_GEM_BODY;
@@ -57,8 +59,18 @@ public class PSM extends BaseContract {
     private PSMTotalData psmTotalData;
 
 
-    public PSM(ContractType type, String address, String polyAddress, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
-               PSMTotalData psmTotalData, Map<String, String> sigMap) {
+    public static PSM genInstance(ContractInfo contractInfo, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
+                                  PSMTotalData psmTotalData, Map<String, String> sigMap) {
+        PSM.ContractExtraData extraData = PSM.parseToExtraData(contractInfo.getExtra());
+        if (ObjectUtil.isNull(extraData)) {
+            return null;
+        }
+        return new PSM(contractInfo.getType(), contractInfo.getAddress(), extraData.getPoly(), iChainHelper,
+                iContractsHelper, psmTotalData, sigMap);
+    }
+
+    public PSM(ContractType type, String address, String polyAddress, IChainHelper iChainHelper, IContractsHelper
+            iContractsHelper, PSMTotalData psmTotalData, Map<String, String> sigMap) {
         super(address, type, iChainHelper, iContractsHelper, sigMap);
         this.polyAddress = polyAddress;
         this.psmTotalData = psmTotalData;
@@ -360,6 +372,20 @@ public class PSM extends BaseContract {
         convertibleAmount = new BigDecimal(convertibleAmount).divide(new BigDecimal(feeTemp), 0, RoundingMode.DOWN).toBigInteger();
 //        convertibleAmount = covertToUSDXDecimal(convertibleAmount, type);
         return convertibleAmount;
+    }
+
+    @Data
+    public static class ContractExtraData {
+        private String poly;
+    }
+
+    public static ContractExtraData parseToExtraData(String input) {
+        try {
+            return GsonUtil.gsonToObject(input, ContractExtraData.class);
+        } catch (Exception e) {
+            log.error("Parse psm failed, input:{} err:{}", e);
+        }
+        return null;
     }
 
 }

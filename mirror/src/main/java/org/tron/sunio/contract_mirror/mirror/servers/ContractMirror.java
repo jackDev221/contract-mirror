@@ -65,7 +65,7 @@ public class ContractMirror implements InitializingBean, IContractsCollectHelper
     @Override
     public void afterPropertiesSet() throws Exception {
         initKafka();
-        contractFactoryManager.initFactoryMap(config.getListContractFactory(), this, this, config.getPolyInfos());
+        contractFactoryManager.initFactoryMap(config.getFactoryInfos(), this, this);
     }
 
     private void initKafka() {

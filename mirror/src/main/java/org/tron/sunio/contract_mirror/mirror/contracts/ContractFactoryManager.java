@@ -11,7 +11,6 @@ import org.tron.sunio.contract_mirror.event_decode.events.PSMEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV1FactoryEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
-import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.BaseFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
@@ -22,7 +21,6 @@ import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMTotalData;
-import org.tron.sunio.contract_mirror.mirror.dao.StableSwapPoolData;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 
 
@@ -63,14 +61,14 @@ public class ContractFactoryManager {
         psmSigMap = PSMEvent.getSigMap();
     }
 
-    public boolean initFactoryMap(List<ContractInfo> contractInfoList, IContractsCollectHelper iContractsCollectHelper, IContractsHelper iContractsHelper, Map<String, String> polyInfos) {
+    public boolean initFactoryMap(List<ContractInfo> contractInfoList, IContractsCollectHelper iContractsCollectHelper, IContractsHelper iContractsHelper) {
         log.info("ContractFactoryManager.initFactoryMap: create Factory!");
         initSigMaps();
         if (ObjectUtil.isNull(contractInfoList) || contractInfoList.size() == 0) {
             return true;
         }
         for (ContractInfo contractInfo : contractInfoList) {
-            switch (contractInfo.getContractType()) {
+            switch (contractInfo.getType()) {
                 case SWAP_FACTORY_V1:
                     contractFactoryHashMap.put(contractInfo.getAddress(), new SwapFactoryV1(
                             contractInfo.getAddress(),
@@ -131,29 +129,25 @@ public class ContractFactoryManager {
                 case CONTRACT_PSM_USDC:
                 case CONTRACT_PSM_USDJ:
                 case CONTRACT_PSM_TUSD:
-                    psmContracts.add(contractInfo.getAddress());
-                    iContractsCollectHelper.addContract(new PSM(
-                            contractInfo.getContractType(),
-                            contractInfo.getAddress(),
-                            polyInfos.getOrDefault(contractInfo.getAddress(), ContractMirrorConst.EMPTY_ADDRESS),
-                            tronChainHelper,
-                            iContractsHelper,
-                            psmTotalData,
-                            psmSigMap
-                    ));
+                    PSM psm = PSM.genInstance(contractInfo, tronChainHelper, iContractsHelper, psmTotalData, psmSigMap);
+                    if (ObjectUtil.isNotNull(psm)) {
+                        psmContracts.add(contractInfo.getAddress());
+                        iContractsCollectHelper.addContract(psm);
+                    }else {
+                        log.error("Fail to create instance for address: {}, type: {}, extra: {}", contractInfo.getAddress(),
+                                contractInfo.getType(), contractInfo.getExtra());
+                    }
                     break;
-                case STABLE_SWAP_TUSD:
-                    iContractsCollectHelper.addContract(new BaseStableSwapPool(
-                            contractInfo.getAddress(),
-                            contractInfo.getContractType(),
-                            2,
-                            2,
-                            new BigInteger[]{new BigInteger("1000000000000000000"), new BigInteger("1000000000000000000")},
-                            new BigInteger[]{new BigInteger("1"), new BigInteger("1")},
-                            tronChainHelper,
-                            iContractsHelper,
-                            curve2PoolSigMap
-                    ));
+                case STABLE_SWAP_POOL:
+                    BaseStableSwapPool instance = BaseStableSwapPool.genInstance(contractInfo, tronChainHelper,
+                            iContractsHelper, curve2PoolSigMap);
+                    if (ObjectUtil.isNotNull(instance)) {
+                        iContractsCollectHelper.addContract(instance);
+                    } else {
+                        log.error("Fail to create instance for address: {}, type: {}, extra: {}", contractInfo.getAddress(),
+                                contractInfo.getType(), contractInfo.getExtra());
+                    }
+                    break;
                 default:
                     break;
             }

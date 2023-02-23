@@ -1,13 +1,16 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
+import org.tron.sunio.contract_mirror.mirror.contracts.ContractInfo;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.StableSwapPoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
@@ -56,6 +59,16 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     @Setter
     private StableSwapPoolData stableSwapPoolData;
+
+    public static BaseStableSwapPool genInstance(ContractInfo contractInfo, IChainHelper iChainHelper,
+                                                 IContractsHelper iContractsHelper, Map<String, String> sigMap) {
+        ContractExtraData extraData = BaseStableSwapPool.parseToExtraData(contractInfo.getExtra());
+        if (ObjectUtil.isNull(extraData)) {
+            return null;
+        }
+        return new BaseStableSwapPool(contractInfo.getAddress(), contractInfo.getType(), extraData.getBaseCoinsCount(),
+                extraData.getCoinsCount(), extraData.getRates(), extraData.getPrecisionMul(), iChainHelper, iContractsHelper, sigMap);
+    }
 
     public BaseStableSwapPool(String address, ContractType type, int baseCoinsCount, int coinsCount, BigInteger[] rates,
                               BigInteger[] precisionMul, IChainHelper iChainHelper,
@@ -1047,6 +1060,24 @@ public class BaseStableSwapPool extends AbstractCurve {
         BigInteger vpRate = vpRateRo(timestamp);
         BigInteger[] res = localCalcWithdrawOneCoin(_token_amount, i, vpRate, timestamp, this.getVarStableSwapBasePoolData().copySelf());
         return res[0];
+    }
+
+    @Data
+    public static class ContractExtraData {
+        private int coinsCount;
+        private int baseCoinsCount;
+        private BigInteger[] rates;
+        private BigInteger[] precisionMul;
+    }
+
+    public static ContractExtraData parseToExtraData(String input) {
+        try {
+            ContractExtraData res = GsonUtil.gsonToObject(input, ContractExtraData.class);
+            return res;
+        } catch (Exception e) {
+            log.error("Parse base stable swap pool failed, input:{} err:{}", e);
+        }
+        return null;
     }
 
 
