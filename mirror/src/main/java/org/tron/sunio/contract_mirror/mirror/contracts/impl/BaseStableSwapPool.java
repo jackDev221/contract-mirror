@@ -145,24 +145,112 @@ public class BaseStableSwapPool extends AbstractCurve {
         return rates;
     }
 
+
     @Override
-    public BigInteger getDyUnderlying(int i, int j, BigInteger dx, BigInteger dy) throws Exception {
-        return null;
+    public BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount, long timestamp) throws Exception {
+        StableSwapPoolData poolData = this.getVarStableSwapBasePoolData();
+        BigInteger amp = a(timestamp);
+        BigInteger vpRate = vpRate(timestamp);
+        BigInteger[] oldBalances = copyBigIntegerArray(poolData.getBalances());
+
+        // Initial invariant
+        BigInteger tokenSupply = poolData.getLpTotalSupply();
+        BigInteger d0 = BigInteger.ZERO;
+        if (tokenSupply.compareTo(BigInteger.ZERO) > 0) {
+            d0 = getDMem(vpRate, oldBalances, amp);
+        }
+        BigInteger[] newBalances = new BigInteger[coinsCount];
+
+        for (int i = 0; i < coinsCount; i++) {
+            BigInteger inAmount = amounts[i];
+            if (tokenSupply.compareTo(BigInteger.ZERO) <= 0) {
+                throw new Exception("in_amount must gt 0");
+            }
+            inAmount = getAmountWFee(i, amounts[i]);
+            newBalances[i] = oldBalances[i].add(inAmount);
+        }
+
+        BigInteger d1 = getDMem(vpRate, newBalances, amp);
+        if (d1.compareTo(d0) <= 0) {
+            throw new Exception("D1 must gt D0");
+        }
+        BigInteger mintAmount = BigInteger.ZERO;
+        BigInteger[] fees = empty(coinsCount);
+        BigInteger d2 = d1;
+
+        if (tokenSupply.compareTo(BigInteger.ZERO) > 0) {
+            BigInteger _fee = poolData.getFee().multiply(BigInteger.valueOf(coinsCount)).divide(BigInteger.valueOf((coinsCount - 1) * 4));
+            BigInteger _admin_fee = poolData.getAdminFee();
+            for (int i = 0; i < coinsCount; i++) {
+                BigInteger idealBalance = d1.multiply(oldBalances[i]).divide(d0);
+                BigInteger difference = BigInteger.ZERO;
+
+                if (idealBalance.compareTo(newBalances[i]) > 0) {
+                    difference = idealBalance.subtract(newBalances[i]);
+                } else {
+                    difference = newBalances[i].subtract(idealBalance);
+                }
+                fees[i] = _fee.multiply(difference).divide(FEE_DENOMINATOR);
+                poolData.getBalances()[i] = newBalances[i].subtract(fees[i].multiply(_admin_fee).divide(FEE_DENOMINATOR));
+                newBalances[i] = newBalances[i].subtract(fees[i]);
+            }
+
+            d2 = getDMem(vpRate, newBalances, amp);
+        } else {
+            poolData.setBalances(newBalances);
+        }
+        if (tokenSupply.compareTo(BigInteger.ZERO) == 0) {
+            mintAmount = d1;
+        } else {
+            mintAmount = tokenSupply.multiply(d2.subtract(d0)).divide(d0);
+        }
+
+        if (mintAmount.compareTo(minMintAmount) < 0) {
+            throw new Exception("Slippage screwed you");
+        }
+        poolData.setLpTotalSupply(poolData.getLpTotalSupply().add(mintAmount));
+        return mintAmount;
     }
 
     @Override
-    public BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount) throws Exception {
-        return null;
-    }
-
-    @Override
-    public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount) throws Exception {
-        return null;
+    public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount, long timestamp) throws Exception {
+        StableSwapPoolData poolData = this.getVarStableSwapBasePoolData();
+        BigInteger vpRate = vpRate(timestamp);
+        BigInteger[] calRes = localCalcWithdrawOneCoin(_token_amount, i, vpRate, timestamp, poolData);
+        if (calRes[0].compareTo(min_amount) < 0) {
+            new Exception("Not enough coins removed");
+        }
+        poolData.getBalances()[i] = poolData.getBalances()[i].subtract(calRes[0].add(calRes[1].multiply(
+                poolData.getAdminFee()).divide(FEE_DENOMINATOR)));
+        poolData.setLpTotalSupply(poolData.getLpTotalSupply().subtract(_token_amount));
+        return calRes[0];
     }
 
     @Override
     public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp) throws Exception {
-        return null;
+        StableSwapPoolData poolData = this.getVarStableSwapBasePoolData();
+        int maxCoin = coinsCount - 1;
+        BigInteger[] rates = getRates();
+        rates[maxCoin] = vpRate(timestamp);
+        BigInteger[] oldBalances = copyBigIntegerArray(poolData.getBalances());
+        BigInteger[] xp = xpMem(rates[maxCoin], oldBalances);
+        BigInteger dxWFee = getAmountWFee(i, dx);
+        BigInteger x = xp[i].add(dxWFee.multiply(rates[i]).divide(PRECISION));
+        BigInteger y = getY(i, j, x, xp, timestamp);
+
+        BigInteger dy = xp[j].subtract(y).subtract(BigInteger.ONE);
+        BigInteger dyFee = dy.multiply(poolData.getFee()).divide(FEE_DENOMINATOR);
+
+        dy = (dy.subtract(dyFee)).multiply(PRECISION).divide(rates[j]);
+        if (dy.compareTo(min_dy) < 0) {
+            throw new Exception("Exchange resulted in fewer coins than expected");
+        }
+        BigInteger dyAminFee = dyFee.multiply(poolData.getAdminFee()).divide(FEE_DENOMINATOR);
+        dyAminFee = dyAminFee.multiply(PRECISION).divide(rates[j]);
+
+        poolData.updateBalances(i, oldBalances[i].add(dxWFee));
+        poolData.updateBalances(j, oldBalances[j].subtract(dy).subtract(dyAminFee));
+        return dy;
     }
 
 
@@ -676,6 +764,74 @@ public class BaseStableSwapPool extends AbstractCurve {
         return HandleResult.genHandleSuccess();
     }
 
+    public BigInteger[] removeLiquidity(BigInteger _amount, BigInteger[] _minAmounts, long timestamp) throws Exception {
+        StableSwapPoolData data = this.getVarStableSwapBasePoolData();
+        BigInteger lpTotalSupply = data.getLpTotalSupply();
+        BigInteger[] amounts = empty(coinsCount);
+        for (int i = 0; i < coinsCount; i++) {
+            BigInteger oldBalance = data.getBalances()[i];
+            BigInteger value = oldBalance.multiply(_amount).divide(lpTotalSupply);
+            if (value.compareTo(_minAmounts[i]) < 0) {
+                throw new Exception("Withdrawal resulted in fewer coins than expected");
+            }
+            data.updateBalances(i, oldBalance.subtract(value));
+            amounts[i] = value;
+        }
+        data.setLpTotalSupply(lpTotalSupply.subtract(_amount));
+        return amounts;
+    }
+
+    public BigInteger removeLiquidityImBalance(BigInteger[] _amounts, BigInteger _minBurnAmount, long timestamp) throws Exception {
+        StableSwapPoolData poolData = this.getVarStableSwapBasePoolData();
+        BigInteger tokenSupply = poolData.getLpTotalSupply();
+        if (tokenSupply.compareTo(BigInteger.ZERO) == 0) {
+            throw new Exception("zero total supply");
+        }
+        BigInteger amp = a(timestamp);
+        BigInteger vpRate = vpRate(timestamp);
+        BigInteger[] old_balances = copyBigIntegerArray(poolData.getBalances());
+        BigInteger[] new_balances = copyBigIntegerArray(poolData.getBalances());
+        BigInteger D0 = getDMem(vpRate, old_balances, amp);
+        for (int i = 0; i < coinsCount; i++) {
+            new_balances[i] = new_balances[i].subtract(_amounts[i]);
+        }
+        BigInteger D1 = getDMem(vpRate, new_balances, amp);
+        BigInteger _fee = poolData.getFee().multiply(BigInteger.valueOf(coinsCount))
+                .divide(BigInteger.valueOf((coinsCount - 1) * 4));
+
+        BigInteger _admin_fee = poolData.getAdminFee();
+        BigInteger[] fees = new BigInteger[coinsCount];
+
+        for (int i = 0; i < coinsCount; i++) {
+            BigInteger ideal_balance = D1.multiply(old_balances[i]).divide(D0);
+            BigInteger difference;
+            if (ideal_balance.compareTo(new_balances[i]) > 0) {
+                difference = ideal_balance.subtract(new_balances[i]);
+            } else {
+                difference = new_balances[i].subtract(ideal_balance);
+            }
+            fees[i] = _fee.multiply(difference).divide(FEE_DENOMINATOR);
+            poolData.getBalances()[i] = new_balances[i].subtract((fees[i].multiply(_admin_fee).divide(FEE_DENOMINATOR)));
+            new_balances[i] = new_balances[i].subtract(fees[i]);
+        }
+        BigInteger token_amount;
+        {
+            BigInteger D2 = getDMem(vpRate, new_balances, amp);
+            token_amount = (D0.subtract(D2)).multiply(tokenSupply).divide(D0);
+            if (token_amount.compareTo(BigInteger.ZERO) == 0) {
+                throw new Exception("zero tokens burned");
+            }
+
+            token_amount = token_amount.add(BigInteger.ONE);
+        }
+        if (token_amount.compareTo(_minBurnAmount) > 0) {
+            throw new Exception("Slippage screwed you");
+        }
+
+        poolData.setLpTotalSupply(tokenSupply.subtract(token_amount));
+        return token_amount;
+    }
+
     public BigInteger exchangeUnderlying(int i, int j, BigInteger _dx, BigInteger mindy, long timestamp) throws Exception {
         StableSwapPoolData data = this.getVarStableSwapBasePoolData();
         BigInteger[] rates = this.copyBigIntegerArray(this.rates);
@@ -716,7 +872,7 @@ public class BaseStableSwapPool extends AbstractCurve {
                 BigInteger[] baseIputs = empty(baseCoinsCount);
                 baseIputs[baseI] = dxWFee;
                 AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(basePool)).copySelf();
-                dxWFee = curve.addLiquidity(baseIputs, BigInteger.ZERO);
+                dxWFee = curve.addLiquidity(baseIputs, BigInteger.ZERO, timestamp);
                 x = dxWFee.multiply(rates[maxCoin]).divide(PRECISION);
                 x = x.add(xp[maxCoin]);
             }
@@ -736,7 +892,7 @@ public class BaseStableSwapPool extends AbstractCurve {
             if (baseJ >= 0) {
                 //dy= 31721347864730507
                 AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(basePool)).copySelf();
-                dy = curve.removeLiquidityOneCoin(dy, baseJ, BigInteger.ZERO);
+                dy = curve.removeLiquidityOneCoin(dy, baseJ, BigInteger.ZERO, timestamp);
             }
 
             if (dy.compareTo(mindy) < 0) {
@@ -748,7 +904,6 @@ public class BaseStableSwapPool extends AbstractCurve {
         }
         return dy;
     }
-
 
     private BigInteger getAmountWFee(int _tokenId, BigInteger dx) {
         // 查看CurvePoolV2 feeIndex 是USDT 不是特殊收费ERC20，之后需要在添加
@@ -976,7 +1131,8 @@ public class BaseStableSwapPool extends AbstractCurve {
         return res;
     }
 
-    public BigInteger getDyUnderLying(int i, int j, BigInteger _dx, long timestamp) throws Exception {
+    @Override
+    public BigInteger getDyUnderlying(int i, int j, BigInteger _dx, long timestamp) throws Exception {
         StableSwapPoolData data = this.getVarStableSwapBasePoolData();
         int maxCoin = coinsCount - 1;
         BigInteger vpRate = vpRateRo(timestamp);
@@ -1000,11 +1156,12 @@ public class BaseStableSwapPool extends AbstractCurve {
                 BigInteger[] baseInput = empty(baseCoinsCount);
                 baseInput[baseI] = _dx;
                 AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(data.getBasePool())).copySelf();
-                x = (curve).calcTokenAmount(0, baseInput, true).multiply(vpRate).divide(PRECISION);
+                x = (curve).calcTokenAmount(timestamp, baseInput, true).multiply(vpRate).divide(PRECISION);
                 x = x.subtract(x.multiply(curve.fee()).divide(BigInteger.TWO.multiply(FEE_DENOMINATOR)));
                 x = x.add(xp[maxCoin]);
             } else {
-                return getDy(baseI, baseJ, _dx, timestamp);
+                AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(data.getBasePool())).copySelf();
+                return curve.getDy(baseI, baseJ, _dx, timestamp);
             }
         }
 
@@ -1092,7 +1249,7 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     public BigInteger calcWithdrawOneCoin(long timestamp, BigInteger _token_amount, int i) throws Exception {
         BigInteger vpRate = vpRateRo(timestamp);
-        BigInteger[] res = localCalcWithdrawOneCoin(_token_amount, i, vpRate, timestamp, this.getVarStableSwapBasePoolData().copySelf());
+        BigInteger[] res = localCalcWithdrawOneCoin(_token_amount, i, vpRate, timestamp, this.getVarStableSwapBasePoolData());
         return res[0];
     }
 

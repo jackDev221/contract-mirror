@@ -875,8 +875,19 @@ public class CurveBasePool extends AbstractCurve {
     }
 
     @Override
-    public BigInteger getDyUnderlying(int i, int j, BigInteger dx, BigInteger dy) throws Exception {
-        return null;
+    public BigInteger getDyUnderlying(int i, int j, BigInteger dx, long timestamp) throws Exception {
+        BigInteger[] xp = xp();
+        BigInteger[] precisions = getPrecisionMul();
+        BigInteger x = xp[i].add(dx.multiply(precisions[i]));
+        BigInteger y = getY(i, j, x, xp);
+        BigInteger dy = (xp[j].subtract(y).subtract(BigInteger.ONE)).divide(precisions[j]);
+        BigInteger _fee = fee().multiply(dy).divide(FEE_DENOMINATOR);
+        return dy.subtract(_fee);
+    }
+
+    @Override
+    public BigInteger getDy(int i, int j, BigInteger dx, long timestamp) throws Exception {
+        return getDy(i, j, dx);
     }
 
     public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp) throws Exception {
@@ -939,6 +950,20 @@ public class CurveBasePool extends AbstractCurve {
         poolData.updateBalances(i, oldBalances[i].add(dxWFee));
         poolData.updateBalances(j, oldBalances[j].subtract(dy).subtract(dyAminFee));
         return dy;
+    }
+
+    public BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount, long timestamp) throws Exception {
+        return addLiquidity(amounts, minMintAmount);
+    }
+
+    @Override
+    public BigInteger[] removeLiquidity(BigInteger _amount, BigInteger[] _minAmounts, long timestamp) throws Exception {
+        return removeLiquidity(_amount, _minAmounts);
+    }
+
+    @Override
+    public BigInteger removeLiquidityImBalance(BigInteger[] _amounts, BigInteger _minBurnAmount, long timestamp) throws Exception {
+        return removeLiquidityImbalance(_amounts, _minBurnAmount);
     }
 
     public BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount) throws Exception {
@@ -1030,6 +1055,10 @@ public class CurveBasePool extends AbstractCurve {
         }
         poolData.setTotalSupply(poolData.getTotalSupply().subtract(_amount));
         return amounts;
+    }
+
+    public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount, long timestamp) throws Exception {
+        return removeLiquidityOneCoin(_token_amount, i, min_amount);
     }
 
     public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount) throws Exception {

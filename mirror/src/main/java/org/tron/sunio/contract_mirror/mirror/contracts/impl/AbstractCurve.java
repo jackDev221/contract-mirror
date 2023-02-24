@@ -28,11 +28,17 @@ public abstract class AbstractCurve extends BaseContract {
 
     public abstract BigInteger[] rates(long timestamp);
 
-    public abstract BigInteger getDyUnderlying(int i, int j, BigInteger dx, BigInteger dy) throws Exception;
+    public abstract BigInteger getDyUnderlying(int i, int j, BigInteger dx, long timestamp) throws Exception;
 
-    public abstract BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount) throws Exception;
+    public abstract BigInteger getDy(int i, int j, BigInteger dx, long timestamp) throws Exception;
 
-    public abstract BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount) throws Exception;
+    public abstract BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount, long timestamp) throws Exception;
+
+    public abstract BigInteger[] removeLiquidity(BigInteger _amount, BigInteger[] _minAmounts, long timestamp) throws Exception;
+
+    public abstract BigInteger removeLiquidityImBalance(BigInteger[] _amounts, BigInteger _minBurnAmount, long timestamp) throws Exception;
+
+    public abstract BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount, long timestamp) throws Exception;
 
     public abstract BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp) throws Exception;
 
