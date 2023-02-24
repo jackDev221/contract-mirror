@@ -354,6 +354,14 @@ public class PSM extends BaseContract {
         return new BigInteger[]{value, fee};
     }
 
+    public double calcUSDDToUSDXFee(BigInteger tout) {
+        return new BigDecimal(tout).divide(new BigDecimal(BigInteger.TEN.pow(18)), 6, RoundingMode.UP).doubleValue();
+    }
+
+    public double calcUSDXToUSDDFee(BigInteger tin) {
+        return new BigDecimal(tin).divide(new BigDecimal(BigInteger.TEN.pow(18)), 6, RoundingMode.UP).doubleValue();
+    }
+
     /**
      * usdd => usd
      * feeTemp = 1 + info10

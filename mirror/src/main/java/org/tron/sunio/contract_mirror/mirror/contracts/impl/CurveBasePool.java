@@ -19,7 +19,9 @@ import org.web3j.abi.datatypes.generated.StaticArray2;
 import org.web3j.abi.datatypes.generated.StaticArray3;
 import org.web3j.abi.datatypes.generated.Uint256;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -863,6 +865,16 @@ public class CurveBasePool extends AbstractCurve {
     }
 
     @Override
+    public BigInteger adminFee() {
+        return this.getVarCurveBasePoolData().getAdminFee();
+    }
+
+    @Override
+    public BigInteger[] rates(long timestamp) {
+        return getRates();
+    }
+
+    @Override
     public BigInteger getDyUnderlying(int i, int j, BigInteger dx, BigInteger dy) throws Exception {
         return null;
     }
@@ -895,6 +907,17 @@ public class CurveBasePool extends AbstractCurve {
         );
         pool.setCurveBasePoolData(poolData);
         return pool;
+    }
+
+    @Override
+    public double calcFee(long timestamp, int j) {
+        BigInteger[] rates = this.rates(timestamp);
+        BigDecimal feeV = new BigDecimal(this.getVarCurveBasePoolData().getFee());
+        BigDecimal adminFeeV = new BigDecimal(this.getVarCurveBasePoolData().getAdminFee());
+        BigDecimal fee = feeV.divide(new BigDecimal(FEE_DENOMINATOR), 6, RoundingMode.UP);
+        BigDecimal feeAdmin = fee.multiply(adminFeeV).multiply(new BigDecimal(PRECISION))
+                .divide(new BigDecimal(FEE_DENOMINATOR), 6, RoundingMode.UP).divide(new BigDecimal(rates[j]), 6, RoundingMode.UP);
+        return fee.add(feeAdmin).doubleValue();
     }
 
     public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, CurveBasePoolData poolData) throws Exception {

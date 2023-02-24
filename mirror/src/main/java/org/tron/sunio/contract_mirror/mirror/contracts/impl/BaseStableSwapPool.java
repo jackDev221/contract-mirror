@@ -18,12 +18,15 @@ import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.FunctionEncoder;
+import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.StaticArray;
 import org.web3j.abi.datatypes.generated.StaticArray2;
 import org.web3j.abi.datatypes.generated.StaticArray3;
 import org.web3j.abi.datatypes.generated.Uint256;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -131,6 +134,18 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     @Override
+    public BigInteger adminFee() {
+        return this.getVarStableSwapBasePoolData().getAdminFee();
+    }
+
+    @Override
+    public BigInteger[] rates(long timestamp) {
+        BigInteger[] rates = copyBigIntegerArray(this.rates);
+        rates[coinsCount - 1] = vpRate(timestamp);
+        return rates;
+    }
+
+    @Override
     public BigInteger getDyUnderlying(int i, int j, BigInteger dx, BigInteger dy) throws Exception {
         return null;
     }
@@ -159,14 +174,33 @@ public class BaseStableSwapPool extends AbstractCurve {
                 type,
                 coinsCount,
                 baseCoinsCount,
-                copyBigInteger(rates),
-                copyBigInteger(precisionMul),
+                copyBigIntegerArray(rates),
+                copyBigIntegerArray(precisionMul),
                 iChainHelper,
                 iContractsHelper,
                 sigMap
         );
         pool.setStableSwapPoolData(data);
         return pool;
+    }
+
+    /**
+     * uint256 dy_fee = dy.mul(fee).div(FEE_DENOMINATOR);
+     * dy = (dy.sub(dy_fee)).mul(PRECISION).div(rates[j]);
+     * require(dy >= min_dy, "Exchange resulted in fewer coins than expected");
+     * <p>
+     * dy_admin_fee = dy_fee.mul(admin_fee).div(FEE_DENOMINATOR);
+     * dy_admin_fee = dy_admin_fee.mul(PRECISION).div(rates[j]);
+     */
+    @Override
+    public double calcFee(long timestamp, int j) {
+        BigInteger[] rates = this.rates(timestamp);
+        BigDecimal feeV = new BigDecimal(this.getVarStableSwapBasePoolData().getFee());
+        BigDecimal adminFeeV = new BigDecimal(this.getVarStableSwapBasePoolData().getAdminFee());
+        BigDecimal fee = feeV.divide(new BigDecimal(FEE_DENOMINATOR), 6, RoundingMode.UP);
+        BigDecimal feeAdmin = fee.multiply(adminFeeV).multiply(new BigDecimal(PRECISION))
+                .divide(new BigDecimal(FEE_DENOMINATOR), 6, RoundingMode.UP).divide(new BigDecimal(rates[j]), 6, RoundingMode.UP);
+        return fee.add(feeAdmin).doubleValue();
     }
 
     @Override
@@ -328,7 +362,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         int i = ((BigInteger) eventValues.getNonIndexedValues().get(0).getValue()).intValue();
         BigInteger dx = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         int j = ((BigInteger) eventValues.getNonIndexedValues().get(2).getValue()).intValue();
-        BigInteger[] rates = getRates();
+        BigInteger[] rates = copyBigIntegerArray(this.rates);
         rates[coinsCount - 1] = vpRate(handleEventExtraData.getTimeStamp());
         BigInteger dy = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
         BigInteger tmp = dy.multiply(rates[j]).multiply(FEE_DENOMINATOR);
@@ -644,7 +678,7 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     public BigInteger exchangeUnderlying(int i, int j, BigInteger _dx, BigInteger mindy, long timestamp) throws Exception {
         StableSwapPoolData data = this.getVarStableSwapBasePoolData();
-        BigInteger[] rates = this.getRates();
+        BigInteger[] rates = this.copyBigIntegerArray(this.rates);
         String basePool = data.getBasePool();
         int maxCoin = coinsCount - 1;
         rates[maxCoin] = vpRate(timestamp);
@@ -743,7 +777,7 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     private BigInteger[] xp(BigInteger vpRate) {
         StableSwapPoolData data = this.getVarStableSwapBasePoolData();
-        BigInteger[] result = getRates();
+        BigInteger[] result = copyBigIntegerArray(this.rates);
         result[coinsCount - 1] = vpRate;
         BigInteger[] balances = data.getBalances();
         for (int i = 0; i < coinsCount; i++) {
@@ -753,7 +787,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     private BigInteger[] xpMem(BigInteger vpRate, BigInteger[] balances) {
-        BigInteger[] result = getRates();
+        BigInteger[] result = copyBigIntegerArray(this.rates);
         result[coinsCount - 1] = vpRate;
         for (int i = 0; i < coinsCount; i++) {
             result[i] = result[i].multiply(balances[i]).divide(PRECISION);
@@ -916,7 +950,7 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     public BigInteger getDy(int i, int j, BigInteger dx, long timestamp) throws Exception {
         StableSwapPoolData data = this.getVarStableSwapBasePoolData();
-        BigInteger[] rates = getRates();
+        BigInteger[] rates = copyBigIntegerArray(this.rates);
         rates[coinsCount - 1] = vpRateRo(timestamp);
         BigInteger[] xp = xp(rates[coinsCount - 1]);
         BigInteger x = xp[i].add(dx.multiply(rates[i]).divide(PRECISION));
@@ -934,7 +968,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         return res;
     }
 
-    private BigInteger[] copyBigInteger(BigInteger[] src) {
+    private BigInteger[] copyBigIntegerArray(BigInteger[] src) {
         BigInteger[] res = new BigInteger[src.length];
         for (int i = 0; i < src.length; i++) {
             res[i] = new BigInteger(src[i].toString());
@@ -1036,7 +1070,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         BigInteger newY = getYD(amp, i, xp, d1);
         BigInteger _fee = data.getFee().multiply(nCoins).divide(BigInteger.valueOf((coinsCount - 1) * 4));
 
-        BigInteger[] rates = getRates();
+        BigInteger[] rates = copyBigIntegerArray(this.rates);
         rates[coinsCount - 1] = vpRate;
         BigInteger[] xpReduced = xp(vpRate);
         BigInteger dy0 = (xp[i].subtract(newY)).multiply(PRECISION).divide(rates[i]);  // w/o fees

@@ -23,4 +23,14 @@ public class ContractsHelper implements IContractsHelper {
     public BaseContract getContract(String address) {
         return contractMaps.get(address);
     }
+
+    @Override
+    public void addContract(BaseContract baseContract) {
+        contractMaps.put(baseContract.getAddress(), baseContract);
+    }
+
+    @Override
+    public boolean containsContract(String address) {
+        return contractMaps.containsKey(address);
+    }
 }

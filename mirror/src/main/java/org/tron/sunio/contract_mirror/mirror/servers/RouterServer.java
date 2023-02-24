@@ -1,6 +1,9 @@
 package org.tron.sunio.contract_mirror.mirror.servers;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -123,7 +126,7 @@ public class RouterServer {
         List<String> roadForName = routItem.getRoadForName();
         List<String> roadForAddr = routItem.getRoadForAddr();
         List<String> pool = routItem.getPool();
-        BigInteger amount = BigInteger.ZERO;
+        SwapResult swapResult = new SwapResult(routerInput.getIn(), 0);
         String fromToken = routerInput.getFromToken();
         String toToken = "";
         for (int i = 0; i < path.size(); i++) {
@@ -132,141 +135,149 @@ public class RouterServer {
             roadForName.add(info.getTokenName());
             pool.add(info.getPoolType());
             toToken = info.getTokenAddress();
-            amount = swapToken(fromToken, toToken, amount, contractMaps.get(info.getContract()));
-            if (amount.compareTo(BigInteger.ZERO) == 0) {
+            swapResult = swapToken(fromToken, toToken, swapResult.amount, swapResult.fee, contractMaps.get(info.getContract()));
+            if (swapResult.amount.compareTo(BigInteger.ZERO) == 0) {
                 log.error("Cal:from {}, to: {},  contract:{}, amount is zero", fromToken, toToken, info.getContract());
                 return null;
             }
         }
-        routItem.setAmount(amount);
+        routItem.setAmount(swapResult.amount);
+        routItem.setFee(swapResult.fee);
         routItem.setInUsd(routerInput.getFromPrice());
         routItem.setOutUsd(routerInput.getToPrice());
         return routItem;
     }
 
-    private BigInteger swapToken(String fromAddress, String toAddress, BigInteger amount, BaseContract baseContract) {
-        BigInteger res = BigInteger.ZERO;
+    private SwapResult swapToken(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
+        SwapResult swapResult = new SwapResult();
         if (ObjectUtil.isNull(baseContract)) {
-            return res;
+            return null;
         }
         switch (baseContract.getType()) {
             case SWAP_V1:
-                res = swapV1(fromAddress, toAddress, amount, baseContract);
+                swapResult = swapV1(fromAddress, toAddress, amount, preFee, baseContract);
                 break;
             case SWAP_V2_PAIR:
-                res = swpV2Pair(fromAddress, toAddress, amount, baseContract);
+                swapResult = swpV2Pair(fromAddress, toAddress, amount, preFee, baseContract);
                 break;
             case CONTRACT_CURVE_2POOL:
             case CONTRACT_CURVE_3POOL:
-                res = curveSwap(fromAddress, toAddress, amount, baseContract);
+                swapResult = curveSwap(fromAddress, toAddress, amount, preFee, baseContract);
                 break;
             case CONTRACT_PSM_USDT:
             case CONTRACT_PSM_USDC:
             case CONTRACT_PSM_USDJ:
             case CONTRACT_PSM_TUSD:
-                res = psmSwap(fromAddress, toAddress, amount, baseContract);
+                swapResult = psmSwap(fromAddress, toAddress, amount, preFee, baseContract);
                 break;
             case STABLE_SWAP_POOL:
-                res = stableSwapPoolSwap(fromAddress, toAddress, amount, baseContract);
+                swapResult = stableSwapPoolSwap(fromAddress, toAddress, amount, preFee, baseContract);
                 break;
             default:
                 break;
         }
-        return res;
+        return swapResult;
     }
 
-    private BigInteger stableSwapPoolSwap(String fromAddress, String toAddress, BigInteger amount, BaseContract baseContract) {
-        BigInteger res;
+    private SwapResult stableSwapPoolSwap(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
+        SwapResult res = new SwapResult();
         try {
             BaseStableSwapPool baseStableSwapPool = (BaseStableSwapPool) baseContract;
             StableSwapPoolData data = baseStableSwapPool.getCurveBasePoolData();
             AbstractCurve curve = baseStableSwapPool.copySelf();
-
             int i = data.getTokenIndex(fromAddress);
             int j = data.getTokenIndex(toAddress);
             if (i == -2 || j == -2) {
-                res = BigInteger.ZERO;
+                res.amount = BigInteger.ZERO;
             } else {
+                long timestamp = System.currentTimeMillis() / 1000;
+                res.fee = preFee + (1 - preFee) * baseStableSwapPool.calcFee(timestamp, j);
                 if (i + j == -1) {
-                    res = curve.exchange(i, j, amount, BigInteger.ZERO, System.currentTimeMillis() / 1000);
+                    res.amount = curve.exchange(i, j, amount, BigInteger.ZERO, timestamp);
                 } else {
-                    res = curve.exchangeUnderlying(i, j, amount, BigInteger.ZERO, System.currentTimeMillis() / 1000);
+                    res.amount = curve.exchangeUnderlying(i, j, amount, BigInteger.ZERO, timestamp);
                 }
             }
         } catch (Exception e) {
             log.error("StableSwapPool fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
                     fromAddress, toAddress, baseContract.getAddress(), amount, e);
-            res = BigInteger.ZERO;
+            res.amount = BigInteger.ZERO;
         }
         return res;
     }
 
-    private BigInteger psmSwap(String fromAddress, String toAddress, BigInteger amount, BaseContract baseContract) {
-        BigInteger res;
+    private SwapResult psmSwap(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
+        SwapResult res = new SwapResult();
         try {
             PSM psm = (PSM) baseContract;
             PSMData data = psm.getPsmData();
             if (fromAddress.equalsIgnoreCase(data.getUsdd())) {
-                res = psm.calcUSDDToUSDX(amount, data.getType(), data.getTout())[0];
+                res.amount = psm.calcUSDDToUSDX(amount, data.getType(), data.getTout())[0];
+                res.fee = preFee + (1 - preFee) * psm.calcUSDDToUSDXFee(data.getTout());
             } else {
-                res = psm.calcUSDXToUSDD(amount, data.getType(), data.getTin())[1];
+                res.amount = psm.calcUSDXToUSDD(amount, data.getType(), data.getTin())[1];
+                res.fee = preFee + (1 - preFee) * psm.calcUSDXToUSDDFee(data.getTin());
             }
 
         } catch (Exception e) {
             log.error("PSM fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
                     fromAddress, toAddress, baseContract.getAddress(), amount, e);
-            res = BigInteger.ZERO;
+            res.amount = BigInteger.ZERO;
         }
         return res;
     }
 
-    private BigInteger curveSwap(String fromAddress, String toAddress, BigInteger amount, BaseContract baseContract) {
-        BigInteger res;
+    private SwapResult curveSwap(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
+        SwapResult res = new SwapResult();
         try {
             CurveBasePool curve = (CurveBasePool) ((AbstractCurve) baseContract).copySelf();
+
             CurveBasePoolData data = curve.getCurveBasePoolData();
             int[] indexes = data.getTokensIndex(fromAddress, toAddress);
             if (indexes[0] <= 0 || indexes[1] < 0) {
                 log.error("Curve fail, from:{}, to:{}, contract:{}, amount:{}, wrong input tokens:{} {}",
                         fromAddress, toAddress, baseContract.getAddress(), amount, fromAddress, toAddress);
-                res = BigInteger.ZERO;
+                res.amount = BigInteger.ZERO;
             } else {
-                res = curve.exchange(indexes[0], indexes[1], amount, BigInteger.ZERO, data);
+                res.fee = preFee + (1 - preFee) * curve.calcFee(0, indexes[1]);
+                res.amount = curve.exchange(indexes[0], indexes[1], amount, BigInteger.ZERO, data);
             }
         } catch (Exception e) {
             log.error("Curve fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
                     fromAddress, toAddress, baseContract.getAddress(), amount, e);
-            res = BigInteger.ZERO;
+            res.amount = BigInteger.ZERO;
         }
         return res;
     }
 
-    private BigInteger swpV2Pair(String fromAddress, String toAddress, BigInteger amount, BaseContract baseContract) {
-        BigInteger res;
+    private SwapResult swpV2Pair(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
+        SwapResult res = new SwapResult();
+        res.fee = preFee + (1 - preFee) * 0.003;
         try {
             SwapV2Pair swapV2 = (SwapV2Pair) baseContract;
-            res = swapV2.getAmountOut(fromAddress, toAddress, amount, swapV2.getSwapV2PairData());
+            res.amount = swapV2.getAmountOut(fromAddress, toAddress, amount, swapV2.getSwapV2PairData());
         } catch (Exception e) {
             log.error("SwapV2 fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
                     fromAddress, toAddress, baseContract.getAddress(), amount, e);
-            res = BigInteger.ZERO;
+            res.amount = BigInteger.ZERO;
         }
         return res;
     }
 
-    private BigInteger swapV1(String fromAddress, String toAddress, BigInteger amount, BaseContract baseContract) {
-        BigInteger res;
+    private SwapResult swapV1(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
+        SwapResult res = new SwapResult();
+        res.fee = preFee + (1 - preFee) * 0.003;
         try {
             SwapV1 swapV1 = (SwapV1) baseContract;
             if (fromAddress.equals(EMPTY_ADDRESS)) {
-                res = swapV1.trxToTokenInput(amount, BigInteger.ZERO, swapV1.getSwapV1Data());
+                res.amount = swapV1.trxToTokenInput(amount, BigInteger.ZERO, swapV1.getSwapV1Data());
             } else {
-                res = swapV1.tokenToTrxInput(amount, BigInteger.ZERO, swapV1.getSwapV1Data());
+                res.amount = swapV1.tokenToTrxInput(amount, BigInteger.ZERO, swapV1.getSwapV1Data());
             }
         } catch (Exception e) {
             log.error("SwapV1 fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
                     fromAddress, toAddress, baseContract.getAddress(), amount, e);
-            res = BigInteger.ZERO;
+            res.amount = BigInteger.ZERO;
         }
         return res;
     }
@@ -437,6 +448,14 @@ public class RouterServer {
 
     private String genListPathsKey(String token0, String token1) {
         return String.format("%s%s%s", token0, SPLIT, token1);
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class SwapResult {
+        private BigInteger amount;
+        private double fee;
     }
 
 }

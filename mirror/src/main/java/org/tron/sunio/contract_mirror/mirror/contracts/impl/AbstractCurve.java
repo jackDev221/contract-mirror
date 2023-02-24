@@ -24,6 +24,10 @@ public abstract class AbstractCurve extends BaseContract {
 
     public abstract BigInteger fee();
 
+    public abstract BigInteger adminFee();
+
+    public abstract BigInteger[] rates(long timestamp);
+
     public abstract BigInteger getDyUnderlying(int i, int j, BigInteger dx, BigInteger dy) throws Exception;
 
     public abstract BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount) throws Exception;
@@ -35,6 +39,8 @@ public abstract class AbstractCurve extends BaseContract {
     public abstract BigInteger exchangeUnderlying(int i, int j, BigInteger _dx, BigInteger mindy, long timestamp) throws Exception;
 
     public abstract AbstractCurve copySelf();
+
+    public abstract double calcFee(long timestamp, int j);
 
     @Override
     public boolean initDataFromChain1() {
@@ -65,4 +71,5 @@ public abstract class AbstractCurve extends BaseContract {
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         return null;
     }
+
 }
