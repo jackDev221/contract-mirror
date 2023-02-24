@@ -51,4 +51,10 @@ public abstract class SynchronizableContract extends Contract implements Synchro
     }
 
     protected abstract void handleEvent(String eventName, EventValues eventValues, long eventTime);
+
+    protected void checkEventTimestamp(long eventTime) {
+        if (eventTime >= timestamp0 && eventTime < timestamp2) {
+            throw new IllegalStateException();
+        }
+    }
 }

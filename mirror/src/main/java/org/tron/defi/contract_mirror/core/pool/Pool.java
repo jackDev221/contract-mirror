@@ -22,6 +22,20 @@ public abstract class Pool extends SynchronizableContract {
     }
 
     @Override
+    public String getContractType() {
+        return getType().name();
+    }
+
+    @Override
+    protected JSONObject getInfo() {
+        JSONObject info = super.getInfo();
+        info.put("name", getName());
+        info.put("tokens", getTokens());
+        info.put("lp_token", getLpToken());
+        return info;
+    }
+
+    @Override
     public Boolean isReady() {
         return null;
     }
@@ -37,20 +51,6 @@ public abstract class Pool extends SynchronizableContract {
         getContractData();
         timestamp1 = System.currentTimeMillis();
         timestamp2 = 2 * timestamp1 - timestamp0;
-    }
-
-    @Override
-    protected JSONObject getInfo() {
-        JSONObject info = super.getInfo();
-        info.put("name", getName());
-        info.put("tokens", getTokens());
-        info.put("lp_token", getLpToken());
-        return info;
-    }
-
-    @Override
-    public String getContractType() {
-        return getType().name();
     }
 
     public abstract void init();
