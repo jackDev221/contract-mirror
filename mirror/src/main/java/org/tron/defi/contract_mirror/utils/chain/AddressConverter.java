@@ -16,7 +16,7 @@ public class AddressConverter {
     public static String TronBase58ToEthAddress(String base58Address) {
         byte[] tronAddress = AddressUtil.decode58Check(base58Address);
         byte[] ethAddress = TronToEthAddress(tronAddress);
-        return ethAddress.toString();
+        return ByteArray.toHexString(ethAddress);
     }
 
     public static byte[] EthToTronAddress(byte[] ethAddress) {

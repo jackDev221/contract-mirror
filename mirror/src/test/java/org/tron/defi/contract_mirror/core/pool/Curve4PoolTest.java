@@ -43,7 +43,7 @@ public class Curve4PoolTest {
         Assertions.assertNotNull(config);
         Curve4Pool pool
             = (Curve4Pool) contractManager.registerContract(new Curve4Pool(config.getAddress()));
-        Assertions.assertTrue(pool.init());
+        Assertions.assertDoesNotThrow(() -> pool.init());
         log.info(pool.info());
     }
 }

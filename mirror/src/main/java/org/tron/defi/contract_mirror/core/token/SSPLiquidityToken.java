@@ -14,7 +14,7 @@ import java.util.List;
 public class SSPLiquidityToken extends TRC20 implements ISSPLP {
     @Setter
     private BigInteger totalSupply;
-
+    private ContractAbi extendAbi;
     public SSPLiquidityToken(String address) {
         super(address);
     }
@@ -26,7 +26,8 @@ public class SSPLiquidityToken extends TRC20 implements ISSPLP {
 
     @Override
     protected ContractAbi loadAbi() {
-        return tronContractTrigger.contractAt(SSPLiquidityTokenAbi.class, getAddress());
+        extendAbi = tronContractTrigger.contractAt(SSPLiquidityTokenAbi.class, getAddress());
+        return super.loadAbi();
     }
 
     @Override
@@ -38,8 +39,8 @@ public class SSPLiquidityToken extends TRC20 implements ISSPLP {
     }
 
     public BigInteger getTotalSupplyFromChain() {
-        List<Type> response = abi.invoke(SSPLiquidityTokenAbi.Functions.TOTAL_SUPPLY,
-                                         Collections.emptyList());
+        List<Type> response = extendAbi.invoke(SSPLiquidityTokenAbi.Functions.TOTAL_SUPPLY,
+                                               Collections.emptyList());
         return ((Uint256) response.get(0)).getValue();
     }
 }

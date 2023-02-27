@@ -38,11 +38,12 @@ public class CurvePoolTest {
     @Test
     public void initTest() {
         Assertions.assertNotNull(config);
+        log.info(config.toString());
         CurvePool pool
             = (CurvePool) contractManager.registerContract(new CurvePool(config.getAddress(),
                                                                          PoolType.convertFromContractType(
                                                                              config.getType())));
-        Assertions.assertTrue(pool.init());
+        Assertions.assertDoesNotThrow(() -> pool.init());
         log.info(pool.info());
     }
 }

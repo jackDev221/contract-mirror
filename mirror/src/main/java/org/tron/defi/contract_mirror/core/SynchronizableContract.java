@@ -29,10 +29,25 @@ public abstract class SynchronizableContract extends Contract implements Synchro
         return timestamp0 > 0 && timestamp1 > timestamp0;
     }
 
-
     @Override
-    public void onEvent(KafkaMessage<ContractLog> kafkaMessage) {
+    public void onEvent(KafkaMessage<ContractLog> kafkaMessage, long syncPeriod) {
+        if (!isEventAccept()) {
+            throw new IllegalStateException();
+        }
         ContractLog contractLog = kafkaMessage.getMessage();
+        if (timestamp0 > 0 &&
+            syncPeriod > 0 &&
+            contractLog.getTimeStamp() - timestamp0 >= syncPeriod) {
+            // force sync period
+            timestamp1 = 0;
+            throw new IllegalStateException();
+        }
+        if (contractLog.getTimeStamp() < timestamp0) {
+            // not interest
+            return;
+        } else if (contractLog.getTimeStamp() < timestamp1) {
+            throw new IllegalStateException();
+        }
         if (contractLog.getBlockNumber() < lastBlockNumber ||
             contractLog.getTimeStamp() < lastEventTimestamp) {
             // handle chain switch

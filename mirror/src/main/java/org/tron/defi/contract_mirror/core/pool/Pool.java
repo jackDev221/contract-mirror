@@ -1,11 +1,13 @@
 package org.tron.defi.contract_mirror.core.pool;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import org.tron.defi.contract_mirror.core.SynchronizableContract;
 import org.tron.defi.contract_mirror.core.token.Token;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public abstract class Pool extends SynchronizableContract {
     @Getter
@@ -27,11 +29,16 @@ public abstract class Pool extends SynchronizableContract {
     }
 
     @Override
-    protected JSONObject getInfo() {
+    public JSONObject getInfo() {
         JSONObject info = super.getInfo();
         info.put("name", getName());
-        info.put("tokens", getTokens());
-        info.put("lp_token", getLpToken());
+        info.put("tokens",
+                 new JSONArray(getTokens().stream()
+                                          .map(x -> x.getInfo())
+                                          .collect(Collectors.toList())));
+        if (null != getLpToken()) {
+            info.put("lp_token", getLpToken().getInfo());
+        }
         return info;
     }
 

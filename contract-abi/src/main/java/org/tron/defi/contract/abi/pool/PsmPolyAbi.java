@@ -1,4 +1,4 @@
-package org.tron.defi.contract.abi.token;
+package org.tron.defi.contract.abi.pool;
 
 import lombok.Getter;
 import org.tron.defi.contract.abi.*;
@@ -6,14 +6,13 @@ import org.tron.defi.contract.abi.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SSPLiquidityTokenAbi extends Contract {
-    public SSPLiquidityTokenAbi(ContractTrigger trigger, String address) {
+public class PsmPolyAbi extends Contract {
+    public PsmPolyAbi(ContractTrigger trigger, String address) {
         super(trigger, address);
     }
 
     @Override
     public EventPrototype getEvent(String signature) {
-        // TODO add is needed
         return null;
     }
 
@@ -23,13 +22,7 @@ public class SSPLiquidityTokenAbi extends Contract {
     }
 
     public enum Functions implements IFunction {
-        // TRC20
-        SYMBOL("symbol", "", "string"),
-        DECIMALS("decimals", "", "uint256"),
-        BALANCE_OF("balanceOf", "address", "uint256"),
-        // SSP
-        TOTAL_SUPPLY("totalSupply", "", "uint256");
-
+        GET_INFO("getInfo", "address", "uint256[]");
         private static final Map<String, Functions> signatureMap = new HashMap<>();
 
         static {
@@ -45,7 +38,7 @@ public class SSPLiquidityTokenAbi extends Contract {
             prototype = new FunctionPrototype(name, inputParams, outputParams);
         }
 
-        static Functions getBySignature(String signature) {
+        public static Functions getBySignature(String signature) {
             return signatureMap.getOrDefault(signature, null);
         }
     }

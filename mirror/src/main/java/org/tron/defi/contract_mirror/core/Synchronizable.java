@@ -10,5 +10,5 @@ public interface Synchronizable {
 
     void sync();
 
-    void onEvent(KafkaMessage<ContractLog> kafkaMessage);
+    void onEvent(KafkaMessage<ContractLog> kafkaMessage, long syncPeriod);
 }

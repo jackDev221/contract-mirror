@@ -3,6 +3,7 @@ package org.tron.defi.contract_mirror.core.token;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.token.TRC20Abi;
 import org.tron.defi.contract_mirror.common.ContractType;
+import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Uint256;
@@ -52,8 +53,10 @@ public class TRC20 extends Token implements ITRC20 {
     }
 
     public BigInteger balanceOfFromChain(String address) {
+        String ethAddress = AddressConverter.TronBase58ToEthAddress(address);
+        System.out.println(ethAddress);
         List<Type> response = abi.invoke(TRC20Abi.Functions.BALANCE_OF,
-                                         Collections.singletonList(address));
+                                         Collections.singletonList(ethAddress));
         return ((Uint256) response.get(0)).getValue();
     }
 

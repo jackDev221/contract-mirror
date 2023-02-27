@@ -57,7 +57,7 @@ public class SunswapV2Factory extends SynchronizableContract {
     }
 
     @Override
-    protected JSONObject getInfo() {
+    public JSONObject getInfo() {
         JSONObject info = super.getInfo();
         info.put("poolNum", getAllPairLen());
         return info;

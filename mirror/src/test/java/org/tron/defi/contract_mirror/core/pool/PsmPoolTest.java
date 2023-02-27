@@ -37,8 +37,9 @@ public class PsmPoolTest {
     @Test
     public void initTest() {
         Assertions.assertNotNull(config);
-        PsmPool pool = (PsmPool) contractManager.registerContract(new PsmPool(config.getAddress()));
-        Assertions.assertTrue(pool.init());
+        PsmPool pool = (PsmPool) contractManager.registerContract(new PsmPool(config.getAddress(),
+                                                                              config.getPolyAddress()));
+        Assertions.assertDoesNotThrow(() -> pool.init());
         log.info(pool.info());
     }
 }

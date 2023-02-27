@@ -13,6 +13,7 @@ import org.tron.defi.contract_mirror.config.KafkaConfig;
 import org.tron.defi.contract_mirror.config.ServerConfig;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.ContractManager;
+import org.tron.defi.contract_mirror.core.SynchronizableContract;
 import org.tron.defi.contract_mirror.core.pool.Pool;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
 import org.tron.defi.contract_mirror.utils.ShardedThreadPool;
@@ -77,36 +78,27 @@ public class EventService {
         listenThread.cancel();
     }
 
-    private boolean handleEvent(Pool pool, KafkaMessage<ContractLog> message) {
-        try {
-            pool.onEvent(message);
-            return true;
-        } catch (IllegalStateException e) {
-            log.warn(pool.getAddress() + " is synchronizing.");
-            return false;
-        }
-    }
-
-    private void emitEventTask(Pool pool, KafkaMessage<ContractLog> message) {
+    private void emitEventTask(SynchronizableContract contract, KafkaMessage<ContractLog> message) {
         if (null == eventPool) {
-            if (!handleEvent(pool, message)) {
-                emitPendingTask(pool, message);
+            if (!handleEvent(contract, message)) {
+                emitPendingTask(contract, message);
             }
         } else {
-            ShardedThreadPool.ShardTask task = new EventShardTask(pool, message);
+            ShardedThreadPool.ShardTask task = new EventShardTask(contract, message);
             eventPool.execute(task);
         }
     }
 
-    private void emitPendingTask(Pool pool, KafkaMessage<ContractLog> message) {
+    private void emitPendingTask(SynchronizableContract contract,
+                                 KafkaMessage<ContractLog> message) {
         try {
             LinkedBlockingQueue<KafkaMessage<ContractLog>> poolQueue = pendingQueue.getOrDefault(
-                pool.getAddress(),
+                contract.getAddress(),
                 null);
             if (null == poolQueue) {
                 poolQueue = new LinkedBlockingQueue<>();
                 LinkedBlockingQueue<KafkaMessage<ContractLog>> exists = pendingQueue.putIfAbsent(
-                    pool.getAddress(),
+                    contract.getAddress(),
                     poolQueue);
                 poolQueue = null == exists ? poolQueue : exists;
             }
@@ -114,7 +106,18 @@ public class EventService {
         } catch (Exception ex) {
             log.error(ex.getMessage());
             // lose message, need sync
-            pool.sync();
+            contract.sync();
+        }
+    }
+
+    private boolean handleEvent(SynchronizableContract contract,
+                                KafkaMessage<ContractLog> message) {
+        try {
+            contract.onEvent(message, serverConfig.getSyncPeriod());
+            return true;
+        } catch (IllegalStateException e) {
+            log.warn(contract.getAddress() + " is synchronizing.");
+            return false;
         }
     }
 
@@ -230,18 +233,18 @@ public class EventService {
     }
 
     private class EventShardTask extends ShardedThreadPool.ShardTask {
-        private final Pool pool;
+        private final SynchronizableContract contract;
         private final KafkaMessage<ContractLog> message;
 
-        public EventShardTask(Pool pool, KafkaMessage<ContractLog> message) {
-            super(pool.getAddress(), SimpleShardMethod.getInstance());
-            this.pool = pool;
+        public EventShardTask(SynchronizableContract contract, KafkaMessage<ContractLog> message) {
+            super(contract.getAddress(), SimpleShardMethod.getInstance());
+            this.contract = contract;
             this.message = message;
         }
 
         @Override
         public void run() {
-            if (!handleEvent(pool, message)) {
+            if (!handleEvent(contract, message)) {
                 log.warn("Drop event earlier than pool synchronization, " +
                          JSON.toJSONString(message.getMessage()));
             }

@@ -26,6 +26,29 @@ public abstract class Contract implements ContractAbi {
 
 
     @Override
+    public EventValues decodeEvent(ContractLog message) {
+        try {
+            String[] topics = message.getRawData().getTopics();
+            EventPrototype prototype = getEvent(topics[0]);
+            if (topics.length - 1 != prototype.getIndexedParams().size()) {
+                throw new IllegalArgumentException("TOPIC SIZE NOT MATCH");
+            }
+            List<Type> indexedValues = new ArrayList<>();
+            for (int i = 1; i < topics.length; i++) {
+                indexedValues.add(DefaultFunctionReturnDecoder.decodeIndexedValue(topics[i],
+                                                                                  prototype.getIndexedParams()
+                                                                                           .get(i)));
+            }
+            List<Type> nonIndexedValues = DefaultFunctionReturnDecoder.decode(message.getRawData()
+                                                                                     .getData(),
+                                                                              prototype.getNonIndexedParams());
+            return new EventValues(indexedValues, nonIndexedValues);
+        } catch (IndexOutOfBoundsException | NullPointerException e) {
+            return null;
+        }
+    }
+
+    @Override
     public List<Type> invoke(String address, IFunction function, List<Object> params) {
 
         FunctionPrototype prototype = getFunction(function.getPrototype().getRawSignature());
@@ -46,29 +69,6 @@ public abstract class Contract implements ContractAbi {
             return DefaultFunctionReturnDecoder.decode(rawResponse, f.getOutputParameters());
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public EventValues decodeEvent(ContractLog message) {
-        try {
-            String[] topics = message.getRawData().getTopics();
-            EventPrototype prototype = getEvent(topics[0]);
-            if (topics.length - 1 != prototype.getIndexedParams().size()) {
-                throw new IllegalArgumentException("TOPIC SIZE NOT MATCH");
-            }
-            List<Type> indexedValues = new ArrayList<>();
-            for (int i = 1; i < topics.length; i++) {
-                indexedValues.add(DefaultFunctionReturnDecoder.decodeIndexedValue(topics[i],
-                                                                                  prototype.getIndexedParams()
-                                                                                           .get(i)));
-            }
-            List<Type> nonIndexedValues = DefaultFunctionReturnDecoder.decode(message.getRawData()
-                                                                                     .getData(),
-                                                                              prototype.getNonIndexedParams());
-            return new EventValues(indexedValues, nonIndexedValues);
-        } catch (IndexOutOfBoundsException | NullPointerException e) {
-            return null;
         }
     }
 }

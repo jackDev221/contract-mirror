@@ -1,6 +1,10 @@
 #contract.mirror.appName=contract mirror
 #contract.mirror.blockInterval=5000
 
+#server
+server:
+  syncPeriod: 86400
+
 #tron
 tron:
   feeLimit: 500000000

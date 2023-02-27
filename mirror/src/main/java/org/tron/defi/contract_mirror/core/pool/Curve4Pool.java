@@ -29,8 +29,8 @@ public class Curve4Pool extends Pool {
     private static final int N_COINS = 2;
     private static final int TOKEN_ID = 0;
     private static final int LP_TOKEN_ID = 1;
-    private static final BigInteger FEE_DENOMINATOR = new BigInteger(String.valueOf(Math.exp(10)));
-    private static final BigInteger PRECISION = new BigInteger(String.valueOf(Math.exp(18)));
+    private static final BigInteger FEE_DENOMINATOR = new BigInteger("10000000000");
+    private static final BigInteger PRECISION = new BigInteger("1000000000000000000");
     private static final BigInteger A_PRECISION = new BigInteger("100");
     private static final List<BigInteger> RATES = Arrays.asList(new BigInteger(
         "1000000000000000000000000000000"), new BigInteger("1000000000000000000"));
@@ -53,7 +53,7 @@ public class Curve4Pool extends Pool {
     }
 
     @Override
-    protected JSONObject getInfo() {
+    public JSONObject getInfo() {
         JSONObject info = super.getInfo();
         info.put("base_pool", underlyingPool.getInfo());
         return info;
@@ -100,7 +100,7 @@ public class Curve4Pool extends Pool {
 
         for (int i = 0; i < N_COINS; i++) {
             response = abi.invoke(Curve4Abi.Functions.BALANCES, Collections.singletonList(i));
-            balances.set(i, ((Uint256) response.get(i)).getValue());
+            balances.set(i, ((Uint256) response.get(0)).getValue());
 
             TRC20 token = (TRC20) getTokens().get(i);
             token.setBalance(getAddress(), token.balanceOfFromChain(getAddress()));
@@ -140,6 +140,9 @@ public class Curve4Pool extends Pool {
                 break;
             case "StopRampA":
                 handleStopRampAEvent(eventValues);
+                break;
+            default:
+                log.warn("Ignore event " + eventName);
                 break;
         }
     }

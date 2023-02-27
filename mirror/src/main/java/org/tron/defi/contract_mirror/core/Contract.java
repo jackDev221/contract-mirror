@@ -35,7 +35,7 @@ public abstract class Contract {
         abi = loadAbi();
     }
 
-    protected JSONObject getInfo() {
+    public JSONObject getInfo() {
         JSONObject info = new JSONObject();
         info.put("address", getAddress());
         info.put("type", getContractType());

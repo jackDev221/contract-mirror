@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 public class CurvePool extends Pool {
     private static final ArrayList<PoolType> CURVE_TYPE
         = new ArrayList<>(Arrays.asList(PoolType.CURVE2, PoolType.CURVE3));
-    private static final BigInteger FEE_DENOMINATOR = new BigInteger(String.valueOf(Math.exp(10)));
-    private static final BigInteger PRECISION = new BigInteger(String.valueOf(Math.exp(18)));
+    private static final BigInteger FEE_DENOMINATOR = new BigInteger("10000000000");
+    private static final BigInteger PRECISION = new BigInteger("1000000000000000000");
     private final List<BigInteger> RATES;
     private final int FEE_INDEX;
     private final List<BigInteger> balances;
@@ -97,7 +97,7 @@ public class CurvePool extends Pool {
         sspLpToken.setTotalSupply(sspLpToken.getTotalSupplyFromChain());
         for (int i = 0; i < getN(); i++) {
             response = abi.invoke(CurveAbi.Functions.BALANCES, Collections.singletonList(i));
-            balances.set(i, ((Uint256) response.get(i)).getValue());
+            balances.set(i, ((Uint256) response.get(0)).getValue());
 
             TRC20 token = (TRC20) getTokens().get(i);
             token.setBalance(getAddress(), token.balanceOfFromChain(getAddress()));
@@ -134,6 +134,9 @@ public class CurvePool extends Pool {
                 break;
             case "StopRampA":
                 handleStopRampAEvent(eventValues);
+                break;
+            default:
+                log.warn("Ignore event " + eventName);
                 break;
         }
     }

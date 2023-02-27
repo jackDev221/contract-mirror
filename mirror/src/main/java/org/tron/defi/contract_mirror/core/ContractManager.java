@@ -46,7 +46,7 @@ public class ContractManager {
                     initCurve(contractConfig.getAddress(), contractConfig.getType());
                     break;
                 case PSM_POOL:
-                    initPsm(contractConfig.getAddress());
+                    initPsm(contractConfig.getAddress(), contractConfig.getPolyAddress());
                     break;
             }
         }
@@ -86,14 +86,9 @@ public class ContractManager {
         }
     }
 
-    public void initPsm(String address) {
-        PsmPool pool = (PsmPool) registerContract(new PsmPool(address));
-        if (!pool.init()) {
-            throw new RuntimeException("Failed to init " +
-                                       pool.getType() +
-                                       " " +
-                                       pool.getAddress());
-        }
+    public void initPsm(String address, String polyAddress) {
+        PsmPool pool = (PsmPool) registerContract(new PsmPool(address, polyAddress));
+        pool.init();
         Token usdd = pool.getUsdd();
         Node node0 = graph.getNode(usdd.getAddress());
         if (null == node0) {
@@ -111,21 +106,13 @@ public class ContractManager {
     public void initSunswapV1(String address) {
         SunswapV1Factory sunswapV1Factory
             = (SunswapV1Factory) registerContract(new SunswapV1Factory(address));
-        try {
-            sunswapV1Factory.sync();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize v1 factory, " + e.getMessage());
-        }
+        sunswapV1Factory.sync();
     }
 
     public void initSunswapV2(String address) {
         SunswapV2Factory sunswapV2Factory
             = (SunswapV2Factory) registerContract(new SunswapV2Factory(address));
-        try {
-            sunswapV2Factory.sync();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize v2 factory, " + e.getMessage());
-        }
+        sunswapV2Factory.sync();
     }
 
     public void initTRX() {

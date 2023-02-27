@@ -23,7 +23,7 @@ public abstract class Token extends Contract {
     }
 
     @Override
-    protected JSONObject getInfo() {
+    public JSONObject getInfo() {
         JSONObject info = super.getInfo();
         info.put("symbol", getSymbol());
         info.put("decimals", getDecimals());
