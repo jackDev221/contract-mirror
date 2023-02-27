@@ -9,7 +9,7 @@ public class BaseResponse {
     private String message;
 
     @ApiModelProperty(value = "结果编码")
-    private String code;
+    private int code;
 
     public String getMessage() {
         return message;
@@ -19,11 +19,11 @@ public class BaseResponse {
         this.message = message;
     }
 
-    public String getCode() {
+    public int getCode() {
         return code;
     }
 
-    public void setCode(String code) {
+    public void setCode(int code) {
         this.code = code;
     }
 

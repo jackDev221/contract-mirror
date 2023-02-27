@@ -87,7 +87,7 @@ public class SwapFactoryV1 extends BaseFactory {
         List<BaseContract> result = new ArrayList<>();
         SwapFactoryV1Data v1Data = this.getVarFactoryV1Data();
         long totalTokens = v1Data.getTokenCount();
-//        totalTokens = 1;
+//        totalTokens = 3;
         List<BaseProcessOut> outs = this.getListContractsBase(cmPool, (int) totalTokens);
         for (BaseProcessOut out : outs) {
             SwapV1FactoryExOut swapV1FactoryExOut = (SwapV1FactoryExOut) out;

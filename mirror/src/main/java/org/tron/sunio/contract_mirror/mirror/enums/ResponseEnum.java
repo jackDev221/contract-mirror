@@ -6,8 +6,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ResponseEnum implements IResponseEnum {
-    SUCCESS("success", "success"),
-    SERVER_ERROR("server_error", "server error");
-    private final String code;
+    SUCCESS(0, "SUCCESS"),
+    SERVER_ERROR(1, "server error");
+    private final int code;
     private final String message;
 }

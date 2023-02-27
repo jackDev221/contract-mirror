@@ -12,7 +12,7 @@ import org.tron.sunio.contract_mirror.mirror.enums.IResponseEnum;
 @Getter
 public class ResultResponse<T> extends BaseResponse {
     @ApiModelProperty(value = "返回结果")
-    private T result;
+    private T data;
 
     @JsonIgnore
     private IResponseEnum responseEnum;
@@ -22,8 +22,8 @@ public class ResultResponse<T> extends BaseResponse {
     }
 
 
-    public void setResult(T result) {
-        this.result = result;
+    public void setData(T data) {
+        this.data = data;
     }
 
     public static <T> ResultResponse<T> newInstance() {

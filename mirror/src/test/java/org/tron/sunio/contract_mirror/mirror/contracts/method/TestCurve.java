@@ -47,7 +47,7 @@ public class TestCurve {
 
             curve3Pool.addLiquidity(
                     new BigInteger[]{new BigInteger("92000000000000000000"), new BigInteger("119000000000000000000"), new BigInteger("100000000")},
-                    new BigInteger("370053401491792594326"), poolData);
+                    new BigInteger("370053401491792594326"), 1675854858, poolData);
         } catch (Exception e) {
             System.out.println("e" + e.toString());
             e.printStackTrace();
@@ -95,7 +95,7 @@ public class TestCurve {
         CurveBasePoolData poolData = curve3Pool.getCurveBasePoolData();
         BigInteger dy = BigInteger.ZERO;
         try {
-            dy = curve3Pool.exchange(2, 0, new BigInteger("12000000"), new BigInteger("9289941016244035010"), poolData);
+            dy = curve3Pool.exchange(2, 0, new BigInteger("12000000"), new BigInteger("9289941016244035010"), 1675826787, poolData);
         } catch (Exception e) {
             System.out.println("e" + e.toString());
             e.printStackTrace();
@@ -203,7 +203,7 @@ public class TestCurve {
             curve3Pool.removeLiquidityImbalance(
                     new BigInteger[]{new BigInteger("85898905970984377"), new BigInteger("81545203641547892"), new BigInteger("463158")},
                     new BigInteger("4258987749200220399191"),
-                    poolData);
+                    1675828071, poolData);
         } catch (Exception e) {
             System.out.println("e" + e.toString());
             e.printStackTrace();
@@ -255,6 +255,7 @@ public class TestCurve {
                     new BigInteger("104443593432663072569"),
                     0,
                     new BigInteger("71545496035121175218"),
+                    1675828071,
                     poolData);
         } catch (Exception e) {
             System.out.println("e" + e.toString());

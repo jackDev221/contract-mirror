@@ -26,6 +26,7 @@ import org.tron.sunio.contract_mirror.mirror.router.StepInfo;
 import org.tron.sunio.contract_mirror.mirror.router.RoutItem;
 import org.tron.sunio.contract_mirror.mirror.router.RoutNode;
 import org.tron.sunio.contract_mirror.mirror.router.RouterInput;
+import org.web3j.utils.Strings;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -45,11 +46,11 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.E
 public class RouterServer {
     private static final String SPLIT = "_";
     private static final String TRX_SYMBOL = "TRX";
-    private static final String USDD = "usdd";
-    private static final String USDT = "usdt";
-    private static final String USDC = "usdc";
-    private static final String USDJ = "usdj";
-    private static final String TUSD = "tusd";
+    private static final String USDD = "USDD";
+    private static final String USDT = "USDT";
+    private static final String USDC = "USDC";
+    private static final String USDJ = "USDJ";
+    private static final String TUSD = "TUSD";
     private static final String POOL_TYPE_V1 = "v1";
     private static final String POOL_TYPE_V2 = "v2";
     private static final String POOL_TYPE_2_POOL = "2pool";
@@ -93,6 +94,9 @@ public class RouterServer {
         List<RoutItem> res = new ArrayList<>();
         for (List<StepInfo> path : paths) {
             RoutItem routItem = getRoutItemByPaths(routerInput, path, contractMaps);
+            if (ObjectUtil.isNull(routItem)){
+                continue;
+            }
             res.add(routItem);
         }
         res = res.stream().sorted(Comparator.comparing(RoutItem::getAmount, (s1, s2) -> {
@@ -111,9 +115,9 @@ public class RouterServer {
     }
 
     private String getTokenPriceInput(String tokenAddress, String tokenSymbol) {
-        String res = tokenAddress;
+        String res = tokenSymbol;
         if (routerConfig.getEnv().equals(RouterConfig.ENV_NILE)) {
-            res = tokenSymbol;
+            res = tokenAddress;
         }
         if (res.equalsIgnoreCase("null")) {
             res = TRX_SYMBOL;
@@ -126,6 +130,9 @@ public class RouterServer {
         List<String> roadForName = routItem.getRoadForName();
         List<String> roadForAddr = routItem.getRoadForAddr();
         List<String> pool = routItem.getPool();
+        roadForName.add(routerInput.getFromTokenSymbol());
+        roadForAddr.add(routerInput.getFromToken());
+//        pool.add(path.get(0).getPoolType());
         SwapResult swapResult = new SwapResult(routerInput.getIn(), 0);
         String fromToken = routerInput.getFromToken();
         String toToken = "";
@@ -140,6 +147,7 @@ public class RouterServer {
                 log.error("Cal:from {}, to: {},  contract:{}, amount is zero", fromToken, toToken, info.getContract());
                 return null;
             }
+            fromToken = toToken;
         }
         routItem.setAmount(swapResult.amount);
         routItem.setFee(swapResult.fee);
@@ -234,13 +242,13 @@ public class RouterServer {
 
             CurveBasePoolData data = curve.getCurveBasePoolData();
             int[] indexes = data.getTokensIndex(fromAddress, toAddress);
-            if (indexes[0] <= 0 || indexes[1] < 0) {
+            if (indexes[0] < 0 || indexes[1] < 0) {
                 log.error("Curve fail, from:{}, to:{}, contract:{}, amount:{}, wrong input tokens:{} {}",
                         fromAddress, toAddress, baseContract.getAddress(), amount, fromAddress, toAddress);
                 res.amount = BigInteger.ZERO;
             } else {
                 res.fee = preFee + (1 - preFee) * curve.calcFee(0, indexes[1]);
-                res.amount = curve.exchange(indexes[0], indexes[1], amount, BigInteger.ZERO, data);
+                res.amount = curve.exchange(indexes[0], indexes[1], amount, BigInteger.ZERO, System.currentTimeMillis() / 1000, data);
             }
         } catch (Exception e) {
             log.error("Curve fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
@@ -303,15 +311,19 @@ public class RouterServer {
             if (isPathContainToken(path, subNode.getContract(), subNode.getAddress())) {
                 continue;
             }
+            RoutNode nextRoot = this.routNodeMap.get(subNode.getAddress());
+            if (ObjectUtil.isNull(nextRoot)) {
+                continue;
+            }
             StepInfo stepInfo = StepInfo.builder()
                     .contract(subNode.getContract())
                     .tokenAddress(subNode.getAddress())
                     .tokenName(subNode.getSymbol())
                     .poolType(subNode.getPoolType())
                     .build();
-            List<StepInfo> pathCopy = List.copyOf(path);
+            List<StepInfo> pathCopy = path.stream().collect(Collectors.toList());
             pathCopy.add(stepInfo);
-            getPaths(subNode, destToken, pathCopy, paths, maxHops);
+            getPaths(nextRoot, destToken, pathCopy, paths, maxHops);
 
         }
         return false;
@@ -341,6 +353,22 @@ public class RouterServer {
                     break;
             }
         }
+
+        for (RoutNode routNode : this.routNodeMap.values()) {
+            String start = routNode.getSymbol() + "/" + routNode.getAddress();
+            StringBuffer buff = new StringBuffer();
+
+            for (RoutNode subNode : routNode.getSubNodes()) {
+                buff.append(subNode.getSymbol());
+                buff.append("/");
+                buff.append(subNode.getAddress());
+                buff.append(" ");
+            }
+
+            System.out.println(start + " ---> " + buff.toString());
+        }
+
+
     }
 
     private void initStableSwapPool(BaseStableSwapPool baseStableSwapPool) {
@@ -406,8 +434,8 @@ public class RouterServer {
             for (int j = i + 1; j < count; j++) {
                 String token0 = data.getCoins()[i];
                 String token1 = data.getCoins()[j];
-                String token0Symbol = data.getCoinNames()[i];
-                String token1Symbol = data.getCoinNames()[j];
+                String token0Symbol = data.getCoinSymbols()[i];
+                String token1Symbol = data.getCoinSymbols()[j];
                 updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, poolType, contract);
                 updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, poolType, contract);
             }
@@ -440,6 +468,10 @@ public class RouterServer {
 
     private void updateRoutNodeMap(String token0, String token0Symbol, String token1, String token1Symbol, String poolType,
                                    String contract) {
+        if (Strings.isEmpty(token0Symbol) || Strings.isEmpty(token1Symbol)) {
+            log.warn("Some token symbol is empty, info:{}, {}, {}, {}, {}, {}", token0, token0Symbol, token1, token1Symbol, poolType, contract);
+            return;
+        }
         RoutNode routNode = routNodeMap.getOrDefault(token0, new RoutNode(token0, token0Symbol, "", ""));
         RoutNode subNode = new RoutNode(token1, token1Symbol, contract, poolType);
         routNode.getSubNodes().add(subNode);

@@ -655,11 +655,10 @@ public class CurveBasePool extends AbstractCurve {
         return d;
     }
 
-    public BigInteger a() {
+    public BigInteger a(long blocTime) {
         CurveBasePoolData curveBasePoolData = this.getVarCurveBasePoolData();
         BigInteger t1 = curveBasePoolData.getFutureATime();
         BigInteger a1 = curveBasePoolData.getFutureA();
-        long blocTime = this.getIContractsHelper().getBlockTime();
         if (blocTime < t1.longValue()) {
             BigInteger a0 = curveBasePoolData.getInitialA();
             BigInteger t0 = curveBasePoolData.getInitialATime();
@@ -687,15 +686,15 @@ public class CurveBasePool extends AbstractCurve {
 
     @Override
     public BigInteger getVirtualPrice(long timestamp) throws Exception {
-        BigInteger d = getD(xp(), a());
+        BigInteger d = getD(xp(), a(timestamp));
         BigInteger totalSupply = getVarCurveBasePoolData().getTotalSupply();
         return d.multiply(PRECISION).divide(totalSupply);
     }
 
     @Override
-    public BigInteger calcTokenAmount(long timestampm, BigInteger[] amounts, boolean deposit) throws Exception {
+    public BigInteger calcTokenAmount(long timestamp, BigInteger[] amounts, boolean deposit) throws Exception {
         BigInteger[] balances = getVarCurveBasePoolData().getCopyBalances();
-        BigInteger amp = a();
+        BigInteger amp = a(timestamp);
         BigInteger d0 = getDMem(balances, amp);
         for (int i = 0; i < coinsCount; i++) {
             if (deposit) {
@@ -715,7 +714,7 @@ public class CurveBasePool extends AbstractCurve {
         return diff.multiply(tokenAmount).divide(d0);
     }
 
-    public BigInteger getY(int i, int j, BigInteger x, BigInteger[] xp_) throws Exception {
+    public BigInteger getY(int i, int j, BigInteger x, BigInteger[] xp_, long timestamp) throws Exception {
         if (i == j) {
             throw new Exception("same coin");
         }
@@ -726,7 +725,7 @@ public class CurveBasePool extends AbstractCurve {
         if (i >= coinsCount) {
             throw new Exception("i above N_COINS");
         }
-        BigInteger amp = a();
+        BigInteger amp = a(timestamp);
         BigInteger d = getD(xp_, amp);
         BigInteger c = d;
         BigInteger s_ = BigInteger.ZERO;
@@ -764,22 +763,22 @@ public class CurveBasePool extends AbstractCurve {
         return y;
     }
 
-    public BigInteger getDy(int i, int j, BigInteger dx) throws Exception {
+    public BigInteger getDy(int i, int j, BigInteger dx, long timestamp) throws Exception {
         BigInteger[] rates = getRates();
         BigInteger[] xp = xp();
         BigInteger fee = getVarCurveBasePoolData().getFee();
         BigInteger x = xp[i].add(dx.multiply(rates[i]).divide(PRECISION));
-        BigInteger y = getY(i, j, x, xp);
+        BigInteger y = getY(i, j, x, xp, timestamp);
         BigInteger dy = (xp[j].subtract(y).subtract(BigInteger.ONE)).multiply(PRECISION).divide(rates[j]);
         return dy.subtract(fee.multiply(dy).divide(FEE_DENOMINATOR));
     }
 
-    public BigInteger getDyUnderLying(int i, int j, BigInteger dx) throws Exception {
+    public BigInteger getDyUnderLying(int i, int j, BigInteger dx, long timestamp) throws Exception {
         BigInteger[] precisions = getPrecisionMul();
         BigInteger[] xp = xp();
         BigInteger fee = getVarCurveBasePoolData().getFee();
         BigInteger x = xp[i].add(dx.multiply(precisions[i]));
-        BigInteger y = getY(i, j, x, xp);
+        BigInteger y = getY(i, j, x, xp, timestamp);
         BigInteger dy = (xp[j].subtract(y).subtract(BigInteger.ONE)).divide(precisions[j]);
         return dy.subtract(fee.multiply(dy).divide(FEE_DENOMINATOR));
     }
@@ -825,10 +824,10 @@ public class CurveBasePool extends AbstractCurve {
         return y;
     }
 
-    private BigInteger[] localCalcWithdrawOneCoin(BigInteger _token_amount, int i, CurveBasePoolData curveBasePoolData) throws Exception {
+    private BigInteger[] localCalcWithdrawOneCoin(BigInteger _token_amount, int i, long timestamp, CurveBasePoolData curveBasePoolData) throws Exception {
         BigInteger nCoins = BigInteger.valueOf(coinsCount);
         BigInteger[] precisions = getPrecisionMul();
-        BigInteger amp = a();
+        BigInteger amp = a(timestamp);
         BigInteger _fee = curveBasePoolData.getFee().multiply(nCoins).divide(BigInteger.valueOf((coinsCount - 1) * 4));
         BigInteger totalSupply = curveBasePoolData.getTotalSupply();
 
@@ -855,7 +854,7 @@ public class CurveBasePool extends AbstractCurve {
     }
 
     public BigInteger calcWithdrawOneCoin(long timestamp, BigInteger _token_amount, int i) throws Exception {
-        BigInteger[] res = localCalcWithdrawOneCoin(_token_amount, i, this.getVarCurveBasePoolData());
+        BigInteger[] res = localCalcWithdrawOneCoin(_token_amount, i, timestamp, this.getVarCurveBasePoolData());
         return res[0];
     }
 
@@ -879,29 +878,21 @@ public class CurveBasePool extends AbstractCurve {
         BigInteger[] xp = xp();
         BigInteger[] precisions = getPrecisionMul();
         BigInteger x = xp[i].add(dx.multiply(precisions[i]));
-        BigInteger y = getY(i, j, x, xp);
+        BigInteger y = getY(i, j, x, xp, timestamp);
         BigInteger dy = (xp[j].subtract(y).subtract(BigInteger.ONE)).divide(precisions[j]);
         BigInteger _fee = fee().multiply(dy).divide(FEE_DENOMINATOR);
         return dy.subtract(_fee);
     }
 
-    @Override
-    public BigInteger getDy(int i, int j, BigInteger dx, long timestamp) throws Exception {
-        return getDy(i, j, dx);
-    }
-
     public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp) throws Exception {
-        return exchange(i, j, dx, min_dy);
-    }
-
-    public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy) throws Exception {
         CurveBasePoolData poolData = this.getVarCurveBasePoolData();
-        return exchange(i, j, dx, min_dy, poolData);
+        return exchange(i, j, dx, min_dy, timestamp, poolData);
     }
 
     @Override
     public BigInteger exchangeUnderlying(int i, int j, BigInteger _dx, BigInteger mindy, long timestamp) throws Exception {
-        return exchange(i, j, _dx, mindy, timestamp);
+        CurveBasePoolData poolData = this.getVarCurveBasePoolData();
+        return exchange(i, j, _dx, mindy, timestamp, poolData);
     }
 
     @Override
@@ -931,13 +922,13 @@ public class CurveBasePool extends AbstractCurve {
         return fee.add(feeAdmin).doubleValue();
     }
 
-    public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, CurveBasePoolData poolData) throws Exception {
+    public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp, CurveBasePoolData poolData) throws Exception {
         BigInteger[] rates = getRates();
         BigInteger[] oldBalances = poolData.copyBalances();
         BigInteger[] xp = xpMem(oldBalances);
         BigInteger dxWFee = getAmountWFee(i, dx);
         BigInteger x = xp[i].add(dxWFee.multiply(rates[i]).divide(PRECISION));
-        BigInteger y = getY(i, j, x, xp);
+        BigInteger y = getY(i, j, x, xp, timestamp);
         BigInteger dy = xp[j].subtract(y).subtract(BigInteger.ONE);
         BigInteger dyFee = dy.multiply(poolData.getFee()).divide(FEE_DENOMINATOR);
         dy = (dy.subtract(dyFee)).multiply(PRECISION).divide(rates[j]);
@@ -952,28 +943,25 @@ public class CurveBasePool extends AbstractCurve {
         return dy;
     }
 
-    public BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount, long timestamp) throws Exception {
-        return addLiquidity(amounts, minMintAmount);
-    }
 
-    @Override
     public BigInteger[] removeLiquidity(BigInteger _amount, BigInteger[] _minAmounts, long timestamp) throws Exception {
         return removeLiquidity(_amount, _minAmounts);
     }
 
     @Override
     public BigInteger removeLiquidityImBalance(BigInteger[] _amounts, BigInteger _minBurnAmount, long timestamp) throws Exception {
-        return removeLiquidityImbalance(_amounts, _minBurnAmount);
+        return removeLiquidityImbalance(_amounts, _minBurnAmount, timestamp);
     }
 
-    public BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount) throws Exception {
+    @Override
+    public BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount, long timestamp) throws Exception {
         CurveBasePoolData poolData = this.getVarCurveBasePoolData();
-        return addLiquidity(amounts, minMintAmount, poolData);
+        return addLiquidity(amounts, minMintAmount, timestamp, poolData);
     }
 
     public BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount,
-                                   CurveBasePoolData poolData) throws Exception {
-        BigInteger amp = a();
+                                   long timestamp, CurveBasePoolData poolData) throws Exception {
+        BigInteger amp = a(timestamp);
         BigInteger tokenSupply = poolData.getTotalSupply();
         // Initial invariant
         BigInteger d0 = BigInteger.ZERO;
@@ -1057,18 +1045,15 @@ public class CurveBasePool extends AbstractCurve {
         return amounts;
     }
 
+
     public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount, long timestamp) throws Exception {
-        return removeLiquidityOneCoin(_token_amount, i, min_amount);
-    }
-
-    public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount) throws Exception {
         CurveBasePoolData poolData = this.getVarCurveBasePoolData();
-        return removeLiquidityOneCoin(_token_amount, i, min_amount, poolData);
+        return removeLiquidityOneCoin(_token_amount, i, min_amount, timestamp, poolData);
     }
 
-    public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount,
+    public BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount, long timestamp,
                                              CurveBasePoolData poolData) throws Exception {
-        BigInteger[] calRes = localCalcWithdrawOneCoin(_token_amount, i, poolData);
+        BigInteger[] calRes = localCalcWithdrawOneCoin(_token_amount, i, timestamp, poolData);
         if (calRes[0].compareTo(min_amount) < 0) {
             new Exception("Not enough coins removed");
         }
@@ -1078,12 +1063,12 @@ public class CurveBasePool extends AbstractCurve {
         return calRes[0];
     }
 
-    public BigInteger removeLiquidityImbalance(BigInteger[] amounts, BigInteger max_burn_amount) throws Exception {
+    public BigInteger removeLiquidityImbalance(BigInteger[] amounts, BigInteger max_burn_amount, long timestamp) throws Exception {
         CurveBasePoolData poolData = this.getVarCurveBasePoolData();
-        return removeLiquidityImbalance(amounts, max_burn_amount, poolData);
+        return removeLiquidityImbalance(amounts, max_burn_amount, timestamp, poolData);
     }
 
-    public BigInteger removeLiquidityImbalance(BigInteger[] amounts, BigInteger max_burn_amount,
+    public BigInteger removeLiquidityImbalance(BigInteger[] amounts, BigInteger max_burn_amount, long timestamp,
                                                CurveBasePoolData poolData) throws Exception {
         BigInteger tokenSupply = poolData.getTotalSupply();
         if (tokenSupply.compareTo(BigInteger.ZERO) == 0) {
@@ -1093,7 +1078,7 @@ public class CurveBasePool extends AbstractCurve {
                 .divide(BigInteger.valueOf((coinsCount - 1) * 4));
 
         BigInteger _admin_fee = poolData.getAdminFee();
-        BigInteger amp = a();
+        BigInteger amp = a(timestamp);
         BigInteger[] old_balances = poolData.getBalances();
         BigInteger[] new_balances = poolData.copyBalances();
         BigInteger D0 = getDMem(old_balances, amp);

@@ -11,7 +11,7 @@ public class RestResultGenerator {
         response.setCode(ResponseEnum.SUCCESS.getCode());
         response.setMessage(ResponseEnum.SUCCESS.getMessage());
         response.setResponseEnum(ResponseEnum.SUCCESS);
-        response.setResult(result);
+        response.setData(result);
         log.info("--------> response:{}", JacksonMapper.toJsonString(response));
         if (log.isDebugEnabled()) {
             log.debug("--------> response:{}", JacksonMapper.toJsonString(response));
@@ -34,7 +34,7 @@ public class RestResultGenerator {
 
     public static <T> ResultResponse<T> genErrorWithMessage(String msg) {
         ResultResponse<T> response = ResultResponse.newInstance();
-        response.setCode("error");
+        response.setCode(1);
         response.setMessage(msg);
         if (log.isDebugEnabled()) {
             log.debug("--------> response:{}", JacksonMapper.toJsonString(response));

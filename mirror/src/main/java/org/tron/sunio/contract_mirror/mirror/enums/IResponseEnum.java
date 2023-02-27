@@ -1,6 +1,6 @@
 package org.tron.sunio.contract_mirror.mirror.enums;
 
 public interface IResponseEnum {
-    String getCode();
+    int getCode();
     String getMessage();
 }
