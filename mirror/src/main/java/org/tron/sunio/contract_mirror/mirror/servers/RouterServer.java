@@ -33,6 +33,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.IS_DEBUG;
 
 @Slf4j
 @Service
@@ -65,10 +67,13 @@ public class RouterServer {
     @Autowired
     private TokenPrice tokenPrice;
 
+    private Map<String, String> baseTokensMap = new HashMap<>();
+
     @Autowired
     private RouterConfig routerConfig;
 
     public List<RoutItem> getRouter(RouterInput routerInput, Map<String, BaseContract> contractMaps) {
+        convertTrxInRouterInput(routerInput);
         RoutNode routNode = routNodeMap.get(routerInput.getFromToken());
         if (ObjectUtil.isNull(routNode)) {
             initRoutNodeMap(contractMaps);
@@ -79,11 +84,11 @@ public class RouterServer {
         }
         List<List<StepInfo>> paths;
 
-        String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken());
+        String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
         paths = cachedPaths.get(key);
         if (ObjectUtil.isNull(paths)) {
             paths = new ArrayList<>();
-            getPaths(routNode, routerInput.getToToken(), new ArrayList<>(), paths, routerConfig.getMaxHops());
+            getPaths(routNode, routerInput.getToToken(), new ArrayList<>(), paths, routerConfig.getMaxHops(), routerInput.isUseBaseTokens());
             if (paths.size() != 0) {
                 cachedPaths.put(key, paths);
             }
@@ -94,7 +99,7 @@ public class RouterServer {
         List<RoutItem> res = new ArrayList<>();
         for (List<StepInfo> path : paths) {
             RoutItem routItem = getRoutItemByPaths(routerInput, path, contractMaps);
-            if (ObjectUtil.isNull(routItem)){
+            if (ObjectUtil.isNull(routItem)) {
                 continue;
             }
             res.add(routItem);
@@ -102,9 +107,27 @@ public class RouterServer {
         res = res.stream().sorted(Comparator.comparing(RoutItem::getAmount, (s1, s2) -> {
             return (new BigDecimal(s2)).compareTo(new BigDecimal(s1));
         })).collect(Collectors.toList());
-
+        if (res.size() > routerConfig.getMaxResultSize()) {
+            res = res.subList(0, routerConfig.getMaxResultSize() - 1);
+        }
         return res;
     }
+
+    private void convertTrxInRouterInput(RouterInput routerInput) {
+        if (ObjectUtil.isNull(routerInput)) {
+            return;
+        }
+        if (Strings.isEmpty(routerInput.getFromToken()) || routerInput.getFromToken().equalsIgnoreCase("null")) {
+            routerInput.setFromToken(EMPTY_ADDRESS);
+            routerInput.setFromTokenSymbol(TRX_SYMBOL);
+        }
+        if (Strings.isEmpty(routerInput.getToToken()) || routerInput.getToToken().equalsIgnoreCase("null")) {
+            routerInput.setToToken(EMPTY_ADDRESS);
+            routerInput.setToTokenSymbol(TRX_SYMBOL);
+        }
+
+    }
+
 
     public String[] getTokenPrice(String fromTokenAddr, String toTokenAddr, String fromTokenSymbol,
                                   String toTokenSymbol) throws Exception {
@@ -299,7 +322,8 @@ public class RouterServer {
         return false;
     }
 
-    private boolean getPaths(RoutNode routNode, String destToken, List<StepInfo> path, List<List<StepInfo>> paths, int maxHops) {
+    private boolean getPaths(RoutNode routNode, String destToken, List<StepInfo> path, List<List<StepInfo>> paths, int maxHops,
+                             boolean isUseBaseTokens) {
         if (path.size() > maxHops) {
             return false;
         }
@@ -308,7 +332,8 @@ public class RouterServer {
             return true;
         }
         for (RoutNode subNode : routNode.getSubNodes()) {
-            if (isPathContainToken(path, subNode.getContract(), subNode.getAddress())) {
+            if (isPathContainToken(path, subNode.getContract(), subNode.getAddress())
+                    || !isTokenUsable(isUseBaseTokens, subNode.getAddress())) {
                 continue;
             }
             RoutNode nextRoot = this.routNodeMap.get(subNode.getAddress());
@@ -323,13 +348,14 @@ public class RouterServer {
                     .build();
             List<StepInfo> pathCopy = path.stream().collect(Collectors.toList());
             pathCopy.add(stepInfo);
-            getPaths(nextRoot, destToken, pathCopy, paths, maxHops);
+            getPaths(nextRoot, destToken, pathCopy, paths, maxHops, isUseBaseTokens);
 
         }
         return false;
     }
 
     public void initRoutNodeMap(Map<String, BaseContract> contractMaps) {
+        this.initBaseTokensMap();
         for (BaseContract baseContract : contractMaps.values()) {
             switch (baseContract.getType()) {
                 case SWAP_V1:
@@ -354,21 +380,27 @@ public class RouterServer {
             }
         }
 
-        for (RoutNode routNode : this.routNodeMap.values()) {
-            String start = routNode.getSymbol() + "/" + routNode.getAddress();
-            StringBuffer buff = new StringBuffer();
+        showRoads();
 
-            for (RoutNode subNode : routNode.getSubNodes()) {
-                buff.append(subNode.getSymbol());
-                buff.append("/");
-                buff.append(subNode.getAddress());
-                buff.append(" ");
+
+    }
+
+    private void showRoads() {
+        if (IS_DEBUG) {
+            for (RoutNode routNode : this.routNodeMap.values()) {
+                String start = routNode.getSymbol() + "/" + routNode.getAddress();
+                StringBuffer buff = new StringBuffer();
+
+                for (RoutNode subNode : routNode.getSubNodes()) {
+                    buff.append(subNode.getSymbol());
+                    buff.append("/");
+                    buff.append(subNode.getAddress());
+                    buff.append(" ");
+                }
+
+                System.out.println(start + " ---> " + buff.toString());
             }
-
-            System.out.println(start + " ---> " + buff.toString());
         }
-
-
     }
 
     private void initStableSwapPool(BaseStableSwapPool baseStableSwapPool) {
@@ -478,8 +510,26 @@ public class RouterServer {
         routNodeMap.put(token0, routNode);
     }
 
-    private String genListPathsKey(String token0, String token1) {
-        return String.format("%s%s%s", token0, SPLIT, token1);
+    private String genListPathsKey(String token0, String token1, boolean isUseBaseTokens) {
+        String index = isUseBaseTokens ? "1" : "0";
+        return String.format("%s%s%s%s%s", token0, SPLIT, token1, SPLIT, index);
+    }
+
+    private void initBaseTokensMap() {
+        if (Strings.isEmpty(routerConfig.getBaseTokens())) {
+            return;
+        }
+        String[] addrs = routerConfig.getBaseTokens().split(",");
+        for (String addr : addrs) {
+            baseTokensMap.put(addr, addr);
+        }
+    }
+
+    private boolean isTokenUsable(boolean isUseBaseTokens, String tokenAddr) {
+        if (!isUseBaseTokens) {
+            return true;
+        }
+        return baseTokensMap.containsKey(tokenAddr);
     }
 
     @Data

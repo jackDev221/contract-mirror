@@ -70,7 +70,9 @@ public class ContractStatusController {
                                            @RequestParam(name = "toTokenAddr", required = true) String toTokenAddr,
                                            @RequestParam(name = "inAmount", required = true) String inAmount,
                                            @RequestParam(name = "fromDecimal", required = true) int fromDecimal,
-                                           @RequestParam(name = "toDecimal", required = true) int toDecimal) {
+                                           @RequestParam(name = "toDecimal", required = true) int toDecimal,
+                                           @RequestParam(name = "useBaseTokens", required = false) boolean isUseBaseToken
+    ) {
 
         try {
             if (!contractMirror.isFirstFinishLoadData()) {
@@ -78,7 +80,7 @@ public class ContractStatusController {
             }
             String[] prices = contractMirror.getRouterServer().getTokenPrice(fromTokenAddr, toTokenAddr, fromToken, toToken);
             RouterInput routerInput = new RouterInput(fromTokenAddr, toTokenAddr, fromToken, toToken, fromDecimal, toDecimal,
-                    new BigInteger(inAmount), prices[0], prices[1]);
+                    new BigInteger(inAmount), prices[0], prices[1], isUseBaseToken);
             List<RoutItem> res = contractMirror.getRouterServer().getRouter(routerInput, contractMirror.getContractHashMap());
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {

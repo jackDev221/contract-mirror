@@ -3,6 +3,7 @@ package org.tron.sunio.contract_mirror.mirror.consts;
 import java.math.BigInteger;
 
 public interface ContractMirrorConst {
+    boolean IS_DEBUG = false;
     String EMPTY_ADDRESS = "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb";
     String EMPTY_TOPIC_VALUE = "0x0000000000000000000000000000000000000000";
     String KAFKA_TOPIC_CONTRACT_LOG = "contractlog";
@@ -60,7 +61,7 @@ public interface ContractMirrorConst {
     String METHOD_POOL = "pool";
     String METHOD_BASE_POOL = "base_pool";
     String METHOD_BASE_LP = "base_lp";
-//    String METHOD_TOKEN = "token";
+    //    String METHOD_TOKEN = "token";
     String METHOD_COINS = "coins";
     String METHOD_BASE_COINS = "base_coins";
     //PSM

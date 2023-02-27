@@ -19,4 +19,5 @@ public class RouterInput {
     private BigInteger in;
     private String fromPrice;
     private String toPrice;
+    private boolean isUseBaseTokens;
 }

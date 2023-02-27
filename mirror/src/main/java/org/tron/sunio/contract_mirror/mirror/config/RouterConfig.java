@@ -13,10 +13,11 @@ public class RouterConfig {
     public static final String ENV_SHASTA = "shasta";
     private String env;
     private String priceUrl;
-    private String baseTokens;
+    private String baseTokens;//address
     private String usdt;
     private String usdc;
     private String usdj;
     private String tusd;
     private int maxHops;
+    private int maxResultSize;
 }
