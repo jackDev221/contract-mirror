@@ -1,6 +1,7 @@
 package org.tron.defi.contract_mirror.core.factory;
 
 import com.alibaba.fastjson.JSONObject;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.factory.SunswapV2FactoryAbi;
@@ -36,6 +37,7 @@ public class SunswapV2Factory extends SynchronizableContract {
     private final ArrayList<Pool> pairs = new ArrayList<>(10000);
     private final ConcurrentHashMap<String, ConcurrentHashMap<String, Pool>> pairMap
         = new ConcurrentHashMap<>(10000);
+    @Setter
     Graph graph;
 
     public SunswapV2Factory(String address) {
@@ -145,7 +147,8 @@ public class SunswapV2Factory extends SynchronizableContract {
         }
         try {
             return getPairFromChain(id);
-        } catch (ClassCastException e) {
+        } catch (RuntimeException e) {
+            // TODO: is there any way to distinguish network error and invalid data ?
             handleInvalidPair(id);
             return null;
         }
@@ -214,6 +217,7 @@ public class SunswapV2Factory extends SynchronizableContract {
     }
 
     private void handleInvalidPair(int id) {
+        log.error("INVALID V2: " + id);
         wlock.lock();
         try {
             if (id == pairs.size()) {

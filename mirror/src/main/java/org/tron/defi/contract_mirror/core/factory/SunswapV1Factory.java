@@ -126,7 +126,7 @@ public class SunswapV1Factory extends SynchronizableContract {
     }
 
     public int getTokenCount() {
-        return null == tokens ? getTokenCountFromChain() : tokens.size();
+        return tokens.isEmpty() ? getTokenCountFromChain() : tokens.size();
     }
 
     public Token getTokenWithId(int id) {
@@ -158,6 +158,7 @@ public class SunswapV1Factory extends SynchronizableContract {
         for (int i = minId; i < maxId; i++) {
             Token token = getTokenWithId(i);
             if (null == token) {
+                log.error("INVALID V1: " + i);
                 handleInvalidToken();
                 continue; // invalid token
             }
@@ -170,8 +171,9 @@ public class SunswapV1Factory extends SynchronizableContract {
             try {
                 Pool pool = getExchange(token.getAddress());
                 newExchange(token.getAddress(), pool.getAddress());
-            } catch (IllegalArgumentException e) {
-                log.error(e.getMessage());
+            } catch (RuntimeException e) {
+                // TODO: is there any way to distinguish network error and invalid data ?
+                log.error("INVALID V1: " + i);
                 handleInvalidToken();
             }
         }

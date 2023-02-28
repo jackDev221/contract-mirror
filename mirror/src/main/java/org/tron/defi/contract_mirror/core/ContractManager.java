@@ -106,12 +106,14 @@ public class ContractManager {
     public void initSunswapV1(String address) {
         SunswapV1Factory sunswapV1Factory
             = (SunswapV1Factory) registerContract(new SunswapV1Factory(address));
+        sunswapV1Factory.setGraph(graph);
         sunswapV1Factory.sync();
     }
 
     public void initSunswapV2(String address) {
         SunswapV2Factory sunswapV2Factory
             = (SunswapV2Factory) registerContract(new SunswapV2Factory(address));
+        sunswapV2Factory.setGraph(graph);
         sunswapV2Factory.sync();
     }
 
