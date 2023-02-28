@@ -42,7 +42,7 @@ public class ContractManager {
                     break;
                 case CURVE_2POOL:
                 case CURVE_3POOL:
-                case CURVE_4POOL:
+                case CURVE_COMBINATION_4POOL:
                     initCurve(contractConfig.getAddress(), contractConfig.getType());
                     break;
                 case PSM_POOL:
@@ -53,15 +53,15 @@ public class ContractManager {
     }
 
     public void initCurve(String address, ContractType type) {
+        PoolType poolType = PoolType.convertFromContractType(type);
         Pool pool;
         switch (type) {
             case CURVE_2POOL:
             case CURVE_3POOL:
-                pool = (Pool) registerContract(new CurvePool(address,
-                                                             PoolType.convertFromContractType(type)));
+                pool = (Pool) registerContract(new CurvePool(address, poolType));
                 break;
-            case CURVE_4POOL:
-                pool = (Pool) registerContract(new Curve4Pool(address));
+            case CURVE_COMBINATION_4POOL:
+                pool = (Pool) registerContract(new CurveCombinationPool(address, poolType));
                 break;
             default:
                 throw new IllegalArgumentException(type.name());

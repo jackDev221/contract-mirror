@@ -13,12 +13,12 @@ import org.tron.defi.contract_mirror.config.ContractConfigList;
 import org.tron.defi.contract_mirror.core.ContractManager;
 
 import static org.tron.defi.contract_mirror.common.ContractType.CURVE_3POOL;
-import static org.tron.defi.contract_mirror.common.ContractType.CURVE_4POOL;
+import static org.tron.defi.contract_mirror.common.ContractType.CURVE_COMBINATION_4POOL;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = TestApplication.class)
-public class Curve4PoolTest {
+public class CurveCombinationPoolTest {
     @Autowired
     private ContractConfigList contractConfigList;
     @Autowired
@@ -26,24 +26,26 @@ public class Curve4PoolTest {
 
     private ContractConfigList.ContractConfig config;
 
+    @Test
+    public void initTest() {
+        Assertions.assertNotNull(config);
+        CurveCombinationPool pool
+            = (CurveCombinationPool) contractManager.registerContract(new CurveCombinationPool(
+            config.getAddress(),
+            PoolType.CURVE_COMBINATION4));
+        Assertions.assertDoesNotThrow(() -> pool.init());
+        log.info(pool.info());
+    }
+
     @BeforeEach
     public void setUp() {
         for (ContractConfigList.ContractConfig contractConfig : contractConfigList.getContracts()) {
             if (CURVE_3POOL == contractConfig.getType()) {
                 contractManager.initCurve(contractConfig.getAddress(), contractConfig.getType());
-            } else if (CURVE_4POOL == contractConfig.getType()) {
+            } else if (CURVE_COMBINATION_4POOL == contractConfig.getType()) {
                 config = contractConfig;
                 break;
             }
         }
-    }
-
-    @Test
-    public void initTest() {
-        Assertions.assertNotNull(config);
-        Curve4Pool pool
-            = (Curve4Pool) contractManager.registerContract(new Curve4Pool(config.getAddress()));
-        Assertions.assertDoesNotThrow(() -> pool.init());
-        log.info(pool.info());
     }
 }

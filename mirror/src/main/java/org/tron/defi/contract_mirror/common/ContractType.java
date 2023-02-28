@@ -8,7 +8,7 @@ public enum ContractType {
     // pools
     CURVE_2POOL,
     CURVE_3POOL,
-    CURVE_4POOL,
+    CURVE_COMBINATION_4POOL,
     PSM_POOL,
     SUNSWAP_V1_POOL,
     SUNSWAP_V2_POOL,

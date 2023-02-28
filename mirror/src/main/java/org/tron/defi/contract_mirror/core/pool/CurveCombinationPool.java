@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class Curve4Pool extends Pool {
+public class CurveCombinationPool extends Pool {
     private static final int N_COINS = 2;
     private static final int TOKEN_ID = 0;
     private static final int LP_TOKEN_ID = 1;
@@ -47,9 +47,9 @@ public class Curve4Pool extends Pool {
     private long timeUpdateVirtualPrice;
     private CurvePool underlyingPool;
 
-    public Curve4Pool(String address) {
+    public CurveCombinationPool(String address, PoolType type) {
         super(address);
-        type = PoolType.CURVE4;
+        this.type = type;
     }
 
     @Override

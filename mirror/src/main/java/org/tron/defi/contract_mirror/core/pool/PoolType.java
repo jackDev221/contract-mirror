@@ -8,7 +8,7 @@ public enum PoolType {
     SUNSWAP_V2,
     CURVE2,
     CURVE3,
-    CURVE4,
+    CURVE_COMBINATION4,
     PSM,
     PSM_POLY;
 
@@ -18,8 +18,8 @@ public enum PoolType {
                 return CURVE2;
             case CURVE_3POOL:
                 return CURVE3;
-            case CURVE_4POOL:
-                return CURVE4;
+            case CURVE_COMBINATION_4POOL:
+                return CURVE_COMBINATION4;
             case PSM_POOL:
                 return PSM;
             default:

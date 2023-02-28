@@ -1,6 +1,10 @@
 #contract.mirror.appName=contract mirror
 #contract.mirror.blockInterval=5000
 
+#server
+server:
+  syncPeriod: 86400
+
 #tron
 tron:
   feeLimit: 500000000
@@ -34,6 +38,10 @@ contract-list:
       type: SUNSWAP_FACTORY_V2
     - address: TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c
       type: CURVE_2POOL
+    - address: TKcEU8ekq2ZoFzLSGFYCUY6aocJBX9X31b
+      type: curve_3POOL
+    - address: TQx6CdLHqjwVmJ45ecRzodKfVumAsdoRXH
+      type: CURVE_COMBINATION_4POOL
     - address: TM9gWuCdFGNMiT1qTq1bgw4tNhJbsESfjA
       type: PSM_POOL
       polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
