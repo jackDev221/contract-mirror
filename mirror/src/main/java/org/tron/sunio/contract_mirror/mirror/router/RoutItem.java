@@ -1,5 +1,6 @@
 package org.tron.sunio.contract_mirror.mirror.router;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,9 +15,11 @@ public class RoutItem {
     private List<String> roadForName = new ArrayList<>();
     private List<String> roadForAddr = new ArrayList<>();
     private List<String> pool = new ArrayList<>();
-    private int impact;
+    private String impact = "0";
     private String inUsd;
     private String outUsd;
-    private BigInteger amount;
-    private double fee;
+    @JsonIgnore
+    private BigInteger amountV;
+    private String amount;
+    private String fee;
 }

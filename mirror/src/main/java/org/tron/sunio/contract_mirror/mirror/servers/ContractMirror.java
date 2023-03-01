@@ -67,6 +67,7 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
     public void afterPropertiesSet() throws Exception {
         initKafka();
         contractFactoryManager.initFactoryMap(config.getFactoryInfos(), this);
+        log.info("L1 heigth:{}", tronChainHelper.blockNumber());
     }
 
     private void initKafka() {
@@ -225,7 +226,7 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
                 if (ObjectUtil.isNotNull(baseContract)) {
                     BaseContract.HandleResult result = baseContract.handleEvent(contractEventWrap);
                     if (result.needToSendMessage()) {
-                        String key = String.format("%_new", record.key());
+                        String key = String.format("%s_new", record.key());
                         kafkaProducerSend(kafkaConfig.getProducerTopic(), key,
                                 contractEventWrap.updateAndToJson(result.getNewTopic(), result.getNewData()));
                     }
@@ -246,7 +247,8 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
                 }
             }
         } catch (Exception e) {
-            log.warn("doTask error:{}", e.toString());
+            e.printStackTrace();
+            log.warn("doTask error:{}", e);
         }
 
     }

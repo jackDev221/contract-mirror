@@ -104,7 +104,7 @@ public class RouterServer {
             }
             res.add(routItem);
         }
-        res = res.stream().sorted(Comparator.comparing(RoutItem::getAmount, (s1, s2) -> {
+        res = res.stream().sorted(Comparator.comparing(RoutItem::getAmountV, (s1, s2) -> {
             return (new BigDecimal(s2)).compareTo(new BigDecimal(s1));
         })).collect(Collectors.toList());
         if (res.size() > routerConfig.getMaxResultSize()) {
@@ -172,8 +172,10 @@ public class RouterServer {
             }
             fromToken = toToken;
         }
-        routItem.setAmount(swapResult.amount);
-        routItem.setFee(swapResult.fee);
+        routItem.setAmountV(swapResult.amount);
+        routItem.setAmount(swapResult.amount.toString());
+        BigDecimal fee = new BigDecimal(swapResult.fee).multiply(new BigDecimal(swapResult.amount));
+        routItem.setFee(fee.toString());
         routItem.setInUsd(routerInput.getFromPrice());
         routItem.setOutUsd(routerInput.getToPrice());
         return routItem;
