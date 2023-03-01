@@ -18,9 +18,6 @@ version = "1.0.0"
 dependencies {
     implementation fileTree("../lib") { include '*.jar' }
     implementation "org.web3j:abi:${web3jVersion}"
-    // implementation "org.web3j:crypto:${web3jVersion}"
-    // implementation "org.web3j:core:$web3jVersion"
-    // implementation "org.web3j:utils:$web3jVersion"
 }
 
 test {
