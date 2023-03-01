@@ -166,7 +166,7 @@ public class SunswapV2Factory extends SynchronizableContract {
             if (null == pair) {
                 continue; // invalid pair
             }
-            newPair(pair.getAddress(), i);
+            newPair(pair.getAddress(), i + 1);
         }
     }
 
