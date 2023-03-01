@@ -30,6 +30,7 @@ import org.web3j.utils.Strings;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -73,6 +74,7 @@ public class RouterServer {
     private RouterConfig routerConfig;
 
     public List<RoutItem> getRouter(RouterInput routerInput, Map<String, BaseContract> contractMaps) {
+        log.info("getRouter:Receive router call:{}", routerInput);
         convertTrxInRouterInput(routerInput);
         RoutNode routNode = routNodeMap.get(routerInput.getFromToken());
         if (ObjectUtil.isNull(routNode)) {
@@ -93,17 +95,21 @@ public class RouterServer {
                 cachedPaths.put(key, paths);
             }
         }
+        log.info("getRouter finish get paths, size:{}", paths.size());
         if (paths.size() == 0) {
             return null;
         }
         List<RoutItem> res = new ArrayList<>();
+        BigDecimal outAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getToDecimal()));
+        BigDecimal inAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getFromDecimal()));
         for (List<StepInfo> path : paths) {
-            RoutItem routItem = getRoutItemByPaths(routerInput, path, contractMaps);
+            RoutItem routItem = getRoutItemByPaths(routerInput, path, contractMaps, inAmountUnit, outAmountUnit);
             if (ObjectUtil.isNull(routItem)) {
                 continue;
             }
             res.add(routItem);
         }
+        log.info("getRouter finish calc result");
         res = res.stream().sorted(Comparator.comparing(RoutItem::getAmountV, (s1, s2) -> {
             return (new BigDecimal(s2)).compareTo(new BigDecimal(s1));
         })).collect(Collectors.toList());
@@ -148,14 +154,14 @@ public class RouterServer {
         return res;
     }
 
-    private RoutItem getRoutItemByPaths(RouterInput routerInput, List<StepInfo> path, Map<String, BaseContract> contractMaps) {
+    private RoutItem getRoutItemByPaths(RouterInput routerInput, List<StepInfo> path, Map<String, BaseContract> contractMaps,
+                                        BigDecimal inAmountUnit, BigDecimal outAmountUnit) {
         RoutItem routItem = new RoutItem();
         List<String> roadForName = routItem.getRoadForName();
         List<String> roadForAddr = routItem.getRoadForAddr();
         List<String> pool = routItem.getPool();
         roadForName.add(routerInput.getFromTokenSymbol());
         roadForAddr.add(routerInput.getFromToken());
-//        pool.add(path.get(0).getPoolType());
         SwapResult swapResult = new SwapResult(routerInput.getIn(), 0);
         String fromToken = routerInput.getFromToken();
         String toToken = "";
@@ -172,12 +178,16 @@ public class RouterServer {
             }
             fromToken = toToken;
         }
+        BigDecimal dAmount = new BigDecimal(swapResult.amount);
+        BigDecimal dIn = new BigDecimal(routerInput.getIn());
         routItem.setAmountV(swapResult.amount);
-        routItem.setAmount(swapResult.amount.toString());
-        BigDecimal fee = new BigDecimal(swapResult.fee).multiply(new BigDecimal(swapResult.amount));
+        String amount = dAmount.divide(outAmountUnit, 6, RoundingMode.UP).toString();
+        routItem.setAmount(amount);
+        BigDecimal fee = new BigDecimal(swapResult.fee).multiply(new BigDecimal(routerInput.getIn()))
+                .divide(inAmountUnit, 6, RoundingMode.UP);
         routItem.setFee(fee.toString());
-        routItem.setInUsd(routerInput.getFromPrice());
-        routItem.setOutUsd(routerInput.getToPrice());
+        routItem.setInUsd(routerInput.getFromPrice().multiply(dIn).divide(inAmountUnit, RoundingMode.UP).toString());
+        routItem.setOutUsd(routerInput.getToPrice().multiply(dAmount).divide(outAmountUnit, RoundingMode.UP).toString());
         return routItem;
     }
 
@@ -357,6 +367,7 @@ public class RouterServer {
     }
 
     public void initRoutNodeMap(Map<String, BaseContract> contractMaps) {
+        log.info("Start initRoutNodeMap");
         this.initBaseTokensMap();
         for (BaseContract baseContract : contractMaps.values()) {
             switch (baseContract.getType()) {

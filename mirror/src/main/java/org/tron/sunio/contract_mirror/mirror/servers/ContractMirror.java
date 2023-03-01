@@ -67,7 +67,7 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
     public void afterPropertiesSet() throws Exception {
         initKafka();
         contractFactoryManager.initFactoryMap(config.getFactoryInfos(), this);
-        log.info("L1 heigth:{}", tronChainHelper.blockNumber());
+        log.info("L1 height:{}", tronChainHelper.blockNumber());
     }
 
     private void initKafka() {

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 @Data
@@ -17,7 +18,7 @@ public class RouterInput {
     private int fromDecimal;
     private int toDecimal;
     private BigInteger in;
-    private String fromPrice;
-    private String toPrice;
+    private BigDecimal fromPrice;
+    private BigDecimal toPrice;
     private boolean isUseBaseTokens;
 }

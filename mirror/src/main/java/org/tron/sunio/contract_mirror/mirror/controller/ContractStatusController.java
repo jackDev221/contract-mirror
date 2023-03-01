@@ -18,6 +18,7 @@ import org.tron.sunio.contract_mirror.mirror.router.RoutItem;
 import org.tron.sunio.contract_mirror.mirror.router.RouterInput;
 import org.tron.sunio.contract_mirror.mirror.servers.ContractMirror;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -80,7 +81,7 @@ public class ContractStatusController {
             }
             String[] prices = contractMirror.getRouterServer().getTokenPrice(fromTokenAddr, toTokenAddr, fromToken, toToken);
             RouterInput routerInput = new RouterInput(fromTokenAddr, toTokenAddr, fromToken, toToken, fromDecimal, toDecimal,
-                    new BigInteger(inAmount), prices[0], prices[1], isUseBaseToken);
+                    new BigInteger(inAmount), new BigDecimal(prices[0]), new BigDecimal(prices[1]), isUseBaseToken);
             List<RoutItem> res = contractMirror.getRouterServer().getRouter(routerInput, contractMirror.getContractHashMap());
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
