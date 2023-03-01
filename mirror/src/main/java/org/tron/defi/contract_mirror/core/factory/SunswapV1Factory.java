@@ -38,12 +38,17 @@ public class SunswapV1Factory extends SynchronizableContract {
     private final Lock wlock = rwlock.writeLock();
     @Setter
     Graph graph;
-    private ConcurrentHashMap<String, Pool> pools = new ConcurrentHashMap<>(20000);
-    private ConcurrentHashMap<String, Token> tokenMap = new ConcurrentHashMap<>(20000);
+    private final ConcurrentHashMap<String, Pool> pools = new ConcurrentHashMap<>(20000);
+    private final ConcurrentHashMap<String, Token> tokenMap = new ConcurrentHashMap<>(20000);
     private List<Token> tokens = new ArrayList<>(20000);
 
     public SunswapV1Factory(String address) {
         super(address);
+    }
+
+    @Override
+    public String getContractType() {
+        return ContractType.SUNSWAP_FACTORY_V1.name();
     }
 
     @Override
@@ -65,11 +70,6 @@ public class SunswapV1Factory extends SynchronizableContract {
         JSONObject info = super.getInfo();
         info.put("poolNum", getTokenCount());
         return info;
-    }
-
-    @Override
-    public String getContractType() {
-        return ContractType.SUNSWAP_FACTORY_V1.name();
     }
 
     @Override
@@ -219,8 +219,8 @@ public class SunswapV1Factory extends SynchronizableContract {
                    : (Token) contractManager.registerContract(new TRC20(tokenAddress));
         } catch (ClassCastException e) {
             // invalid token address
-            log.error(e.getMessage());
-            throw new IllegalArgumentException("INVALID TOKEN ADDRESS " + tokenAddress);
+            log.error("INVALID TOKEN ADDRESS " + tokenAddress + " , error " + e.getMessage());
+            return null;
         }
     }
 
