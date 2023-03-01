@@ -45,6 +45,11 @@ public class SunswapV2Factory extends SynchronizableContract {
     }
 
     @Override
+    public String getContractType() {
+        return ContractType.SUNSWAP_FACTORY_V2.name();
+    }
+
+    @Override
     public ContractAbi loadAbi() {
         return tronContractTrigger.contractAt(SunswapV2FactoryAbi.class, getAddress());
     }
@@ -63,11 +68,6 @@ public class SunswapV2Factory extends SynchronizableContract {
         JSONObject info = super.getInfo();
         info.put("poolNum", getAllPairLen());
         return info;
-    }
-
-    @Override
-    public String getContractType() {
-        return ContractType.SUNSWAP_FACTORY_V2.name();
     }
 
     @Override
@@ -190,7 +190,7 @@ public class SunswapV2Factory extends SynchronizableContract {
             pair.init();
             return pair;
         } catch (ClassCastException e) {
-            log.error(e.getMessage());
+            log.error("INVALID PAIR ADDRESS " + pairAddress + " , error " + e.getMessage());
             throw e;
         }
     }
@@ -278,5 +278,6 @@ public class SunswapV2Factory extends SynchronizableContract {
         node0.addOutEdge(edge0);
         node1.addInEdge(edge0);
         node1.addOutEdge(edge1);
+        log.info("New SunswapV2 " + pair.info());
     }
 }

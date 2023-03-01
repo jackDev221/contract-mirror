@@ -248,7 +248,7 @@ public class SunswapV1Factory extends SynchronizableContract {
         newExchange(tokenAddress, poolAddress);
     }
 
-    private boolean newExchange(String tokenAddress, String exchangeAddress) {
+    private void newExchange(String tokenAddress, String exchangeAddress) {
         Pool pool = getExchangeWithAddress(tokenAddress, exchangeAddress);
         Token token = pool.getTokens().get(1);
         Node node = graph.getNode(tokenAddress);
@@ -270,6 +270,6 @@ public class SunswapV1Factory extends SynchronizableContract {
         } finally {
             wlock.unlock();
         }
-        return true;
+        log.info("New SunswapV1 " + pool.info());
     }
 }
