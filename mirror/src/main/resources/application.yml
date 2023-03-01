@@ -11,13 +11,13 @@ tron:
   mainChain:
     type: mainnet
     fullNodeList:
-      - grpc.trongrid.io:50051
+      - 172.22.8.91:50051
     rpcVersion: 2
     gatewayAddress: TFLtPoEtVJBMcj6kZPrQrwEdM3W3shxsBU
   sideChain:
     type: mainnet
     fullNodeList:
-      - grpc.trongrid.io:50051
+      - 172.22.8.91:50051
     rpcVersion: 2
     gatewayAddress: TRDepx5KoQ8oNbFVZ5sogwUxtdYmATDRgX
     chainId: 413AF23F37DA0D48234FDD43D89931E98E1144481B
