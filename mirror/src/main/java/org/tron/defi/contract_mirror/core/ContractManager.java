@@ -1,5 +1,6 @@
 package org.tron.defi.contract_mirror.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.defi.contract_mirror.common.ContractType;
@@ -16,6 +17,7 @@ import org.tron.defi.contract_mirror.utils.chain.TronContractTrigger;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Component
 public class ContractManager {
     private final ConcurrentHashMap<String, Contract> contracts = new ConcurrentHashMap<>(50000);
@@ -84,6 +86,7 @@ public class ContractManager {
                 node1.addOutEdge(new Edge(node1, node0, pool));
             }
         }
+        log.info("INIT CURVE " + pool.info());
     }
 
     public void initPsm(String address, String polyAddress) {
@@ -101,6 +104,7 @@ public class ContractManager {
         }
         node0.addOutEdge(new Edge(node0, node1, pool));
         node1.addOutEdge(new Edge(node1, node0, pool));
+        log.info("INIT PSM " + pool.info());
     }
 
     public void initSunswapV1(String address) {
@@ -108,6 +112,7 @@ public class ContractManager {
             = (SunswapV1Factory) registerContract(new SunswapV1Factory(address));
         sunswapV1Factory.setGraph(graph);
         sunswapV1Factory.sync();
+        log.info("INIT SunswapV1 Factory " + sunswapV1Factory.info());
     }
 
     public void initSunswapV2(String address) {
@@ -115,10 +120,12 @@ public class ContractManager {
             = (SunswapV2Factory) registerContract(new SunswapV2Factory(address));
         sunswapV2Factory.setGraph(graph);
         sunswapV2Factory.sync();
+        log.info("INIT SunswapV2 Factory " + sunswapV2Factory.info());
     }
 
     public void initTRX() {
         registerContract(TRX.getInstance());
+        log.info("INIT TRX " + TRX.getInstance().info());
     }
 
     public Contract registerContract(Contract contract) {
