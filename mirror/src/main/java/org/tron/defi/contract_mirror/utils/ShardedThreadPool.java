@@ -2,22 +2,26 @@ package org.tron.defi.contract_mirror.utils;
 
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.tron.defi.contract_mirror.config.ServerConfig;
 
 import java.util.ArrayList;
 
+@Slf4j
 public class ShardedThreadPool {
     private final ArrayList<ThreadPoolTaskExecutor> executors;
 
     public ShardedThreadPool(ServerConfig.ThreadPoolConfig threadPoolConfig) {
-        executors = new ArrayList<>(threadPoolConfig.getThreadNum());
-        for (int i = 0; i < threadPoolConfig.getThreadNum(); ++i) {
+        int threadNum = Math.max(1, threadPoolConfig.getThreadNum());
+        executors = new ArrayList<>(threadNum);
+        for (int i = 0; i < threadNum; ++i) {
             ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
             executor.setCorePoolSize(1);
             executor.initialize();
             executors.add(executor);
         }
+        log.info("Initialized shared pool , shard num " + threadNum);
     }
 
     public void execute(ShardTask task) {

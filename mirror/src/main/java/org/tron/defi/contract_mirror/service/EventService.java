@@ -50,12 +50,14 @@ public class EventService {
             eventPool = new ShardedThreadPool(serverConfig.getEventPoolConfig());
         }
         pendingPool = new ThreadPoolTaskExecutor();
-        if (null != serverConfig.getPendingPoolConfig()) {
+        if (null != serverConfig.getPendingPoolConfig() &&
+            serverConfig.getPendingPoolConfig().getThreadNum() > 0) {
             pendingPool.setCorePoolSize(serverConfig.getPendingPoolConfig().getThreadNum());
         } else {
             pendingPool.setCorePoolSize(1);
         }
         pendingPool.initialize();
+        log.info("Initialized pending pool, corePoolSize " + pendingPool.getCorePoolSize());
         for (int i = 0; i < pendingPool.getCorePoolSize(); ++i) {
             pendingPool.execute(new PendingEventConsumer());
         }
@@ -153,6 +155,10 @@ public class EventService {
                                 // taken by other consumer
                                 continue;
                             }
+                            log.info("Processing " +
+                                     messages.size() +
+                                     " pending messages for " +
+                                     poolAddress);
                             // handle messages
                             for (KafkaMessage<ContractLog> message : messages) {
                                 if (!handleEvent(pool, message)) {
@@ -183,6 +189,7 @@ public class EventService {
                     log.error(ex.getMessage());
                 }
                 if (pendingQueue.isEmpty()) {
+                    log.info("Wait pending message...");
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
