@@ -4,9 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.SunswapV2Abi;
 import org.tron.defi.contract_mirror.core.Contract;
+import org.tron.defi.contract_mirror.core.token.ITRC20;
+import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRC20;
-import org.tron.defi.contract_mirror.core.token.Token;
 import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
+import org.tron.defi.contract_mirror.utils.chain.TronContractTrigger;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Type;
@@ -17,10 +19,60 @@ import java.util.Collections;
 import java.util.List;
 
 @Slf4j
-public class SunswapV2Pool extends Pool {
+public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
     public SunswapV2Pool(String address) {
         super(address);
         this.type = PoolType.SUNSWAP_V2;
+    }
+
+    @Override
+    public BigInteger balanceOf(String address) {
+        return getLpToken().balanceOf(address);
+    }
+
+    @Override
+    public BigInteger balanceOfFromChain(String address) {
+        return getLpToken().balanceOfFromChain(address);
+    }
+
+    @Override
+    public BigInteger getTotalSupplyFromChain() {
+        return getLpToken().getTotalSupplyFromChain();
+    }
+
+    @Override
+    public void setBalance(String address, BigInteger balance) {
+        getLpToken().setBalance(address, balance);
+    }
+
+    @Override
+    public void setTotalSupply(BigInteger totalSupply) {
+        getLpToken().setTotalSupply(totalSupply);
+    }
+
+    @Override
+    public BigInteger totalSupply() {
+        return getLpToken().totalSupply();
+    }
+
+    @Override
+    public void transferFrom(String issuer, String from, BigInteger amount) {
+        getLpToken().transferFrom(issuer, from, amount);
+    }
+
+    @Override
+    public int getDecimals() {
+        return ((IToken) getLpToken()).getDecimals();
+    }
+
+    @Override
+    public String getSymbol() {
+        return ((IToken) getLpToken()).getSymbol();
+    }
+
+    @Override
+    public void transfer(String issuer, String to, BigInteger amount) {
+        ((IToken) getLpToken()).transfer(issuer, to, amount);
     }
 
     @Override
@@ -29,15 +81,9 @@ public class SunswapV2Pool extends Pool {
     }
 
     @Override
-    protected void getContractData() {
-        try {
-            TRC20 token0 = (TRC20) getTokens().get(0);
-            TRC20 token1 = (TRC20) getTokens().get(1);
-            token0.setBalance(getAddress(), token0.balanceOfFromChain(getAddress()));
-            token1.setBalance(getAddress(), token1.balanceOfFromChain(getAddress()));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
+    public void setTronContractTrigger(TronContractTrigger tronContractTrigger) {
+        super.setTronContractTrigger(tronContractTrigger);
+        ((Contract) getLpToken()).setTronContractTrigger(tronContractTrigger);
     }
 
     @Override
@@ -54,21 +100,36 @@ public class SunswapV2Pool extends Pool {
         return tronContractTrigger.contractAt(SunswapV2Abi.class, getAddress());
     }
 
-    public Token getToken0() {
+    @Override
+    protected void getContractData() {
+        wlock.lock();
+        try {
+            ITRC20 token0 = (ITRC20) getTokens().get(0);
+            ITRC20 token1 = (ITRC20) getTokens().get(1);
+            token0.setBalance(getAddress(), token0.balanceOfFromChain(getAddress()));
+            token1.setBalance(getAddress(), token1.balanceOfFromChain(getAddress()));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        } finally {
+            wlock.unlock();
+        }
+    }
+
+    public ITRC20 getToken0() {
         if (tokens.size() > 0) {
-            return tokens.get(0);
+            return (ITRC20) tokens.get(0);
         }
         return getTokenFromChain(0);
     }
 
-    public Token getToken1() {
+    public ITRC20 getToken1() {
         if (tokens.size() > 1) {
-            return tokens.get(1);
+            return (ITRC20) tokens.get(1);
         }
         return getTokenFromChain(1);
     }
 
-    private Token getTokenFromChain(int n) {
+    private ITRC20 getTokenFromChain(int n) {
         if (n > 1) {
             throw new IllegalArgumentException("n = " + n);
         }
@@ -80,14 +141,19 @@ public class SunswapV2Pool extends Pool {
             = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return contract != null
-               ? (Token) contract
-               : (Token) contractManager.registerContract(new TRC20(tokenAddress));
+               ? (ITRC20) contract
+               : (ITRC20) contractManager.registerContract(new TRC20(tokenAddress));
     }
 
     private void handleSyncEvent(EventValues eventValues) {
         BigInteger balance0 = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
         BigInteger balance1 = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
-        ((TRC20) getTokens().get(0)).setBalance(getAddress(), balance0);
-        ((TRC20) getTokens().get(1)).setBalance(getAddress(), balance1);
+        wlock.lock();
+        try {
+            ((ITRC20) getTokens().get(0)).setBalance(getAddress(), balance0);
+            ((ITRC20) getTokens().get(1)).setBalance(getAddress(), balance1);
+        } finally {
+            wlock.unlock();
+        }
     }
 }

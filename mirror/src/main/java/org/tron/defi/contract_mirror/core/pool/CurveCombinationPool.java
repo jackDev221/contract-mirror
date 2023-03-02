@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.Curve4Abi;
 import org.tron.defi.contract_mirror.core.Contract;
-import org.tron.defi.contract_mirror.core.token.SSPLiquidityToken;
+import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.core.token.TRC20;
-import org.tron.defi.contract_mirror.core.token.Token;
+import org.tron.defi.contract_mirror.utils.TokenMath;
 import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.Address;
@@ -62,9 +62,9 @@ public class CurveCombinationPool extends Pool {
     @Override
     public void init() {
         initUnderlyingPool();
-        tokens.add(getTokenFromChain(TOKEN_ID));
+        tokens.add((Contract) getTokenFromChain(TOKEN_ID));
         tokens.addAll(underlyingPool.getTokens());
-        Token underlyingLpToken = getTokenFromChain(LP_TOKEN_ID);
+        ITRC20 underlyingLpToken = getTokenFromChain(LP_TOKEN_ID);
         balances = Arrays.asList(BigInteger.ZERO, BigInteger.ZERO);
         if (!underlyingLpToken.equals(underlyingPool.getLpToken())) {
             throw new IllegalArgumentException("UNDERLYING LP_TOKEN MISMATCH");
@@ -76,34 +76,38 @@ public class CurveCombinationPool extends Pool {
 
     @Override
     protected void getContractData() {
-        List<Type> response = abi.invoke(Curve4Abi.Functions.FEE, Collections.emptyList());
-        fee = ((Uint256) response.get(0)).getValue();
-        response = abi.invoke(Curve4Abi.Functions.ADMIN_FEE, Collections.emptyList());
-        adminFee = ((Uint256) response.get(0)).getValue();
+        wlock.lock();
+        try {
+            List<Type> response = abi.invoke(Curve4Abi.Functions.FEE, Collections.emptyList());
+            fee = ((Uint256) response.get(0)).getValue();
+            response = abi.invoke(Curve4Abi.Functions.ADMIN_FEE, Collections.emptyList());
+            adminFee = ((Uint256) response.get(0)).getValue();
 
-        response = abi.invoke(Curve4Abi.Functions.INITIAL_A, Collections.emptyList());
-        initialA = ((Uint256) response.get(0)).getValue();
-        response = abi.invoke(Curve4Abi.Functions.INITIAL_A_TIME, Collections.emptyList());
-        timeInitialA = ((Uint256) response.get(0)).getValue().longValue();
-        response = abi.invoke(Curve4Abi.Functions.FUTURE_A, Collections.emptyList());
-        futureA = ((Uint256) response.get(0)).getValue();
-        response = abi.invoke(Curve4Abi.Functions.FUTURE_A_TIME, Collections.emptyList());
-        timeFutureA = ((Uint256) response.get(0)).getValue().longValue();
+            response = abi.invoke(Curve4Abi.Functions.INITIAL_A, Collections.emptyList());
+            initialA = ((Uint256) response.get(0)).getValue();
+            response = abi.invoke(Curve4Abi.Functions.INITIAL_A_TIME, Collections.emptyList());
+            timeInitialA = ((Uint256) response.get(0)).getValue().longValue();
+            response = abi.invoke(Curve4Abi.Functions.FUTURE_A, Collections.emptyList());
+            futureA = ((Uint256) response.get(0)).getValue();
+            response = abi.invoke(Curve4Abi.Functions.FUTURE_A_TIME, Collections.emptyList());
+            timeFutureA = ((Uint256) response.get(0)).getValue().longValue();
 
-        response = abi.invoke(Curve4Abi.Functions.BASE_VIRTUAL_PRICE, Collections.emptyList());
-        virtualPrice = ((Uint256) response.get(0)).getValue();
-        response = abi.invoke(Curve4Abi.Functions.BASE_CACHE_UPDATED, Collections.emptyList());
-        timeUpdateVirtualPrice = ((Uint256) response.get(0)).getValue().longValue();
+            response = abi.invoke(Curve4Abi.Functions.BASE_VIRTUAL_PRICE, Collections.emptyList());
+            virtualPrice = ((Uint256) response.get(0)).getValue();
+            response = abi.invoke(Curve4Abi.Functions.BASE_CACHE_UPDATED, Collections.emptyList());
+            timeUpdateVirtualPrice = ((Uint256) response.get(0)).getValue().longValue();
 
-        SSPLiquidityToken sspLpToken = (SSPLiquidityToken) getLpToken();
-        sspLpToken.setTotalSupply(sspLpToken.getTotalSupplyFromChain());
+            getLpToken().setTotalSupply(getLpToken().getTotalSupplyFromChain());
 
-        for (int i = 0; i < N_COINS; i++) {
-            response = abi.invoke(Curve4Abi.Functions.BALANCES, Collections.singletonList(i));
-            balances.set(i, ((Uint256) response.get(0)).getValue());
+            for (int i = 0; i < N_COINS; i++) {
+                response = abi.invoke(Curve4Abi.Functions.BALANCES, Collections.singletonList(i));
+                balances.set(i, ((Uint256) response.get(0)).getValue());
 
-            TRC20 token = (TRC20) getTokens().get(i);
-            token.setBalance(getAddress(), token.balanceOfFromChain(getAddress()));
+                ITRC20 token = (ITRC20) getTokens().get(i);
+                token.setBalance(getAddress(), token.balanceOfFromChain(getAddress()));
+            }
+        } finally {
+            wlock.unlock();
         }
     }
 
@@ -153,20 +157,27 @@ public class CurveCombinationPool extends Pool {
     }
 
     private BigInteger getA(long timestamp) {
-        if (timestamp < timeFutureA) {
-            if (futureA.subtract(initialA).compareTo(BigInteger.ZERO) > 0) {
-                return initialA.add(futureA.subtract(initialA)
-                                           .multiply(BigInteger.valueOf(timestamp - timeInitialA))
-                                           .divide(BigInteger.valueOf(timeFutureA - timeInitialA)));
+        rlock.lock();
+        try {
+            if (timestamp < timeFutureA) {
+                if (futureA.subtract(initialA).compareTo(BigInteger.ZERO) > 0) {
+                    return initialA.add(futureA.subtract(initialA)
+                                               .multiply(BigInteger.valueOf(timestamp -
+                                                                            timeInitialA))
+                                               .divide(BigInteger.valueOf(timeFutureA -
+                                                                          timeInitialA)));
+                } else {
+                    return initialA.subtract(initialA.subtract(futureA)
+                                                     .multiply(BigInteger.valueOf(timestamp -
+                                                                                  timeInitialA))
+                                                     .divide(BigInteger.valueOf(timeFutureA -
+                                                                                timeInitialA)));
+                }
             } else {
-                return initialA.subtract(initialA.subtract(futureA)
-                                                 .multiply(BigInteger.valueOf(timestamp -
-                                                                              timeInitialA))
-                                                 .divide(BigInteger.valueOf(timeFutureA -
-                                                                            timeInitialA)));
+                return futureA;
             }
-        } else {
-            return futureA;
+        } finally {
+            rlock.unlock();
         }
     }
 
@@ -204,17 +215,17 @@ public class CurveCombinationPool extends Pool {
         throw new IllegalStateException();
     }
 
-    private Token getLpTokenFromChain() {
+    private ITRC20 getLpTokenFromChain() {
         List<Type> response = abi.invoke(Curve4Abi.Functions.LP_TOKEN, Collections.emptyList());
         String tokenAddress
             = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return contract != null
-               ? (Token) contract
-               : (Token) contractManager.registerContract(new SSPLiquidityToken(tokenAddress));
+               ? (ITRC20) contract
+               : (ITRC20) contractManager.registerContract(new TRC20(tokenAddress));
     }
 
-    private Token getTokenFromChain(int n) throws RuntimeException {
+    private ITRC20 getTokenFromChain(int n) throws RuntimeException {
         if (n > 1) {
             throw new IndexOutOfBoundsException("n = " + n);
         }
@@ -223,8 +234,8 @@ public class CurveCombinationPool extends Pool {
             = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return contract != null
-               ? (Token) contract
-               : (Token) contractManager.registerContract(new TRC20(tokenAddress));
+               ? (ITRC20) contract
+               : (ITRC20) contractManager.registerContract(new TRC20(tokenAddress));
     }
 
     private BigInteger getVirtualPrice(long timestamp, boolean update) {
@@ -240,13 +251,18 @@ public class CurveCombinationPool extends Pool {
     }
 
     private List<BigInteger> getXP(BigInteger price) {
-        List<BigInteger> xp = new ArrayList<>(balances.size());
-        for (int i = 0; i < balances.size(); i++) {
-            xp.add(balances.get(i)
-                           .multiply(i != N_COINS - 1 ? RATES.get(i) : price)
-                           .divide(PRECISION));
+        rlock.lock();
+        try {
+            List<BigInteger> xp = new ArrayList<>(balances.size());
+            for (int i = 0; i < balances.size(); i++) {
+                xp.add(balances.get(i)
+                               .multiply(i != N_COINS - 1 ? RATES.get(i) : price)
+                               .divide(PRECISION));
+            }
+            return xp;
+        } finally {
+            rlock.unlock();
         }
-        return xp;
     }
 
     private BigInteger getY(int i, int j, BigInteger x, List<BigInteger> xp, BigInteger A) {
@@ -303,40 +319,56 @@ public class CurveCombinationPool extends Pool {
         if (amounts.size() != N_COINS || amounts.size() != fees.size()) {
             throw new IllegalArgumentException("SIZE NOT MATCH");
         }
-        SSPLiquidityToken sspLpToken = (SSPLiquidityToken) getLpToken();
-        if (sspLpToken.totalSupply().compareTo(BigInteger.ZERO) > 0) {
-            for (int i = 0; i < N_COINS; i++) {
-                TRC20 token = (TRC20) getTokens().get(i);
-                BigInteger balanceN = token.balanceOf(getAddress());
-                token.setBalance(getAddress(), balanceN.add(amounts.get(i)));
+        wlock.lock();
+        try {
+            if (getLpToken().totalSupply().compareTo(BigInteger.ZERO) > 0) {
+                for (int i = 0; i < N_COINS; i++) {
+                    ITRC20 token = (ITRC20) getTokens().get(i);
+                    TokenMath.increaseBalance(token, getAddress(), amounts.get(i));
 
-                BigInteger adminFeeN = fees.get(i).multiply(adminFee).divide(FEE_DENOMINATOR);
-                balances.set(i, balances.get(i).add(amounts.get(i)).subtract(adminFeeN));
+                    BigInteger adminFeeN = fees.get(i).multiply(adminFee).divide(FEE_DENOMINATOR);
+                    balances.set(i,
+                                 TokenMath.safeSubtract(TokenMath.safeAdd(balances.get(i),
+                                                                          amounts.get(i)),
+                                                        adminFeeN));
+                }
+            } else {
+                for (int i = 0; i < N_COINS; i++) {
+                    ITRC20 token = (ITRC20) getTokens().get(i);
+                    TokenMath.increaseBalance(token, getAddress(), amounts.get(i));
+                    balances.set(i, TokenMath.safeAdd(balances.get(i), amounts.get(i)));
+                }
             }
-        } else {
-            for (int i = 0; i < N_COINS; i++) {
-                TRC20 token = (TRC20) getTokens().get(i);
-                BigInteger balanceN = token.balanceOf(getAddress());
-                token.setBalance(getAddress(), balanceN.add(amounts.get(i)));
-
-                balances.set(i, balances.get(i).add(amounts.get(i)));
-            }
+            BigInteger amountMint = TokenMath.safeSubtract(tokenSupply, getLpToken().totalSupply());
+            TokenMath.increaseBalance(getLpToken(), provider, amountMint);
+            getLpToken().setTotalSupply(tokenSupply);
+        } finally {
+            wlock.unlock();
         }
-        BigInteger amountMint = tokenSupply.subtract(sspLpToken.totalSupply());
-        sspLpToken.setBalance(provider, sspLpToken.balanceOf(provider).add(amountMint));
-        sspLpToken.setTotalSupply(tokenSupply);
     }
 
     private void handleNewFeeEvent(EventValues eventValues) {
-        fee = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
-        adminFee = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
+        wlock.lock();
+        try {
+            fee = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
+            adminFee = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
+        } finally {
+            wlock.unlock();
+        }
     }
 
     private void handleRampAEvent(EventValues eventValues) {
-        initialA = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
-        futureA = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
-        timeInitialA = ((Uint256) eventValues.getNonIndexedValues().get(2)).getValue().longValue();
-        timeFutureA = ((Uint256) eventValues.getNonIndexedValues().get(3)).getValue().longValue();
+        wlock.lock();
+        try {
+            initialA = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
+            futureA = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
+            timeInitialA = ((Uint256) eventValues.getNonIndexedValues().get(2)).getValue()
+                                                                               .longValue();
+            timeFutureA = ((Uint256) eventValues.getNonIndexedValues().get(3)).getValue()
+                                                                              .longValue();
+        } finally {
+            wlock.unlock();
+        }
     }
 
     private void handleRemoveLiquidity(EventValues eventValues) {
@@ -352,16 +384,19 @@ public class CurveCombinationPool extends Pool {
         if (amounts.size() != N_COINS) {
             throw new IllegalArgumentException("SIZE NOT MATCH");
         }
-        for (int i = 0; i < N_COINS; i++) {
-            TRC20 token = (TRC20) getTokens().get(i);
-            token.setBalance(getAddress(), token.balanceOf(getAddress()).subtract(amounts.get(i)));
-
-            balances.set(i, balances.get(i).subtract(amounts.get(i)));
+        wlock.lock();
+        try {
+            for (int i = 0; i < N_COINS; i++) {
+                ITRC20 token = (ITRC20) getTokens().get(i);
+                TokenMath.decreaseBalance(token, getAddress(), amounts.get(i));
+                balances.set(i, TokenMath.safeSubtract(balances.get(i), amounts.get(i)));
+            }
+            BigInteger amountBurn = TokenMath.safeSubtract(getLpToken().totalSupply(), tokenSupply);
+            TokenMath.decreaseBalance(getLpToken(), provider, amountBurn);
+            getLpToken().setTotalSupply(tokenSupply);
+        } finally {
+            wlock.unlock();
         }
-        SSPLiquidityToken sspLpToken = (SSPLiquidityToken) getLpToken();
-        BigInteger amountBurn = sspLpToken.totalSupply().subtract(tokenSupply);
-        sspLpToken.setBalance(provider, sspLpToken.balanceOf(provider).subtract(amountBurn));
-        sspLpToken.setTotalSupply(tokenSupply);
     }
 
     private void handleRemoveLiquidityImbalance(EventValues eventValues) {
@@ -383,26 +418,36 @@ public class CurveCombinationPool extends Pool {
         if (amounts.size() != N_COINS || amounts.size() != fees.size()) {
             throw new IllegalArgumentException("SIZE NOT MATCH");
         }
+        wlock.lock();
+        try {
+            for (int i = 0; i < N_COINS; i++) {
+                ITRC20 token = (ITRC20) getTokens().get(i);
+                TokenMath.decreaseBalance(token, getAddress(), amounts.get(i));
 
-        for (int i = 0; i < N_COINS; i++) {
-            TRC20 token = (TRC20) getTokens().get(i);
-            BigInteger balanceN = token.balanceOf(getAddress());
-            token.setBalance(getAddress(), balanceN.subtract(amounts.get(i)));
-
-            BigInteger adminFeeN = fees.get(i).multiply(adminFee).divide(FEE_DENOMINATOR);
-            balances.set(i, balances.get(i).subtract(amounts.get(i)).subtract(adminFeeN));
+                BigInteger adminFeeN = fees.get(i).multiply(adminFee).divide(FEE_DENOMINATOR);
+                balances.set(i,
+                             TokenMath.safeSubtract(balances.get(i),
+                                                    TokenMath.safeAdd(amounts.get(i), adminFeeN)));
+            }
+            BigInteger amountBurn = TokenMath.safeSubtract(getLpToken().totalSupply(), tokenSupply);
+            TokenMath.decreaseBalance(getLpToken(), provider, amountBurn);
+            getLpToken().setTotalSupply(tokenSupply);
+        } finally {
+            wlock.unlock();
         }
-        SSPLiquidityToken sspLpToken = (SSPLiquidityToken) getLpToken();
-        BigInteger amountBurn = sspLpToken.totalSupply().subtract(tokenSupply);
-        sspLpToken.setBalance(provider, sspLpToken.balanceOf(provider).subtract(amountBurn));
-        sspLpToken.setTotalSupply(tokenSupply);
     }
 
     private void handleStopRampAEvent(EventValues eventValues) {
-        initialA = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
-        timeInitialA = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue().longValue();
-        futureA = initialA;
-        timeFutureA = timeInitialA;
+        wlock.unlock();
+        try {
+            initialA = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
+            timeInitialA = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue()
+                                                                               .longValue();
+            futureA = initialA;
+            timeFutureA = timeInitialA;
+        } finally {
+            wlock.unlock();
+        }
     }
 
     private void handleTokenExchangeEvent(EventValues eventValues) {
@@ -410,11 +455,6 @@ public class CurveCombinationPool extends Pool {
         BigInteger amountSold = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
         int buyId = ((Int128) eventValues.getNonIndexedValues().get(2)).getValue().intValue();
         BigInteger amountBuy = ((Uint256) eventValues.getNonIndexedValues().get(3)).getValue();
-
-        TRC20 tokenSold = (TRC20) getTokens().get(soldId);
-        TRC20 tokenBuy = (TRC20) getTokens().get(buyId);
-        tokenSold.setBalance(getAddress(), tokenSold.balanceOf(getAddress()).add(amountSold));
-        tokenBuy.setBalance(getAddress(), tokenBuy.balanceOf(getAddress()).subtract(amountBuy));
 
         // dyFee = dy * fee / FEE_DENOMINATOR
         // amountBuy = (dy - dyFee) * PRECISION / RATES[buyId]
@@ -425,9 +465,21 @@ public class CurveCombinationPool extends Pool {
                                          .multiply(adminFee)
                                          .divide(FEE_DENOMINATOR)
                                          .divide(FEE_DENOMINATOR.subtract(fee));
-        // It's easy when amountSold is equal to token received by contract
-        balances.set(soldId, balances.get(soldId).add(amountSold));
-        balances.set(buyId, balances.get(buyId).subtract(amountBuy).subtract(dyAdminFee));
+        wlock.lock();
+        try {
+            ITRC20 tokenSold = (ITRC20) getTokens().get(soldId);
+            ITRC20 tokenBuy = (ITRC20) getTokens().get(buyId);
+            TokenMath.increaseBalance(tokenSold, getAddress(), amountSold);
+            TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
+
+            // It's easy when amountSold is equal to token received by contract
+            balances.set(soldId, TokenMath.safeAdd(balances.get(soldId), amountSold));
+            balances.set(buyId,
+                         TokenMath.safeSubtract(balances.get(buyId),
+                                                TokenMath.safeAdd(amountBuy, dyAdminFee)));
+        } finally {
+            wlock.unlock();
+        }
     }
 
     private void handleTokenExchangeUnderlyingEvent(EventValues eventValues, long eventTime) {
@@ -440,10 +492,8 @@ public class CurveCombinationPool extends Pool {
             return;
         }
 
-        TRC20 tokenSold = (TRC20) getTokens().get(soldId);
-        TRC20 tokenBuy = (TRC20) getTokens().get(buyId);
-        tokenSold.setBalance(getAddress(), tokenSold.balanceOf(getAddress()).add(amountSold));
-        tokenBuy.setBalance(getAddress(), tokenBuy.balanceOf(getAddress()).subtract(amountBuy));
+        ITRC20 tokenSold = (ITRC20) getTokens().get(soldId);
+        ITRC20 tokenBuy = (ITRC20) getTokens().get(buyId);
 
         int i = soldId == TOKEN_ID ? TOKEN_ID : LP_TOKEN_ID;
         int j = buyId == TOKEN_ID ? TOKEN_ID : LP_TOKEN_ID;
@@ -458,9 +508,18 @@ public class CurveCombinationPool extends Pool {
                                          .divide(FEE_DENOMINATOR)
                                          .divide(FEE_DENOMINATOR.subtract(fee));
         if (soldId != FEE_INDEX) {
-            // It's easy when amountSold is equal to token received by contract
-            balances.set(i, balances.get(i).add(amountSold));
-            balances.set(j, balances.get(j).subtract(amountBuy).subtract(dyAdminFee));
+            wlock.lock();
+            try {
+                TokenMath.increaseBalance(tokenSold, getAddress(), amountSold);
+                TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
+                // It's easy when amountSold is equal to token received by contract
+                balances.set(i, TokenMath.safeAdd(balances.get(i), amountSold));
+                balances.set(j,
+                             TokenMath.safeSubtract(balances.get(j),
+                                                    TokenMath.safeAdd(amountBuy, dyAdminFee)));
+            } finally {
+                wlock.unlock();
+            }
             return;
         }
         // dyAdminFee =
@@ -469,8 +528,7 @@ public class CurveCombinationPool extends Pool {
                                   .multiply(FEE_DENOMINATOR)
                                   .multiply(RATES.get(j))
                                   .divide(fee)
-                                  .divide(adminFee)
-                                  .divide(PRECISION);
+                                  .divide(adminFee).divide(PRECISION);
         // dy = xp[j] - y - 1
         BigInteger price = getVirtualPrice(eventTime, true);
         List<BigInteger> xp = getXP(price);
@@ -480,8 +538,18 @@ public class CurveCombinationPool extends Pool {
         BigInteger x = getY(buyId, soldId, y, xp, A);
         // x = dx * RATES[i] / PRECISION + xp[i] where RATES[i] = price
         BigInteger dx = x.subtract(xp.get(i)).multiply(PRECISION).divide(price);
-        balances.set(i, balances.get(i).add(dx));
-        balances.set(j, balances.get(j).subtract(amountBuy).subtract(dyAdminFee));
+        assert dx.compareTo(BigInteger.ZERO) >= 0;
+        wlock.lock();
+        try {
+            TokenMath.increaseBalance(tokenSold, getAddress(), amountSold);
+            TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
+            balances.set(i, TokenMath.safeAdd(balances.get(i), dx));
+            balances.set(j,
+                         TokenMath.safeSubtract(balances.get(j),
+                                                TokenMath.safeAdd(amountBuy, dyAdminFee)));
+        } finally {
+            wlock.unlock();
+        }
     }
 
     private void initUnderlyingPool() throws RuntimeException {
@@ -490,7 +558,9 @@ public class CurveCombinationPool extends Pool {
             = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         underlyingPool = (CurvePool) contractManager.getContract(poolAddress);
         if (null == underlyingPool) {
-            throw new RuntimeException(getType().name() + " " + getAddress() +
+            throw new RuntimeException(getType().name() +
+                                       " " +
+                                       getAddress() +
                                        " should initialize after " +
                                        poolAddress);
         }

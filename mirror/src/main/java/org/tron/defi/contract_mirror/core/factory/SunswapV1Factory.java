@@ -13,9 +13,10 @@ import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.graph.Node;
 import org.tron.defi.contract_mirror.core.pool.Pool;
 import org.tron.defi.contract_mirror.core.pool.SunswapV1Pool;
+import org.tron.defi.contract_mirror.core.token.ITRC20;
+import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRC20;
 import org.tron.defi.contract_mirror.core.token.TRX;
-import org.tron.defi.contract_mirror.core.token.Token;
 import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.Address;
@@ -36,11 +37,11 @@ public class SunswapV1Factory extends SynchronizableContract {
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
     private final Lock rlock = rwlock.readLock();
     private final Lock wlock = rwlock.writeLock();
+    private final ConcurrentHashMap<String, Pool> pools = new ConcurrentHashMap<>(20000);
+    private final ConcurrentHashMap<String, ITRC20> tokenMap = new ConcurrentHashMap<>(20000);
     @Setter
     Graph graph;
-    private final ConcurrentHashMap<String, Pool> pools = new ConcurrentHashMap<>(20000);
-    private final ConcurrentHashMap<String, Token> tokenMap = new ConcurrentHashMap<>(20000);
-    private List<Token> tokens = new ArrayList<>(20000);
+    private List<Contract> tokens = new ArrayList<>(20000);
 
     public SunswapV1Factory(String address) {
         super(address);
@@ -82,7 +83,7 @@ public class SunswapV1Factory extends SynchronizableContract {
         int currentCount = tokens.size();
         try {
             for (int i = tokenCount; i < currentCount; i++) {
-                Token token = tokens.get(i);
+                Contract token = tokens.get(i);
                 Node trxNode = graph.getNode(TRX.getInstance().getAddress());
                 Node node = graph.getNode(token.getAddress());
                 Pool pool = getExchange(token.getAddress());
@@ -129,12 +130,12 @@ public class SunswapV1Factory extends SynchronizableContract {
         return tokens.isEmpty() ? getTokenCountFromChain() : tokens.size();
     }
 
-    public Token getTokenWithId(int id) {
-        Token token = null;
+    public IToken getTokenWithId(int id) {
+        IToken token = null;
         rlock.lock();
         try {
             if (tokens.size() > id) {
-                token = tokens.get(id);
+                token = (IToken) tokens.get(id);
             }
         } finally {
             rlock.unlock();
@@ -156,21 +157,22 @@ public class SunswapV1Factory extends SynchronizableContract {
         }
         // TODO: parallelism optimization
         for (int i = minId; i < maxId; i++) {
-            Token token = getTokenWithId(i);
+            IToken token = getTokenWithId(i);
             if (null == token) {
                 log.error("INVALID V1: " + i);
                 handleInvalidToken();
                 continue; // invalid token
             }
-            if (token.getAddress().equals(TRX.getInstance().getAddress())) {
+            Contract contract = (Contract) token;
+            if (contract.getAddress().equals(TRX.getInstance().getAddress())) {
                 wlock.lock();
-                tokens.add(token);
+                tokens.add(contract);
                 wlock.unlock();
                 continue;
             }
             try {
-                Pool pool = getExchange(token.getAddress());
-                newExchange(token.getAddress(), pool.getAddress());
+                Pool pool = getExchange(contract.getAddress());
+                newExchange(contract.getAddress(), pool.getAddress());
             } catch (RuntimeException e) {
                 // TODO: is there any way to distinguish network error and invalid data ?
                 log.error("INVALID V1: " + i);
@@ -194,8 +196,8 @@ public class SunswapV1Factory extends SynchronizableContract {
             Pool pool = contract != null
                         ? (Pool) contract
                         : (Pool) contractManager.registerContract(new SunswapV1Pool(poolAddress));
-            Token token = getTokenWithAddress(tokenAddress);
-            pool.setTokens(new ArrayList<>(Arrays.asList(TRX.getInstance(), token)));
+            IToken token = getTokenWithAddress(tokenAddress);
+            pool.setTokens(new ArrayList<>(Arrays.asList(TRX.getInstance(), (Contract) token)));
             pool.sync();
             return pool;
         } catch (ClassCastException e) {
@@ -211,12 +213,12 @@ public class SunswapV1Factory extends SynchronizableContract {
         return ((Uint256) response.get(0)).getValue().intValue();
     }
 
-    private Token getTokenWithAddress(String tokenAddress) {
+    private IToken getTokenWithAddress(String tokenAddress) {
         try {
             Contract contract = contractManager.getContract(tokenAddress);
             return null != contract
-                   ? (Token) contract
-                   : (Token) contractManager.registerContract(new TRC20(tokenAddress));
+                   ? (IToken) contract
+                   : (IToken) contractManager.registerContract(new TRC20(tokenAddress));
         } catch (ClassCastException e) {
             // invalid token address
             log.error("INVALID TOKEN ADDRESS " + tokenAddress + " , error " + e.getMessage());
@@ -224,7 +226,7 @@ public class SunswapV1Factory extends SynchronizableContract {
         }
     }
 
-    private Token getTokenWithIdFromChain(int id) {
+    private IToken getTokenWithIdFromChain(int id) {
         List<Type> response = abi.invoke(SunswapV1FactoryAbi.Functions.GET_TOKEN_WITH_ID,
                                          Collections.singletonList(id));
         String tokenAddress
@@ -250,7 +252,7 @@ public class SunswapV1Factory extends SynchronizableContract {
 
     private void newExchange(String tokenAddress, String exchangeAddress) {
         Pool pool = getExchangeWithAddress(tokenAddress, exchangeAddress);
-        Token token = pool.getTokens().get(1);
+        Contract token = pool.getTokens().get(1);
         Node node = graph.getNode(tokenAddress);
         if (null == node) {
             node = graph.addNode(new Node(token));
@@ -266,7 +268,7 @@ public class SunswapV1Factory extends SynchronizableContract {
         wlock.lock();
         try {
             tokens.add(token);
-            tokenMap.put(tokenAddress, token);
+            tokenMap.put(tokenAddress, (ITRC20) token);
         } finally {
             wlock.unlock();
         }

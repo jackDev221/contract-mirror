@@ -1,7 +1,7 @@
 package org.tron.defi.contract_mirror.core.graph;
 
 import lombok.Getter;
-import org.tron.defi.contract_mirror.core.token.Token;
+import org.tron.defi.contract_mirror.core.Contract;
 
 import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
@@ -15,24 +15,10 @@ public class Node {
     private final ArrayList<Edge> inEdges = new ArrayList<>();
     private final ArrayList<Edge> outEdges = new ArrayList<>();
     @Getter
-    private final Token token;
+    private final Contract token;
 
-    public Node(Token token) {
+    public Node(Contract token) {
         this.token = token;
-    }
-
-    public int inDegree() {
-        rlock.lock();
-        int degree = inEdges.size();
-        rlock.unlock();
-        return degree;
-    }
-
-    public int outDegree() {
-        rlock.lock();
-        int degree = outEdges.size();
-        rlock.unlock();
-        return degree;
     }
 
     public void addInEdge(Edge edge) {
@@ -48,20 +34,6 @@ public class Node {
         }
     }
 
-    public void deleteInEdge(Edge edge) {
-        wlock.lock();
-        try {
-            for (Edge e : outEdges) {
-                if (edge.isEqual(e)) {
-                    outEdges.remove(e);
-                    return;
-                }
-            }
-        } finally {
-            wlock.unlock();
-        }
-    }
-
     public void addOutEdge(Edge edge) {
         wlock.lock();
         try {
@@ -71,6 +43,20 @@ public class Node {
                 }
             }
             outEdges.add(edge);
+        } finally {
+            wlock.unlock();
+        }
+    }
+
+    public void deleteInEdge(Edge edge) {
+        wlock.lock();
+        try {
+            for (Edge e : outEdges) {
+                if (edge.isEqual(e)) {
+                    outEdges.remove(e);
+                    return;
+                }
+            }
         } finally {
             wlock.unlock();
         }
@@ -110,5 +96,19 @@ public class Node {
             rlock.unlock();
         }
         return currentEdges;
+    }
+
+    public int inDegree() {
+        rlock.lock();
+        int degree = inEdges.size();
+        rlock.unlock();
+        return degree;
+    }
+
+    public int outDegree() {
+        rlock.lock();
+        int degree = outEdges.size();
+        rlock.unlock();
+        return degree;
     }
 }

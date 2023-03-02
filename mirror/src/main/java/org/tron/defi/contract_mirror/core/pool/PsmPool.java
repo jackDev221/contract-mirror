@@ -4,8 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.PsmAbi;
 import org.tron.defi.contract_mirror.core.Contract;
+import org.tron.defi.contract_mirror.core.token.ITRC20;
+import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRC20;
-import org.tron.defi.contract_mirror.core.token.Token;
+import org.tron.defi.contract_mirror.utils.TokenMath;
 import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.Address;
@@ -32,11 +34,11 @@ public class PsmPool extends Pool {
 
     @Override
     public void init() {
-        tokens.add(getUsddFromChain());
-        tokens.add(getGemFromChain());
+        tokens.add((Contract) getUsddFromChain());
+        tokens.add((Contract) getGemFromChain());
         gemToUsddDecimalFactor = BigInteger.valueOf(10)
-                                           .pow(tokens.get(0).getDecimals() -
-                                                tokens.get(1).getDecimals());
+                                           .pow(((IToken) tokens.get(0)).getDecimals() -
+                                                ((IToken) tokens.get(1)).getDecimals());
         updateName();
         initPoly();
         sync();
@@ -44,9 +46,14 @@ public class PsmPool extends Pool {
 
     @Override
     protected void getContractData() {
-        info = poly.getInfo(getAddress());
-        ((TRC20) getGem()).setBalance(getAddress(), info.getBalanceGem());
-        ((TRC20) getUsdd()).setBalance(getAddress(), info.getBalanceUsdd());
+        wlock.lock();
+        try {
+            info = poly.getInfo(getAddress());
+            getGem().setBalance(getAddress(), info.getBalanceGem());
+            getUsdd().setBalance(getAddress(), info.getBalanceUsdd());
+        } finally {
+            wlock.unlock();
+        }
     }
 
     @Override
@@ -74,17 +81,17 @@ public class PsmPool extends Pool {
         return tronContractTrigger.contractAt(PsmAbi.class, getAddress());
     }
 
-    public Token getGem() {
+    public ITRC20 getGem() {
         final int gemId = 1;
-        return tokens.get(gemId);
+        return (ITRC20) tokens.get(gemId);
     }
 
-    public Token getUsdd() {
+    public ITRC20 getUsdd() {
         final int usddId = 0;
-        return tokens.get(usddId);
+        return (ITRC20) tokens.get(usddId);
     }
 
-    private Token getGemFromChain() {
+    private ITRC20 getGemFromChain() {
         List<Type> response = abi.invoke(PsmAbi.Functions.GEM_JOIN, Collections.emptyList());
         String gemJoinAddress
             = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
@@ -93,48 +100,57 @@ public class PsmPool extends Pool {
             = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return null != contract
-               ? (Token) contract
-               : (Token) contractManager.registerContract(new TRC20(tokenAddress));
+               ? (ITRC20) contract
+               : (ITRC20) contractManager.registerContract(new TRC20(tokenAddress));
     }
 
-    private Token getUsddFromChain() {
+    private ITRC20 getUsddFromChain() {
         List<Type> response = abi.invoke(PsmAbi.Functions.USDD, Collections.emptyList());
         String tokenAddress
             = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
         Contract contract = contractManager.getContract(tokenAddress);
         return null != contract
-               ? (Token) contract
-               : (Token) contractManager.registerContract(new TRC20(tokenAddress));
+               ? (ITRC20) contract
+               : (ITRC20) contractManager.registerContract(new TRC20(tokenAddress));
     }
 
     private void handleBuyGemEvent(EventValues eventValues) {
         BigInteger gemAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
         BigInteger fee = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
         BigInteger usddAmount = gemAmount.multiply(gemToUsddDecimalFactor).add(fee);
+        wlock.lock();
+        try {
+            info.setBalanceGem(TokenMath.safeSubtract(info.getBalanceGem(), gemAmount));
+            info.setBalanceUsdd(TokenMath.safeAdd(info.getBalanceUsdd(), usddAmount));
+            getGem().setBalance(getAddress(), info.getBalanceGem());
+            getUsdd().setBalance(getAddress(), info.getBalanceUsdd());
 
-        info.setBalanceGem(info.getBalanceGem().subtract(gemAmount));
-        info.setBalanceUsdd(info.getBalanceUsdd().add(usddAmount));
-        ((TRC20) getGem()).setBalance(getAddress(), info.getBalanceGem());
-        ((TRC20) getUsdd()).setBalance(getAddress(), info.getBalanceUsdd());
-
-        info.setAmountUsddToGem(info.getAmountUsddToGem().add(usddAmount));
+            info.setAmountUsddToGem(TokenMath.safeAdd(info.getAmountUsddToGem(), usddAmount));
+        } finally {
+            wlock.unlock();
+        }
     }
 
     private void handleFileEvent(EventValues eventValues) {
         String what = new String(((Bytes32) eventValues.getIndexedValues().get(0)).getValue());
         BigInteger value = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
-        switch (what) {
-            case "tin":
-                info.setFeeToUsdd(value);
-                break;
-            case "tout":
-                info.setFeeToGem(value);
-                break;
-            case "quota":
-                // do nothing
-                break;
-            default:
-                throw new IllegalArgumentException("UNKNOWN PARAMETER " + what);
+        wlock.lock();
+        try {
+            switch (what) {
+                case "tin":
+                    info.setFeeToUsdd(value);
+                    break;
+                case "tout":
+                    info.setFeeToGem(value);
+                    break;
+                case "quota":
+                    // do nothing
+                    break;
+                default:
+                    throw new IllegalArgumentException("UNKNOWN PARAMETER " + what);
+            }
+        } finally {
+            wlock.unlock();
         }
     }
 
@@ -142,14 +158,18 @@ public class PsmPool extends Pool {
         BigInteger gemAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
         BigInteger fee = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
         BigInteger usddAmount = gemAmount.multiply(gemToUsddDecimalFactor).subtract(fee);
+        wlock.lock();
+        try {
+            info.setBalanceGem(TokenMath.safeAdd(info.getBalanceGem(), gemAmount));
+            info.setBalanceUsdd(TokenMath.safeSubtract(info.getBalanceUsdd(), usddAmount));
+            getGem().setBalance(getAddress(), info.getBalanceGem());
+            getUsdd().setBalance(getAddress(), info.getBalanceUsdd());
 
-        info.setBalanceGem(info.getBalanceGem().add(gemAmount));
-        info.setBalanceUsdd(info.getBalanceUsdd().subtract(usddAmount));
-        ((TRC20) getGem()).setBalance(getAddress(), info.getBalanceGem());
-        ((TRC20) getUsdd()).setBalance(getAddress(), info.getBalanceUsdd());
-
-        info.setAmountGemToUsdd(info.getAmountGemToUsdd().add(gemAmount));
-        info.setAmountTotalToUsdd(info.getAmountTotalToUsdd().add(gemAmount));
+            info.setAmountGemToUsdd(TokenMath.safeAdd(info.getAmountGemToUsdd(), gemAmount));
+            info.setAmountTotalToUsdd(TokenMath.safeAdd(info.getAmountTotalToUsdd(), gemAmount));
+        } finally {
+            wlock.unlock();
+        }
     }
 
     private void initPoly() {

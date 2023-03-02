@@ -3,21 +3,29 @@ package org.tron.defi.contract_mirror.core.pool;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
+import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.SynchronizableContract;
-import org.tron.defi.contract_mirror.core.token.Token;
+import org.tron.defi.contract_mirror.core.token.ITRC20;
+import org.tron.defi.contract_mirror.core.token.IToken;
 
 import java.util.ArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 public abstract class Pool extends SynchronizableContract {
+    protected final ReadWriteLock rwlock = new ReentrantReadWriteLock();
+    protected final Lock rlock = rwlock.readLock();
+    protected final Lock wlock = rwlock.writeLock();
     @Getter
     protected String name;
     @Getter
     protected PoolType type = PoolType.UNKNOWN;
     @Getter
-    protected ArrayList<Token> tokens = new ArrayList<>();
+    protected ArrayList<Contract> tokens = new ArrayList<>();
     @Getter
-    protected Token lpToken;
+    protected ITRC20 lpToken;
 
     Pool(String address) {
         super(address);
@@ -33,11 +41,10 @@ public abstract class Pool extends SynchronizableContract {
         JSONObject info = super.getInfo();
         info.put("name", getName());
         info.put("tokens",
-                 new JSONArray(getTokens().stream()
-                                          .map(x -> x.getInfo())
+                 new JSONArray(getTokens().stream().map(Contract::getInfo)
                                           .collect(Collectors.toList())));
         if (null != getLpToken()) {
-            info.put("lp_token", getLpToken().getInfo());
+            info.put("lp_token", ((Contract) getLpToken()).getInfo());
         }
         return info;
     }
@@ -64,7 +71,7 @@ public abstract class Pool extends SynchronizableContract {
 
     protected abstract void getContractData();
 
-    public void setTokens(ArrayList<Token> tokens) {
+    public void setTokens(ArrayList<Contract> tokens) {
         if (tokens.size() <= 1) {
             throw new IllegalArgumentException("at least 2 tokens");
         }
@@ -75,7 +82,7 @@ public abstract class Pool extends SynchronizableContract {
     protected void updateName() {
         name = type.name().concat(" ");
         for (int i = 0; i < tokens.size(); i++) {
-            name = name.concat(tokens.get(i).getSymbol());
+            name = name.concat(((IToken) tokens.get(i)).getSymbol());
             if (i < tokens.size() - 1) {
                 name = name.concat("-");
             }

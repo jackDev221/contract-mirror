@@ -12,7 +12,6 @@ import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.graph.Node;
 import org.tron.defi.contract_mirror.core.pool.*;
 import org.tron.defi.contract_mirror.core.token.TRX;
-import org.tron.defi.contract_mirror.core.token.Token;
 import org.tron.defi.contract_mirror.utils.chain.TronContractTrigger;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,13 +70,13 @@ public class ContractManager {
         pool.init();
         int n = pool.getTokens().size();
         for (int i = 0; i < n - 1; i++) {
-            Token token0 = pool.getTokens().get(i);
+            Contract token0 = pool.getTokens().get(i);
             Node node0 = graph.getNode(token0.getAddress());
             if (null == node0) {
                 node0 = graph.addNode(new Node(token0));
             }
             for (int j = i + 1; j < n; j++) {
-                Token token1 = pool.getTokens().get(j);
+                Contract token1 = pool.getTokens().get(j);
                 Node node1 = graph.getNode(token1.getAddress());
                 if (null == node1) {
                     node1 = graph.addNode(new Node(token1));
@@ -92,12 +91,12 @@ public class ContractManager {
     public void initPsm(String address, String polyAddress) {
         PsmPool pool = (PsmPool) registerContract(new PsmPool(address, polyAddress));
         pool.init();
-        Token usdd = pool.getUsdd();
+        Contract usdd = (Contract) pool.getUsdd();
         Node node0 = graph.getNode(usdd.getAddress());
         if (null == node0) {
             node0 = graph.addNode(new Node(usdd));
         }
-        Token gem = pool.getGem();
+        Contract gem = (Contract) pool.getGem();
         Node node1 = graph.getNode(gem.getAddress());
         if (null == node1) {
             node1 = graph.addNode(new Node(gem));

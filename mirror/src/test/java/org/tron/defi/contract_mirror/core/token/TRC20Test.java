@@ -21,16 +21,16 @@ public class TRC20Test {
     private ContractManager contractManager;
 
     @Test
-    public void getSymbolTest() {
+    public void getDecimalsTest() {
         String usdtAddress = tokenConfigList.getTokens().get("USDT");
-        Token usdd = (Token) contractManager.registerContract(new TRC20(usdtAddress));
-        Assertions.assertEquals("USDT", usdd.getSymbol());
+        TRC20 usdd = (TRC20) contractManager.registerContract(new TRC20(usdtAddress));
+        Assertions.assertEquals(6, usdd.getDecimals());
     }
 
     @Test
-    public void getDecimalsTest() {
+    public void getSymbolTest() {
         String usdtAddress = tokenConfigList.getTokens().get("USDT");
-        Token usdd = (Token) contractManager.registerContract(new TRC20(usdtAddress));
-        Assertions.assertEquals(6, usdd.getDecimals());
+        TRC20 usdd = (TRC20) contractManager.registerContract(new TRC20(usdtAddress));
+        Assertions.assertEquals("USDT", usdd.getSymbol());
     }
 }

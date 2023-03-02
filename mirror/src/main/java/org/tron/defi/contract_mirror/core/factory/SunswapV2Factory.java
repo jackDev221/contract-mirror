@@ -13,7 +13,6 @@ import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.graph.Node;
 import org.tron.defi.contract_mirror.core.pool.Pool;
 import org.tron.defi.contract_mirror.core.pool.SunswapV2Pool;
-import org.tron.defi.contract_mirror.core.token.Token;
 import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.Address;
@@ -83,8 +82,8 @@ public class SunswapV2Factory extends SynchronizableContract {
                 if (null == pair) {
                     continue;
                 }
-                Token token0 = pair.getTokens().get(0);
-                Token token1 = pair.getTokens().get(1);
+                Contract token0 = pair.getTokens().get(0);
+                Contract token1 = pair.getTokens().get(1);
                 Node node0 = graph.getNode(token0.getAddress());
                 Node node1 = graph.getNode(token1.getAddress());
                 Edge edge0 = new Edge(node0, node1, pair);
@@ -184,8 +183,8 @@ public class SunswapV2Factory extends SynchronizableContract {
                                  :
                                  (SunswapV2Pool) contractManager.registerContract(new SunswapV2Pool(
                                      pairAddress));
-            Token token0 = pair.getToken0();
-            Token token1 = pair.getToken1();
+            Contract token0 = (Contract) pair.getToken0();
+            Contract token1 = (Contract) pair.getToken1();
             pair.setTokens(new ArrayList<>(Arrays.asList(token0, token1)));
             pair.init();
             return pair;
@@ -230,8 +229,8 @@ public class SunswapV2Factory extends SynchronizableContract {
 
     private void newPair(String poolAddress, int newLength) {
         Pool pair = getPairByAddress(poolAddress);
-        Token token0 = pair.getTokens().get(0);
-        Token token1 = pair.getTokens().get(1);
+        Contract token0 = pair.getTokens().get(0);
+        Contract token1 = pair.getTokens().get(1);
         if (token0 == null || token1 == null) {
             // this shouldn't happen
             throw new IllegalStateException();
