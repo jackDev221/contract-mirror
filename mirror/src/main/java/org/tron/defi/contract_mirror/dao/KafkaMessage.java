@@ -9,8 +9,8 @@ public class KafkaMessage<T> {
     private long timestamp;
     private T message;
 
-    public KafkaMessage(ConsumerRecord<Long, String> record) {
+    public KafkaMessage(ConsumerRecord<Long, String> record, Class<T> clz) {
         timestamp = record.timestamp();
-        message = JSON.parseObject(record.value(), (Class<T>) message.getClass());
+        message = JSON.parseObject(record.value(), clz);
     }
 }

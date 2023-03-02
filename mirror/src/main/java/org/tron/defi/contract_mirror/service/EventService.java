@@ -197,10 +197,6 @@ public class EventService {
     private class EventListenThread extends Thread {
         private final AtomicBoolean listen = new AtomicBoolean(true);
 
-        public void cancel() {
-            listen.set(false);
-        }
-
         public void run() {
             while (listen.get()) {
                 try {
@@ -213,26 +209,31 @@ public class EventService {
                         Iterator<ConsumerRecord<Long, String>> iterator
                             = consumerRecords.iterator();
                         while (iterator.hasNext()) {
-                            KafkaMessage<ContractLog> message = new KafkaMessage<>(iterator.next());
+                            KafkaMessage<ContractLog> message = new KafkaMessage<>(iterator.next(),
+                                                                                   ContractLog.class);
                             String address = message.getMessage().getContractAddress();
                             Contract contract = contractManager.getContract(address);
-                            if (null == contract || !(contract instanceof Pool)) {
+                            if (null == contract || !(contract instanceof SynchronizableContract)) {
                                 continue;
                             }
-                            Pool pool = (Pool) contract;
-                            if (!pendingQueue.containsKey(pool.getAddress()) &&
-                                pool.isEventAccept()) {
-                                emitEventTask(pool, message);
+                            SynchronizableContract contractToSync
+                                = (SynchronizableContract) contract;
+                            if (!pendingQueue.containsKey(contractToSync.getAddress()) &&
+                                contractToSync.isEventAccept()) {
+                                emitEventTask(contractToSync, message);
                             } else {
-                                emitPendingTask(pool, message);
+                                emitPendingTask(contractToSync, message);
                             }
                         }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
                     log.error(e.getMessage());
                 }
             }
+        }
+
+        public void cancel() {
+            listen.set(false);
         }
     }
 
