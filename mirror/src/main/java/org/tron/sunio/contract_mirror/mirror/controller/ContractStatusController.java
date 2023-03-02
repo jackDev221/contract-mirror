@@ -85,6 +85,7 @@ public class ContractStatusController {
             List<RoutItem> res = contractMirror.getRouterServer().getRouter(routerInput, contractMirror.getContractHashMap());
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
+            e.printStackTrace();
             return RestResultGenerator.genErrorWithMessage(e.getMessage());
         }
     }

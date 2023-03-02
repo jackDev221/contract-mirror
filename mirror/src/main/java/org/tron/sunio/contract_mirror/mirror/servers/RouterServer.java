@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.jaxb.core.util.Which;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.tron.sunio.contract_mirror.mirror.config.RouterConfig;
@@ -22,6 +23,7 @@ import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.price.TokenPrice;
+import org.tron.sunio.contract_mirror.mirror.router.CacheNode;
 import org.tron.sunio.contract_mirror.mirror.router.StepInfo;
 import org.tron.sunio.contract_mirror.mirror.router.RoutItem;
 import org.tron.sunio.contract_mirror.mirror.router.RoutNode;
@@ -342,21 +344,22 @@ public class RouterServer {
 
     private boolean getPathsNoRecurrence(RoutNode routNode, String destToken, List<List<StepInfo>> paths, int maxHops,
                                          boolean isUseBaseTokens) {
-        int[] leftNodes = new int[maxHops];
-        int currentStep = 0;
-        leftNodes[currentStep] = routNode.getSubNodes().size();
-        List<RoutNode> cacheNodes = new ArrayList<>();
-        cacheNodes.addAll(cacheNodes.size(), routNode.getSubNodes());
+        List<CacheNode> cacheNodes = new ArrayList<>();
+        cacheNodes.add(new CacheNode(routNode));
         List<StepInfo> path = new ArrayList<>();
         while (cacheNodes.size() > 0) {
-            while(leftNodes[currentStep] <= 0){
-                //本轮次消耗完了
-                currentStep--;
-                path.remove(currentStep);
+            RoutNode node = cacheNodes.get(cacheNodes.size() - 1).getSubNode();
+            while (ObjectUtil.isNull(node)) {
+                if (path.size() > 0){
+                    path.remove(path.size() - 1);
+                }
+                cacheNodes.remove(cacheNodes.size() - 1);
+                if (cacheNodes.size() > 0) {
+                    node = cacheNodes.get(cacheNodes.size() - 1).getSubNode();
+                }else {
+                    return true;
+                }
             }
-            RoutNode node = cacheNodes.remove(cacheNodes.size() - 1);
-            leftNodes[currentStep] -= 1;
-
             boolean isNodeAvailing = (isPathContainToken(path, node.getContract(), node.getAddress())
                     || !isTokenUsable(isUseBaseTokens, node.getAddress()));
             RoutNode nextRoot = this.routNodeMap.get(node.getAddress());
@@ -370,27 +373,22 @@ public class RouterServer {
                     .poolType(node.getPoolType())
                     .build();
             path.add(stepInfo);
-            currentStep++;
             if (node.getAddress().equalsIgnoreCase(destToken)) {
                 List<StepInfo> pathCopy = path.stream().collect(Collectors.toList());
                 paths.add(pathCopy);
-                path.remove(currentStep - 1);
-                currentStep--;
+                path.remove(path.size() - 1);
                 continue;
             }
 
-            if (currentStep >= maxHops) {
-                // 路线过长
-                path.remove(currentStep - 1);
-                currentStep--;
+            if (path.size() >= maxHops) {
+                path.remove(path.size() - 1);
                 continue;
             }
-            leftNodes[currentStep] = nextRoot.getSubNodes().size();
-            cacheNodes.addAll(cacheNodes.size(), nextRoot.getSubNodes());
+            cacheNodes.add(new CacheNode(nextRoot));
         }
+
         return true;
     }
-
 
     private boolean getPaths(RoutNode routNode, String destToken, List<StepInfo> path, List<List<StepInfo>> paths, int maxHops,
                              boolean isUseBaseTokens) {
@@ -450,10 +448,7 @@ public class RouterServer {
                     break;
             }
         }
-
         showRoads();
-
-
     }
 
     private void showRoads() {

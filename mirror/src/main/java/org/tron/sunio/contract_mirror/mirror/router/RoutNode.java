@@ -9,12 +9,11 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class RoutNode {
-    String address;
-    String symbol;
-    String contract;
-    String poolType;
-    List<RoutNode> subNodes;
-
+    private String address;
+    private String symbol;
+    private String contract;
+    private String poolType;
+    private List<RoutNode> subNodes;
 
     public RoutNode(String address, String symbol, String contract, String poolType) {
         this.address = address;
@@ -22,6 +21,5 @@ public class RoutNode {
         this.contract = contract;
         this.poolType = poolType;
         subNodes = new ArrayList<>();
-
     }
 }
