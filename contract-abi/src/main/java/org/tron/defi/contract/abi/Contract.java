@@ -1,5 +1,6 @@
 package org.tron.defi.contract.abi;
 
+import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.log.ContractLog;
 import org.web3j.abi.DefaultFunctionEncoder;
 import org.web3j.abi.DefaultFunctionReturnDecoder;
@@ -10,6 +11,7 @@ import org.web3j.abi.datatypes.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 public abstract class Contract implements ContractAbi {
     private final ContractTrigger trigger;
     private final String address;
@@ -39,11 +41,11 @@ public abstract class Contract implements ContractAbi {
                                                                                   prototype.getIndexedParams()
                                                                                            .get(i)));
             }
-            List<Type> nonIndexedValues = DefaultFunctionReturnDecoder.decode(message.getRawData()
-                                                                                     .getData(),
+            List<Type> nonIndexedValues = DefaultFunctionReturnDecoder.decode(message.getRawData().getData(),
                                                                               prototype.getNonIndexedParams());
             return new EventValues(indexedValues, nonIndexedValues);
         } catch (IndexOutOfBoundsException | NullPointerException e) {
+            log.error(message.toString());
             return null;
         }
     }

@@ -3,7 +3,7 @@
 
 #server
 server:
-  syncPeriod: 86400
+  syncPeriod: 86400000
 
 #tron
 tron:
