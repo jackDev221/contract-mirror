@@ -77,25 +77,28 @@ public class RouterServer {
         log.info("getRouter:Receive router call:{}", routerInput);
         convertTrxInRouterInput(routerInput);
         RoutNode routNode = routNodeMap.get(routerInput.getFromToken());
-        if (ObjectUtil.isNull(routNode)) {
-            initRoutNodeMap(contractMaps);
-            routNode = routNodeMap.get(routerInput.getFromToken());
-        }
+
+//        if (ObjectUtil.isNull(routNode)) {
+//            initRoutNodeMap(contractMaps);
+//            routNode = routNodeMap.get(routerInput.getFromToken());
+//        }
         if (ObjectUtil.isNull(routNode)) {
             return null;
         }
         List<List<StepInfo>> paths;
-
+        long t0 = System.currentTimeMillis();
         String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
         paths = cachedPaths.get(key);
         if (ObjectUtil.isNull(paths)) {
             paths = new ArrayList<>();
-            getPaths(routNode, routerInput.getToToken(), new ArrayList<>(), paths, routerConfig.getMaxHops(), routerInput.isUseBaseTokens());
+            getPathsNoRecurrence(routNode, routerInput.getToToken(), paths, routerConfig.getMaxHops(), routerInput.isUseBaseTokens());
+//            getPaths(routNode, routerInput.getToToken(), new ArrayList<>(), paths, routerConfig.getMaxHops(), routerInput.isUseBaseTokens());
             if (paths.size() != 0) {
                 cachedPaths.put(key, paths);
             }
         }
-        log.info("getRouter finish get paths, size:{}", paths.size());
+        long t1 = System.currentTimeMillis();
+        log.info("getRouter finish get paths, size:{}, cast:{}", paths.size(), t1 - t0);
         if (paths.size() == 0) {
             return null;
         }
@@ -109,13 +112,16 @@ public class RouterServer {
             }
             res.add(routItem);
         }
-        log.info("getRouter finish calc result");
+        long t2 = System.currentTimeMillis();
+        log.info("getRouter finish calc result, cast {}", t2 - t1);
         res = res.stream().sorted(Comparator.comparing(RoutItem::getAmountV, (s1, s2) -> {
             return (new BigDecimal(s2)).compareTo(new BigDecimal(s1));
         })).collect(Collectors.toList());
         if (res.size() > routerConfig.getMaxResultSize()) {
             res = res.subList(0, routerConfig.getMaxResultSize() - 1);
         }
+        long t3 = System.currentTimeMillis();
+        log.info("getRouter finish sorted result, cast {}", t3 - t2);
         return res;
     }
 
@@ -333,6 +339,58 @@ public class RouterServer {
         }
         return false;
     }
+
+    private boolean getPathsNoRecurrence(RoutNode routNode, String destToken, List<List<StepInfo>> paths, int maxHops,
+                                         boolean isUseBaseTokens) {
+        int[] leftNodes = new int[maxHops];
+        int currentStep = 0;
+        leftNodes[currentStep] = routNode.getSubNodes().size();
+        List<RoutNode> cacheNodes = new ArrayList<>();
+        cacheNodes.addAll(cacheNodes.size(), routNode.getSubNodes());
+        List<StepInfo> path = new ArrayList<>();
+        while (cacheNodes.size() > 0) {
+            while(leftNodes[currentStep] <= 0){
+                //本轮次消耗完了
+                currentStep--;
+                path.remove(currentStep);
+            }
+            RoutNode node = cacheNodes.remove(cacheNodes.size() - 1);
+            leftNodes[currentStep] -= 1;
+
+            boolean isNodeAvailing = (isPathContainToken(path, node.getContract(), node.getAddress())
+                    || !isTokenUsable(isUseBaseTokens, node.getAddress()));
+            RoutNode nextRoot = this.routNodeMap.get(node.getAddress());
+            if (ObjectUtil.isNull(nextRoot) || isNodeAvailing) {
+                continue;
+            }
+            StepInfo stepInfo = StepInfo.builder()
+                    .contract(node.getContract())
+                    .tokenAddress(node.getAddress())
+                    .tokenName(node.getSymbol())
+                    .poolType(node.getPoolType())
+                    .build();
+            path.add(stepInfo);
+            currentStep++;
+            if (node.getAddress().equalsIgnoreCase(destToken)) {
+                List<StepInfo> pathCopy = path.stream().collect(Collectors.toList());
+                paths.add(pathCopy);
+                path.remove(currentStep - 1);
+                currentStep--;
+                continue;
+            }
+
+            if (currentStep >= maxHops) {
+                // 路线过长
+                path.remove(currentStep - 1);
+                currentStep--;
+                continue;
+            }
+            leftNodes[currentStep] = nextRoot.getSubNodes().size();
+            cacheNodes.addAll(cacheNodes.size(), nextRoot.getSubNodes());
+        }
+        return true;
+    }
+
 
     private boolean getPaths(RoutNode routNode, String destToken, List<StepInfo> path, List<List<StepInfo>> paths, int maxHops,
                              boolean isUseBaseTokens) {
