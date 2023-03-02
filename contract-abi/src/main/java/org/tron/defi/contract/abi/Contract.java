@@ -45,7 +45,6 @@ public abstract class Contract implements ContractAbi {
                                                                               prototype.getNonIndexedParams());
             return new EventValues(indexedValues, nonIndexedValues);
         } catch (IndexOutOfBoundsException | NullPointerException e) {
-            log.error(message.toString());
             return null;
         }
     }
