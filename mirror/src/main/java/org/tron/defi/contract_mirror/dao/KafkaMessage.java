@@ -6,8 +6,13 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 @Data
 public class KafkaMessage<T> {
-    private long timestamp;
-    private T message;
+    private final long timestamp;
+    private final T message;
+
+    public KafkaMessage(T message) {
+        this.message = message;
+        timestamp = System.currentTimeMillis();
+    }
 
     public KafkaMessage(ConsumerRecord<Long, String> record, Class<T> clz) {
         timestamp = record.timestamp();

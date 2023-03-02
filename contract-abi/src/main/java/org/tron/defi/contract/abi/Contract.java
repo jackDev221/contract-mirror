@@ -5,6 +5,7 @@ import org.tron.defi.contract.log.ContractLog;
 import org.web3j.abi.DefaultFunctionEncoder;
 import org.web3j.abi.DefaultFunctionReturnDecoder;
 import org.web3j.abi.EventValues;
+import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 
@@ -37,9 +38,9 @@ public abstract class Contract implements ContractAbi {
             }
             List<Type> indexedValues = new ArrayList<>();
             for (int i = 1; i < topics.length; i++) {
+                TypeReference<Type> valueType = prototype.getIndexedParams().get(i - 1);
                 indexedValues.add(DefaultFunctionReturnDecoder.decodeIndexedValue(topics[i],
-                                                                                  prototype.getIndexedParams()
-                                                                                           .get(i)));
+                                                                                  valueType));
             }
             List<Type> nonIndexedValues = DefaultFunctionReturnDecoder.decode(message.getRawData().getData(),
                                                                               prototype.getNonIndexedParams());
