@@ -4,9 +4,9 @@ import org.tron.defi.contract.log.ContractLog;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
 
 public interface Synchronizable {
-    Boolean isReady();
+    boolean isEventAccept();
 
-    Boolean isEventAccept();
+    boolean isReady();
 
     void sync();
 

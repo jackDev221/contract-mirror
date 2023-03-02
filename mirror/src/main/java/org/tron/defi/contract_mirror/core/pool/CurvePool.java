@@ -66,6 +66,18 @@ public class CurvePool extends Pool {
     }
 
     @Override
+    public boolean isReady() {
+        if (!isEventAccept()) {
+            return false;
+        }
+        if (ready) {
+            return true;
+        }
+        ready = System.currentTimeMillis() > timestamp2;
+        return ready;
+    }
+
+    @Override
     public void init() {
         int n = getN();
         tokens.ensureCapacity(n);

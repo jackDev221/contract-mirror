@@ -32,6 +32,11 @@ public abstract class Pool extends SynchronizableContract {
     }
 
     @Override
+    public boolean isReady() {
+        return isEventAccept();
+    }
+
+    @Override
     public String getContractType() {
         return getType().name();
     }
@@ -47,16 +52,6 @@ public abstract class Pool extends SynchronizableContract {
             info.put("lp_token", ((Contract) getLpToken()).getInfo());
         }
         return info;
-    }
-
-    @Override
-    public Boolean isReady() {
-        return null;
-    }
-
-    @Override
-    public Boolean isEventAccept() {
-        return null;
     }
 
     @Override

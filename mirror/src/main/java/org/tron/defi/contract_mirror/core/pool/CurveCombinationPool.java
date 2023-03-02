@@ -53,6 +53,18 @@ public class CurveCombinationPool extends Pool {
     }
 
     @Override
+    public boolean isReady() {
+        if (!isEventAccept()) {
+            return false;
+        }
+        if (ready) {
+            return true;
+        }
+        ready = System.currentTimeMillis() > timestamp2;
+        return ready;
+    }
+
+    @Override
     public JSONObject getInfo() {
         JSONObject info = super.getInfo();
         info.put("base_pool", underlyingPool.getInfo());
@@ -528,7 +540,8 @@ public class CurveCombinationPool extends Pool {
                                   .multiply(FEE_DENOMINATOR)
                                   .multiply(RATES.get(j))
                                   .divide(fee)
-                                  .divide(adminFee).divide(PRECISION);
+                                  .divide(adminFee)
+                                  .divide(PRECISION);
         // dy = xp[j] - y - 1
         BigInteger price = getVirtualPrice(eventTime, true);
         List<BigInteger> xp = getXP(price);

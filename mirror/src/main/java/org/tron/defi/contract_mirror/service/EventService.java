@@ -209,7 +209,9 @@ public class EventService {
                         Iterator<ConsumerRecord<Long, String>> iterator
                             = consumerRecords.iterator();
                         while (iterator.hasNext()) {
-                            KafkaMessage<ContractLog> message = new KafkaMessage<>(iterator.next(),
+                            ConsumerRecord<Long, String> record = iterator.next();
+                            log.debug(record.value());
+                            KafkaMessage<ContractLog> message = new KafkaMessage<>(record,
                                                                                    ContractLog.class);
                             String address = message.getMessage().getContractAddress();
                             Contract contract = contractManager.getContract(address);

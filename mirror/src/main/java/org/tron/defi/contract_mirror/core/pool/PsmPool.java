@@ -33,6 +33,18 @@ public class PsmPool extends Pool {
     }
 
     @Override
+    public boolean isReady() {
+        if (!isEventAccept()) {
+            return false;
+        }
+        if (ready) {
+            return true;
+        }
+        ready = System.currentTimeMillis() > timestamp2;
+        return ready;
+    }
+
+    @Override
     public void init() {
         tokens.add((Contract) getUsddFromChain());
         tokens.add((Contract) getGemFromChain());

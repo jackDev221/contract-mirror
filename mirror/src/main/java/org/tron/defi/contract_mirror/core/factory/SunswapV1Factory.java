@@ -74,6 +74,11 @@ public class SunswapV1Factory extends SynchronizableContract {
     }
 
     @Override
+    public boolean isReady() {
+        return isEventAccept();
+    }
+
+    @Override
     public void sync() {
         timestamp0 = System.currentTimeMillis();
         int tokenCount = getTokenCountFromChain();
