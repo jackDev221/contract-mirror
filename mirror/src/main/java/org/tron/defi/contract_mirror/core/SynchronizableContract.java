@@ -3,6 +3,7 @@ package org.tron.defi.contract_mirror.core;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.EventPrototype;
 import org.tron.defi.contract.log.ContractLog;
+import org.tron.defi.contract_mirror.dao.BlockInfo;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
 import org.web3j.abi.EventValues;
 
@@ -11,8 +12,8 @@ public abstract class SynchronizableContract extends Contract implements Synchro
     protected long timestamp0 = 0;
     protected long timestamp1 = 0;
     protected long timestamp2 = 0;
-    protected long lastBlockNumber = 0;
-    protected long lastEventTimestamp = 0;
+    protected BlockInfo lastBlock;
+    protected long lastEventTimestamp;
     protected boolean ready = false;
 
     public SynchronizableContract(String address) {
@@ -43,8 +44,12 @@ public abstract class SynchronizableContract extends Contract implements Synchro
         } else if (contractLog.getTimeStamp() < timestamp1) {
             throw new IllegalStateException();
         }
-        if (contractLog.getBlockNumber() < lastBlockNumber ||
-            contractLog.getTimeStamp() < lastEventTimestamp) {
+        BlockInfo blockInfo = new BlockInfo(contractLog.getBlockNumber(),
+                                            contractLog.getBlockHash());
+        if (contractLog.isRemoved() ||
+            contractLog.getTimeStamp() < lastEventTimestamp ||
+            (null != lastBlock &&
+             (blockInfo.isEarlier(lastBlock) || blockInfo.isConflict(lastBlock)))) {
             // handle chain switch
             throw new IllegalStateException();
         }
@@ -54,12 +59,14 @@ public abstract class SynchronizableContract extends Contract implements Synchro
             handleEvent(prototype.getName(), eventValues, contractLog.getTimeStamp());
             log.info("Processed message " + contractLog);
         } catch (NullPointerException npe) {
+            npe.printStackTrace();
             log.warn("Unsupported event: " + contractLog);
         } catch (RuntimeException e) {
+            e.printStackTrace();
             log.error(e.getMessage());
             throw new IllegalStateException();
         }
-        lastBlockNumber = contractLog.getBlockNumber();
+        lastBlock = blockInfo;
         lastEventTimestamp = contractLog.getTimeStamp();
     }
 
