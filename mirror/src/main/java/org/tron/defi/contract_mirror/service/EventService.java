@@ -3,6 +3,7 @@ package org.tron.defi.contract_mirror.service;
 import com.alibaba.fastjson.JSON;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import org.tron.defi.contract_mirror.utils.kafka.FallbackRebalanceListener;
 import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -208,9 +210,10 @@ public class EventService {
                         if (0 == consumerRecords.count()) {
                             continue;
                         }
-                        while (consumerRecords.iterator().hasNext()) {
-                            KafkaMessage<ContractLog> message
-                                = new KafkaMessage<>(consumerRecords.iterator().next());
+                        Iterator<ConsumerRecord<Long, String>> iterator
+                            = consumerRecords.iterator();
+                        while (iterator.hasNext()) {
+                            KafkaMessage<ContractLog> message = new KafkaMessage<>(iterator.next());
                             String address = message.getMessage().getContractAddress();
                             Contract contract = contractManager.getContract(address);
                             if (null == contract || !(contract instanceof Pool)) {
@@ -226,6 +229,7 @@ public class EventService {
                         }
                     }
                 } catch (Exception e) {
+                    e.printStackTrace();
                     log.error(e.getMessage());
                 }
             }

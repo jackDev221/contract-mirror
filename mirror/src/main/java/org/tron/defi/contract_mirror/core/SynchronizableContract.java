@@ -63,6 +63,7 @@ public abstract class SynchronizableContract extends Contract implements Synchro
         }
         lastBlockNumber = contractLog.getBlockNumber();
         lastEventTimestamp = contractLog.getTimeStamp();
+        log.info("Processed message " + kafkaMessage);
     }
 
     protected abstract void handleEvent(String eventName, EventValues eventValues, long eventTime);
