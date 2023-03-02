@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 @Getter
 public class EventPrototype {
+    private static final String HEX_PREFIX = "0x";
     private final String name;
     private final List<TypeReference<Type>> indexedParams = new ArrayList<>();
     private final List<TypeReference<Type>> nonIndexedParams = new ArrayList<>();
@@ -43,7 +44,7 @@ public class EventPrototype {
                                      .map(parameter -> parameter.getType())
                                      .collect(Collectors.joining(",")) +
                        ")";
-        signature = EventEncoder.buildEventSignature(rawSignature);
+        signature = EventEncoder.buildEventSignature(rawSignature).substring(HEX_PREFIX.length());
     }
 
     @Getter

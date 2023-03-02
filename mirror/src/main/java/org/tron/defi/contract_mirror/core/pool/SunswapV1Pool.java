@@ -79,24 +79,6 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     }
 
     @Override
-    public void setTronContractTrigger(TronContractTrigger tronContractTrigger) {
-        super.setTronContractTrigger(tronContractTrigger);
-        ((Contract) getLpToken()).setTronContractTrigger(tronContractTrigger);
-    }
-
-    @Override
-    protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
-        if (eventName.equals("Snapshot")) {
-            handleSnapshotEvent(eventValues);
-        }
-    }
-
-    @Override
-    protected ContractAbi loadAbi() {
-        return tronContractTrigger.contractAt(SunswapV1Abi.class, getAddress());
-    }
-
-    @Override
     protected void getContractData() {
         wlock.lock();
         try {
@@ -109,6 +91,26 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
         } finally {
             wlock.unlock();
         }
+    }
+
+    @Override
+    protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
+        if (eventName.equals("Snapshot")) {
+            handleSnapshotEvent(eventValues);
+        } else {
+            log.warn("Ignore event " + eventName);
+        }
+    }
+
+    @Override
+    protected ContractAbi loadAbi() {
+        return tronContractTrigger.contractAt(SunswapV1Abi.class, getAddress());
+    }
+
+    @Override
+    public void setTronContractTrigger(TronContractTrigger tronContractTrigger) {
+        super.setTronContractTrigger(tronContractTrigger);
+        ((Contract) getLpToken()).setTronContractTrigger(tronContractTrigger);
     }
 
     private void handleSnapshotEvent(EventValues eventValues) {
