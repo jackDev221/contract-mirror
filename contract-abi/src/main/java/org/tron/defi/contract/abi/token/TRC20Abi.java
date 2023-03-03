@@ -47,8 +47,8 @@ public class TRC20Abi extends Contract {
     }
 
     public enum Events implements IEvent {
-        APPROVAL("Approval", "address indexed, address indexed, uint"),
-        TRANSFER("Transfer", "address indexed, address indexed, uint256");
+        APPROVAL("Approval", "address indexed,address indexed,uint256"),
+        TRANSFER("Transfer", "address indexed,address indexed,uint256");
         private static final Map<String, Events> signatureMap = new HashMap<>();
 
         static {
