@@ -114,7 +114,7 @@ public class RouterServer {
                 return (new BigDecimal(s2)).compareTo(new BigDecimal(s1));
             })).collect(Collectors.toList());
             if (res.size() > routerConfig.getMaxResultSize()) {
-                res = res.subList(0, routerConfig.getMaxResultSize() - 1);
+                res = res.subList(0, routerConfig.getMaxResultSize());
             }
             long t3 = System.currentTimeMillis();
             log.info("getRouter finish sorted result, cast {}", t3 - t2);
