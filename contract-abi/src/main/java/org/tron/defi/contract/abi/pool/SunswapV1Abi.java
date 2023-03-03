@@ -12,13 +12,21 @@ public class SunswapV1Abi extends Contract {
     }
 
     @Override
-    public FunctionPrototype getFunction(String signature) {
-        return Functions.getBySignature(signature).getPrototype();
+    public EventPrototype getEvent(String signature) {
+        try {
+            return Events.getBySignature(signature).getPrototype();
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     @Override
-    public EventPrototype getEvent(String signature) {
-        return Events.getBySignature(signature).getPrototype();
+    public FunctionPrototype getFunction(String signature) {
+        try {
+            return Functions.getBySignature(signature).getPrototype();
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     public enum Functions implements IFunction {

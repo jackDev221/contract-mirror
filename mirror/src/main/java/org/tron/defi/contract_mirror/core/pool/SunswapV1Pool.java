@@ -117,28 +117,20 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     public EventValues decodeEvent(ContractLog log) {
-        try {
-            EventValues eventValues = abi.decodeEvent(log);
-            if (null != eventValues) {
-                return eventValues;
-            }
-            return ((Contract) getLpToken()).decodeEvent(log);
-        } catch (NullPointerException e) {
-            return null;
+        EventValues eventValues = abi.decodeEvent(log);
+        if (null != eventValues) {
+            return eventValues;
         }
+        return ((Contract) getLpToken()).decodeEvent(log);
     }
 
     @Override
     public EventPrototype getEvent(String signature) {
-        try {
-            EventPrototype prototype = abi.getEvent(signature);
-            if (null != prototype) {
-                return prototype;
-            }
-            return ((Contract) getLpToken()).getEvent(signature);
-        } catch (NullPointerException e) {
-            return null;
+        EventPrototype prototype = abi.getEvent(signature);
+        if (null != prototype) {
+            return prototype;
         }
+        return ((Contract) getLpToken()).getEvent(signature);
     }
 
     @Override

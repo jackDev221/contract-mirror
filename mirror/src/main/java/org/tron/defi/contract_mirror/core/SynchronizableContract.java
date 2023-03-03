@@ -1,5 +1,6 @@
 package org.tron.defi.contract_mirror.core;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.EventPrototype;
 import org.tron.defi.contract.log.ContractLog;
@@ -9,10 +10,15 @@ import org.web3j.abi.EventValues;
 
 @Slf4j
 public abstract class SynchronizableContract extends Contract implements Synchronizable {
+    @Getter
     protected long timestamp0 = 0;
+    @Getter
     protected long timestamp1 = 0;
+    @Getter
     protected long timestamp2 = 0;
+    @Getter
     protected BlockInfo lastBlock;
+    @Getter
     protected long lastEventTimestamp;
     protected boolean ready = false;
 
@@ -53,19 +59,20 @@ public abstract class SynchronizableContract extends Contract implements Synchro
             // handle chain switch
             throw new IllegalStateException();
         }
-        try {
-            EventPrototype prototype = getEvent(contractLog.getRawData().getTopics()[0]);
-            log.info("On " + prototype.getRawSignature() + " event");
-            EventValues eventValues = decodeEvent(contractLog);
-            handleEvent(prototype.getName(), eventValues, contractLog.getTimeStamp());
-            log.debug("Processed event " + contractLog);
-        } catch (NullPointerException npe) {
-            npe.printStackTrace();
+        EventPrototype prototype = getEvent(contractLog.getRawData().getTopics()[0]);
+        if (null == prototype) {
             log.warn("Unsupported event: " + contractLog);
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            log.error("Failed event: " + contractLog);
-            throw new IllegalStateException();
+        } else {
+            try {
+                log.info("On " + prototype.getRawSignature() + " event");
+                EventValues eventValues = decodeEvent(contractLog);
+                handleEvent(prototype.getName(), eventValues, contractLog.getTimeStamp());
+                log.debug("Processed event " + contractLog);
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+                log.error("Failed event: " + contractLog);
+                throw new IllegalStateException();
+            }
         }
         lastBlock = blockInfo;
         lastEventTimestamp = contractLog.getTimeStamp();

@@ -30,24 +30,24 @@ public abstract class Contract implements ContractAbi {
 
     @Override
     public EventValues decodeEvent(ContractLog message) {
-        try {
-            String[] topics = message.getRawData().getTopics();
-            EventPrototype prototype = getEvent(topics[0]);
-            if (topics.length - 1 != prototype.getIndexedParams().size()) {
-                throw new IllegalArgumentException("TOPIC SIZE NOT MATCH");
-            }
-            List<Type> indexedValues = new ArrayList<>();
-            for (int i = 1; i < topics.length; i++) {
-                TypeReference<Type> valueType = prototype.getIndexedParams().get(i - 1);
-                indexedValues.add(DefaultFunctionReturnDecoder.decodeIndexedValue(topics[i],
-                                                                                  valueType));
-            }
-            List<Type> nonIndexedValues = DefaultFunctionReturnDecoder.decode(message.getRawData().getData(),
-                                                                              prototype.getNonIndexedParams());
-            return new EventValues(indexedValues, nonIndexedValues);
-        } catch (IndexOutOfBoundsException | NullPointerException e) {
+        String[] topics = message.getRawData().getTopics();
+        EventPrototype prototype = getEvent(topics[0]);
+        if (null == prototype) {
             return null;
         }
+        if (topics.length - 1 != prototype.getIndexedParams().size()) {
+            throw new IllegalArgumentException("TOPIC SIZE NOT MATCH");
+        }
+        List<Type> indexedValues = new ArrayList<>();
+        for (int i = 1; i < topics.length; i++) {
+            TypeReference<Type> valueType = prototype.getIndexedParams().get(i - 1);
+            indexedValues.add(DefaultFunctionReturnDecoder.decodeIndexedValue(topics[i],
+                                                                              valueType));
+        }
+        List<Type> nonIndexedValues = DefaultFunctionReturnDecoder.decode(message.getRawData()
+                                                                                 .getData(),
+                                                                          prototype.getNonIndexedParams());
+        return new EventValues(indexedValues, nonIndexedValues);
     }
 
     @Override

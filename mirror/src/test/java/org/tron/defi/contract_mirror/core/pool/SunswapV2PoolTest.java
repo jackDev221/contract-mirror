@@ -10,26 +10,29 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.tron.defi.contract.log.ContractLog;
 import org.tron.defi.contract_mirror.TestApplication;
-import org.tron.defi.contract_mirror.config.ContractConfigList;
+import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.ContractManager;
 import org.tron.defi.contract_mirror.dao.BlockInfo;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
 
-import static org.tron.defi.contract_mirror.common.ContractType.CURVE_2POOL;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = TestApplication.class)
-public class CurvePoolTest {
-    @Autowired
-    private ContractConfigList contractConfigList;
+public class SunswapV2PoolTest {
     @Autowired
     private ContractManager contractManager;
-    private ContractConfigList.ContractConfig config;
-    private CurvePool pool;
+    private SunswapV2Pool pool;
 
     @Test
-    public void handleTokenExchangeTest() {
+    public void initTest() {
+        Assertions.assertDoesNotThrow(() -> pool.init());
+    }
+
+    @Test
+    public void onTransferEventTest() {
         Assertions.assertDoesNotThrow(() -> pool.init());
 
         ContractLog log = new ContractLog();
@@ -44,35 +47,22 @@ public class CurvePoolTest {
         }
         log.setRemoved(false);
         ContractLog.RawData rawData = new ContractLog.RawData();
-        String[] topics = new String[2];
-        topics[0] = "8b3e96f2b889fa771c53c981b40daf005f63f637f1869f707052d15a3dd97140";
-        topics[1] = "000000000000000000000000a2c2426d23bb43809e6eba1311afddde8d45f5d8";
+        String[] topics = new String[3];
+        topics[0] = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+        topics[1] = "0000000000000000000000000000000000000000000000000000000000000000";
+        topics[2] = "00000000000000000000000095ea94607f769b5b612dba2ad9a4ef01a1e04c87";
         rawData.setTopics(topics);
-        rawData.setData(
-            "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002fa90a32a2149a0000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000342c0151");
+        rawData.setData("00000000000000000000000000000000000000000000000000000042538f812f");
         log.setRawData(rawData);
-
         Assertions.assertDoesNotThrow(() -> pool.onEvent(new KafkaMessage<>(log), 86400000));
     }
 
-    @Test
-    public void initTest() {
-        Assertions.assertDoesNotThrow(() -> pool.init());
-        log.info(pool.info());
-    }
-
     @BeforeEach
-    public void setUp() {
-        for (ContractConfigList.ContractConfig contractConfig : contractConfigList.getContracts()) {
-            if (CURVE_2POOL == contractConfig.getType()) {
-                config = contractConfig;
-                break;
-            }
-        }
-        Assertions.assertNotNull(config);
-        log.info(config.toString());
-        pool = (CurvePool) contractManager.registerContract(new CurvePool(config.getAddress(),
-                                                                          PoolType.convertFromContractType(
-                                                                              config.getType())));
+    void setUp() {
+        final String address = "TR4fHizLc7xCy6v1UVdTqLxYzTW1QHCds6";
+        pool = (SunswapV2Pool) contractManager.registerContract(new SunswapV2Pool(address));
+        Contract token0 = (Contract) pool.getToken0();
+        Contract token1 = (Contract) pool.getToken1();
+        pool.setTokens(new ArrayList<>(Arrays.asList(token0, token1)));
     }
 }

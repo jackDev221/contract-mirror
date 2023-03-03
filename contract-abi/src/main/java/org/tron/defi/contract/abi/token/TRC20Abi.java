@@ -13,12 +13,20 @@ public class TRC20Abi extends Contract {
 
     @Override
     public EventPrototype getEvent(String signature) {
-        return Events.getBySignature(signature).getPrototype();
+        try {
+            return Events.getBySignature(signature).getPrototype();
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     @Override
     public FunctionPrototype getFunction(String signature) {
-        return Functions.getBySignature(signature).getPrototype();
+        try {
+            return Functions.getBySignature(signature).getPrototype();
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     public enum Functions implements IFunction {

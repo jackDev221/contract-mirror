@@ -18,7 +18,11 @@ public class PsmPolyAbi extends Contract {
 
     @Override
     public FunctionPrototype getFunction(String signature) {
-        return Functions.getBySignature(signature).getPrototype();
+        try {
+            return Functions.getBySignature(signature).getPrototype();
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     public enum Functions implements IFunction {
