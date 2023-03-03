@@ -32,11 +32,6 @@ public abstract class Pool extends SynchronizableContract {
     }
 
     @Override
-    public boolean isReady() {
-        return isEventAccept();
-    }
-
-    @Override
     public String getContractType() {
         return getType().name();
     }
@@ -46,12 +41,18 @@ public abstract class Pool extends SynchronizableContract {
         JSONObject info = super.getInfo();
         info.put("name", getName());
         info.put("tokens",
-                 new JSONArray(getTokens().stream().map(Contract::getInfo)
+                 new JSONArray(getTokens().stream()
+                                          .map(Contract::getInfo)
                                           .collect(Collectors.toList())));
         if (null != getLpToken()) {
             info.put("lp_token", ((Contract) getLpToken()).getInfo());
         }
         return info;
+    }
+
+    @Override
+    public boolean isReady() {
+        return isEventAccept();
     }
 
     @Override
@@ -65,6 +66,17 @@ public abstract class Pool extends SynchronizableContract {
     public abstract void init();
 
     protected abstract void getContractData();
+
+    public void replaceToken(Contract newToken) {
+        for (int i = 0; i < tokens.size(); i++) {
+            if (tokens.get(i).getAddress().equals(newToken.getAddress())) {
+                tokens.set(i, newToken);
+                break;
+            }
+        }
+        updateName();
+        sync();
+    }
 
     public void setTokens(ArrayList<Contract> tokens) {
         if (tokens.size() <= 1) {

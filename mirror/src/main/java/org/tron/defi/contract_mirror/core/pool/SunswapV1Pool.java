@@ -19,8 +19,14 @@ import java.math.BigInteger;
 public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     public SunswapV1Pool(String address) {
         super(address);
+        type = PoolType.SUNSWAP_V1;
         lpToken = new TRC20(address);
-        this.type = PoolType.SUNSWAP_V1;
+    }
+
+    public SunswapV1Pool(ITRC20 lpToken) {
+        super(((Contract) lpToken).getAddress());
+        type = PoolType.SUNSWAP_V1;
+        this.lpToken = lpToken;
     }
 
     @Override

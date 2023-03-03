@@ -196,20 +196,26 @@ public class SunswapV1Factory extends SynchronizableContract {
     }
 
     private Pool getExchangeWithAddress(String tokenAddress, String poolAddress) {
-        try {
-            Contract contract = contractManager.getContract(poolAddress);
-            Pool pool = contract != null
-                        ? (Pool) contract
-                        : (Pool) contractManager.registerContract(new SunswapV1Pool(poolAddress));
-            IToken token = getTokenWithAddress(tokenAddress);
-            pool.setTokens(new ArrayList<>(Arrays.asList(TRX.getInstance(), (Contract) token)));
-            pool.sync();
-            return pool;
-        } catch (ClassCastException e) {
-            // invalid pair address
-            log.error(e.getMessage());
-            throw new IllegalArgumentException("INVALID POOL ADDRESS " + poolAddress);
+        Contract contract = contractManager.getContract(poolAddress);
+        Pool pool;
+        if (null == contract) {
+            pool = (Pool) contractManager.registerContract(new SunswapV1Pool(poolAddress));
+        } else if (!(contract instanceof ITRC20)) {
+            log.error("INVALID V1 ADDRESS " + poolAddress);
+            throw new ClassCastException();
+        } else if (!(contract instanceof SunswapV1Pool)) {
+            // wrap token by SunswapV1Pool
+            contractManager.unregisterContract(contract);
+            contract = contractManager.registerContract(new SunswapV1Pool((ITRC20) contract));
+            pool = (Pool) graph.replaceNode(new Node(contract)).getToken();
+        } else {
+            // already exist
+            pool = (Pool) contract;
         }
+        IToken token = getTokenWithAddress(tokenAddress);
+        pool.setTokens(new ArrayList<>(Arrays.asList(TRX.getInstance(), (Contract) token)));
+        pool.init();
+        return pool;
     }
 
     private int getTokenCountFromChain() {

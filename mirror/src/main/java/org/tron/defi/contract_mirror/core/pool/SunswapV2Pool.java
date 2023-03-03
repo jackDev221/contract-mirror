@@ -22,7 +22,14 @@ import java.util.List;
 public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
     public SunswapV2Pool(String address) {
         super(address);
-        this.type = PoolType.SUNSWAP_V2;
+        type = PoolType.SUNSWAP_V2;
+        lpToken = new TRC20(address);
+    }
+
+    public SunswapV2Pool(ITRC20 lpToken) {
+        super(((Contract) lpToken).getAddress());
+        type = PoolType.SUNSWAP_V2;
+        this.lpToken = lpToken;
     }
 
     @Override

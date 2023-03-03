@@ -39,7 +39,7 @@ contract-list:
     - address: TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c
       type: CURVE_2POOL
     - address: TKcEU8ekq2ZoFzLSGFYCUY6aocJBX9X31b
-      type: curve_3POOL
+      type: CURVE_3POOL
     - address: TQx6CdLHqjwVmJ45ecRzodKfVumAsdoRXH
       type: CURVE_COMBINATION_4POOL
     - address: TM9gWuCdFGNMiT1qTq1bgw4tNhJbsESfjA
