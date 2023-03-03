@@ -60,11 +60,10 @@ public class ContractManager {
         switch (type) {
             case CURVE_2POOL:
             case CURVE_3POOL:
-                pool = registerOrReplacePool(new CurvePool(address, poolType), CurvePool.class);
+                pool = (Pool) registerContract(new CurvePool(address, poolType));
                 break;
             case CURVE_COMBINATION_4POOL:
-                pool = registerOrReplacePool(new CurveCombinationPool(address, poolType),
-                                             CurveCombinationPool.class);
+                pool = (Pool) registerContract(new CurveCombinationPool(address, poolType));
                 break;
             default:
                 throw new IllegalArgumentException(type.name());
@@ -91,7 +90,7 @@ public class ContractManager {
     }
 
     public void initPsm(String address, String polyAddress) {
-        PsmPool pool = registerOrReplacePool(new PsmPool(address, polyAddress), PsmPool.class);
+        PsmPool pool = (PsmPool) registerContract(new PsmPool(address, polyAddress));
         pool.init();
         Contract usdd = (Contract) pool.getUsdd();
         Node node0 = graph.getNode(usdd.getAddress());
