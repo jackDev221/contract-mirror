@@ -14,7 +14,7 @@ import org.tron.defi.contract_mirror.utils.chain.TronContractTrigger;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.abi.datatypes.generated.Uint112;
 
 import java.math.BigInteger;
 import java.util.Collections;
@@ -173,8 +173,8 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
     }
 
     private void handleSyncEvent(EventValues eventValues) {
-        BigInteger balance0 = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
-        BigInteger balance1 = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
+        BigInteger balance0 = ((Uint112) eventValues.getNonIndexedValues().get(0)).getValue();
+        BigInteger balance1 = ((Uint112) eventValues.getNonIndexedValues().get(1)).getValue();
         wlock.lock();
         try {
             ((ITRC20) getTokens().get(0)).setBalance(getAddress(), balance0);
