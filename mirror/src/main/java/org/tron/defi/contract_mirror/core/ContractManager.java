@@ -135,13 +135,18 @@ public class ContractManager {
         return null != exist ? exist : contract;
     }
 
-    public <T extends Contract> T registerOrReplacePool(T pool, Class<T> clz) {
+    public <T extends Pool> T registerOrReplacePool(T pool, Class<T> clz) {
         Contract exist = contracts.getOrDefault(pool.getAddress(), null);
         if (null != exist) {
             if (clz.isAssignableFrom(exist.getClass())) {
                 return (T) exist;
             } else if (ITRC20.class.isAssignableFrom(exist.getClass())) {
                 // wrap token
+                log.warn(pool.getAddress() +
+                         " from " +
+                         exist.getClass().getName() +
+                         " to " +
+                         clz.getName());
                 unregisterContract(exist);
                 try {
                     pool = (T) registerContract(clz.getConstructor(ITRC20.class)

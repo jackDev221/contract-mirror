@@ -157,6 +157,7 @@ public class SunswapV2Factory extends SynchronizableContract {
         } catch (RuntimeException e) {
             // TODO: is there any way to distinguish network error and invalid data ?
             e.printStackTrace();
+            log.error(e.getMessage());
             handleInvalidPair(id);
             return null;
         }

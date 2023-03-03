@@ -32,7 +32,11 @@ public class Graph {
     }
 
     public Node replaceNode(Node newNode) {
-        Node oldNode = nodes.get(newNode.getToken().getAddress());
+        Node oldNode = getNode(newNode.getToken().getAddress());
+        if (null == oldNode) {
+            return addNode(newNode);
+        }
+
         for (Edge inEdge : oldNode.getInEdges()) {
             Node from = inEdge.getFrom();
             Pool pool = inEdge.getPool();

@@ -61,9 +61,10 @@ public class SunswapV1PoolTest {
 
     @BeforeEach
     void setUp() {
-        final String address = "TStojTQUzpUatNY1xtc5uD2SoCDcn4RD5Z";
+        final String poolAddress = "TStojTQUzpUatNY1xtc5uD2SoCDcn4RD5Z";
         final String tokenAddress = "TYr8aaM1nyEKi9wvg4h1r5dPXfuEkF68Dn";
-        pool = (SunswapV1Pool) contractManager.registerContract(new SunswapV1Pool(address));
+        pool = contractManager.registerOrReplacePool(new SunswapV1Pool(poolAddress),
+                                                     SunswapV1Pool.class);
         Contract token = contractManager.registerContract(new TRC20(tokenAddress));
         pool.setTokens(new ArrayList<>(Arrays.asList(TRX.getInstance(), token)));
     }
