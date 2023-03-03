@@ -71,6 +71,7 @@ public class RouterServer {
     private TokenPrice tokenPrice;
 
     private Map<String, String> baseTokensMap = new HashMap<>();
+    private Map<String, String> baseTokenSymbolsMap = new HashMap<>();
 
     @Autowired
     private RouterConfig routerConfig;
@@ -350,18 +351,18 @@ public class RouterServer {
         while (cacheNodes.size() > 0) {
             RoutNode node = cacheNodes.get(cacheNodes.size() - 1).getSubNode();
             while (ObjectUtil.isNull(node)) {
-                if (path.size() > 0){
+                if (path.size() > 0) {
                     path.remove(path.size() - 1);
                 }
                 cacheNodes.remove(cacheNodes.size() - 1);
                 if (cacheNodes.size() > 0) {
                     node = cacheNodes.get(cacheNodes.size() - 1).getSubNode();
-                }else {
+                } else {
                     return true;
                 }
             }
             boolean isNodeAvailing = (isPathContainToken(path, node.getContract(), node.getAddress())
-                    || !isTokenUsable(isUseBaseTokens, node.getAddress()));
+                    || !isTokenUsable(isUseBaseTokens, node.getAddress(), node.getSymbol()));
             RoutNode nextRoot = this.routNodeMap.get(node.getAddress());
             if (ObjectUtil.isNull(nextRoot) || isNodeAvailing) {
                 continue;
@@ -401,7 +402,7 @@ public class RouterServer {
         }
         for (RoutNode subNode : routNode.getSubNodes()) {
             if (isPathContainToken(path, subNode.getContract(), subNode.getAddress())
-                    || !isTokenUsable(isUseBaseTokens, subNode.getAddress())) {
+                    || !isTokenUsable(isUseBaseTokens, subNode.getAddress(), subNode.getSymbol())) {
                 continue;
             }
             RoutNode nextRoot = this.routNodeMap.get(subNode.getAddress());
@@ -582,20 +583,27 @@ public class RouterServer {
     }
 
     private void initBaseTokensMap() {
-        if (Strings.isEmpty(routerConfig.getBaseTokens())) {
-            return;
+        if (!Strings.isEmpty(routerConfig.getBaseTokens())) {
+            String[] addrs = routerConfig.getBaseTokens().split(",");
+            for (String addr : addrs) {
+                baseTokensMap.put(addr, addr);
+            }
         }
-        String[] addrs = routerConfig.getBaseTokens().split(",");
-        for (String addr : addrs) {
-            baseTokensMap.put(addr, addr);
+
+        if (!Strings.isEmpty(routerConfig.getBaseTokenSymbols())) {
+            String[] symbols = routerConfig.getBaseTokenSymbols().split(",");
+            for (String symbol : symbols) {
+                baseTokenSymbolsMap.put(symbol, symbol);
+            }
         }
+
     }
 
-    private boolean isTokenUsable(boolean isUseBaseTokens, String tokenAddr) {
+    private boolean isTokenUsable(boolean isUseBaseTokens, String tokenAddr, String tokenSymbol) {
         if (!isUseBaseTokens) {
             return true;
         }
-        return baseTokensMap.containsKey(tokenAddr);
+        return baseTokensMap.containsKey(tokenAddr) || baseTokenSymbolsMap.containsKey(tokenSymbol);
     }
 
     @Data

@@ -14,6 +14,7 @@ public class RouterConfig {
     private String env;
     private String priceUrl;
     private String baseTokens;//address
+    private String baseTokenSymbols;//address
     private String usdt;
     private String usdc;
     private String usdj;
