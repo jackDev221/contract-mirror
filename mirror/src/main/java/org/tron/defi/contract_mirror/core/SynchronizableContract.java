@@ -54,9 +54,9 @@ public abstract class SynchronizableContract extends Contract implements Synchro
             throw new IllegalStateException();
         }
         try {
-            EventPrototype prototype = abi.getEvent(contractLog.getRawData().getTopics()[0]);
+            EventPrototype prototype = getEvent(contractLog.getRawData().getTopics()[0]);
             log.info("On " + prototype.getRawSignature() + " event");
-            EventValues eventValues = abi.decodeEvent(contractLog);
+            EventValues eventValues = decodeEvent(contractLog);
             handleEvent(prototype.getName(), eventValues, contractLog.getTimeStamp());
             log.debug("Processed event " + contractLog);
         } catch (NullPointerException npe) {

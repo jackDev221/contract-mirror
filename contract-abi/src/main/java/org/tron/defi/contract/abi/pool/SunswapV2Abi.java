@@ -55,7 +55,7 @@ public class SunswapV2Abi extends Contract {
         MINT("Mint", "address indexed,uint256,uint256"),
         BURN("Burn", "address indexed,uint256,uint256,address indexed"),
         SWAP("Swap", "address indexed,uint256,uint256,uint256,uint256,address indexed"),
-        SYNC("Sync", "uint256,uint256");
+        SYNC("Sync", "uint112,uint112");
         private static final Map<String, Events> signatureMap = new HashMap<>();
 
         static {

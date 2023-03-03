@@ -13,8 +13,7 @@ public class TRC20Abi extends Contract {
 
     @Override
     public EventPrototype getEvent(String signature) {
-        // TODO add is needed
-        return null;
+        return Events.getBySignature(signature).getPrototype();
     }
 
     @Override
@@ -43,6 +42,29 @@ public class TRC20Abi extends Contract {
         }
 
         static Functions getBySignature(String signature) {
+            return signatureMap.getOrDefault(signature, null);
+        }
+    }
+
+    public enum Events implements IEvent {
+        APPROVAL("Approval", "address indexed, address indexed, uint"),
+        TRANSFER("Transfer", "address indexed, address indexed, uint256");
+        private static final Map<String, Events> signatureMap = new HashMap<>();
+
+        static {
+            for (Events value : values()) {
+                signatureMap.put(value.getPrototype().getSignature(), value);
+            }
+        }
+
+        @Getter
+        private final EventPrototype prototype;
+
+        Events(String name, String parameters) {
+            prototype = new EventPrototype(name, parameters);
+        }
+
+        public static IEvent getBySignature(String signature) {
             return signatureMap.getOrDefault(signature, null);
         }
     }

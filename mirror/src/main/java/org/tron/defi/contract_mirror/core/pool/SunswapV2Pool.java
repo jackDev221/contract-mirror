@@ -2,7 +2,9 @@ package org.tron.defi.contract_mirror.core.pool;
 
 import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
+import org.tron.defi.contract.abi.EventPrototype;
 import org.tron.defi.contract.abi.pool.SunswapV2Abi;
+import org.tron.defi.contract.log.ContractLog;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.core.token.IToken;
@@ -114,6 +116,24 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
     @Override
     protected ContractAbi loadAbi() {
         return tronContractTrigger.contractAt(SunswapV2Abi.class, getAddress());
+    }
+
+    @Override
+    public EventValues decodeEvent(ContractLog log) throws NullPointerException {
+        EventValues eventValues = abi.decodeEvent(log);
+        if (null != eventValues) {
+            return eventValues;
+        }
+        return ((Contract) getLpToken()).decodeEvent(log);
+    }
+
+    @Override
+    public EventPrototype getEvent(String signature) throws NullPointerException {
+        EventPrototype prototype = abi.getEvent(signature);
+        if (null != prototype) {
+            return prototype;
+        }
+        return ((Contract) getLpToken()).getEvent(signature);
     }
 
     @Override
