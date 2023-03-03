@@ -13,7 +13,6 @@ import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.graph.Node;
 import org.tron.defi.contract_mirror.core.pool.Pool;
 import org.tron.defi.contract_mirror.core.pool.SunswapV2Pool;
-import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.Address;
@@ -115,10 +114,13 @@ public class SunswapV2Factory extends SynchronizableContract {
 
     @Override
     protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
-        if (eventName.equals("PairCreated")) {
-            handleCreatePairEvent(eventValues);
-        } else {
-            // do nothing
+        switch (eventName) {
+            case "PairCreated":
+                handleCreatePairEvent(eventValues);
+                break;
+            default:
+                log.warn("Ignore event " + eventName);
+                break;
         }
     }
 
@@ -182,23 +184,8 @@ public class SunswapV2Factory extends SynchronizableContract {
     }
 
     private Pool getPairByAddress(String pairAddress) {
-        Contract contract = contractManager.getContract(pairAddress);
-        SunswapV2Pool pair;
-        if (null == contract) {
-            pair = (SunswapV2Pool) contractManager.registerContract(new SunswapV2Pool(pairAddress));
-        } else if (!(contract instanceof ITRC20)) {
-            log.error("INVALID V2 ADDRESS " + pairAddress);
-            throw new ClassCastException();
-        } else if (!(contract instanceof SunswapV2Pool)) {
-            // wrap token by SunswapV2Pool
-            contractManager.unregisterContract(contract);
-            contract = contractManager.registerContract(new SunswapV2Pool((ITRC20) contract));
-            pair = (SunswapV2Pool) graph.replaceNode(new Node(contract)).getToken();
-        } else {
-            // already exist
-            pair = (SunswapV2Pool) contract;
-        }
-
+        SunswapV2Pool pair = contractManager.registerOrReplacePool(new SunswapV2Pool(pairAddress),
+                                                                   SunswapV2Pool.class);
         Contract token0 = (Contract) pair.getToken0();
         Contract token1 = (Contract) pair.getToken1();
         pair.setTokens(new ArrayList<>(Arrays.asList(token0, token1)));

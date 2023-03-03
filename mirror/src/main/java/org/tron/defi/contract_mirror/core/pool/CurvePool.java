@@ -78,7 +78,7 @@ public class CurvePool extends Pool {
     }
 
     @Override
-    public void init() {
+    protected void doInitialize() {
         int n = getN();
         tokens.ensureCapacity(n);
         for (int i = 0; i < n; i++) {

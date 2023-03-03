@@ -26,6 +26,7 @@ public abstract class Pool extends SynchronizableContract {
     protected ArrayList<Contract> tokens = new ArrayList<>();
     @Getter
     protected ITRC20 lpToken;
+    protected boolean initialized = false;
 
     Pool(String address) {
         super(address);
@@ -63,7 +64,15 @@ public abstract class Pool extends SynchronizableContract {
         timestamp2 = 2 * timestamp1 - timestamp0;
     }
 
-    public abstract void init();
+    protected abstract void doInitialize();
+
+    public void init() {
+        if (initialized) {
+            return;
+        }
+        doInitialize();
+        initialized = true;
+    }
 
     protected abstract void getContractData();
 

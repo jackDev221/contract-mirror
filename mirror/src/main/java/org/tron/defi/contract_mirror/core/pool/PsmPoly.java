@@ -36,7 +36,7 @@ public class PsmPoly extends Contract {
     }
 
     @Data
-    public class PsmInfo {
+    public static class PsmInfo {
         private BigInteger amountUsddToGem;
         private BigInteger amountGemToUsdd;
         private BigInteger quotaTotalToUsdd;

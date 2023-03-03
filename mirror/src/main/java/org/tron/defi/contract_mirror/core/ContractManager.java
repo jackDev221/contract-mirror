@@ -11,6 +11,7 @@ import org.tron.defi.contract_mirror.core.graph.Edge;
 import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.graph.Node;
 import org.tron.defi.contract_mirror.core.pool.*;
+import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.core.token.TRX;
 import org.tron.defi.contract_mirror.utils.chain.TronContractTrigger;
 
@@ -59,10 +60,11 @@ public class ContractManager {
         switch (type) {
             case CURVE_2POOL:
             case CURVE_3POOL:
-                pool = (Pool) registerContract(new CurvePool(address, poolType));
+                pool = registerOrReplacePool(new CurvePool(address, poolType), CurvePool.class);
                 break;
             case CURVE_COMBINATION_4POOL:
-                pool = (Pool) registerContract(new CurveCombinationPool(address, poolType));
+                pool = registerOrReplacePool(new CurveCombinationPool(address, poolType),
+                                             CurveCombinationPool.class);
                 break;
             default:
                 throw new IllegalArgumentException(type.name());
@@ -89,7 +91,7 @@ public class ContractManager {
     }
 
     public void initPsm(String address, String polyAddress) {
-        PsmPool pool = (PsmPool) registerContract(new PsmPool(address, polyAddress));
+        PsmPool pool = registerOrReplacePool(new PsmPool(address, polyAddress), PsmPool.class);
         pool.init();
         Contract usdd = (Contract) pool.getUsdd();
         Node node0 = graph.getNode(usdd.getAddress());
@@ -132,6 +134,30 @@ public class ContractManager {
         contract.setContractManager(this);
         Contract exist = contracts.putIfAbsent(contract.getAddress(), contract);
         return null != exist ? exist : contract;
+    }
+
+    public <T extends Contract> T registerOrReplacePool(T pool, Class<T> clz) {
+        Contract exist = contracts.getOrDefault(pool.getAddress(), null);
+        if (null != exist) {
+            if (clz.isAssignableFrom(exist.getClass())) {
+                return (T) exist;
+            } else if (ITRC20.class.isAssignableFrom(exist.getClass())) {
+                // wrap token
+                unregisterContract(exist);
+                try {
+                    pool = (T) registerContract(clz.getConstructor(ITRC20.class)
+                                                   .newInstance((ITRC20) exist));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new RuntimeException();
+                }
+                return (T) graph.replaceNode(new Node(pool)).getToken();
+            } else {
+                throw new ClassCastException();
+            }
+        } else {
+            return (T) registerContract(pool);
+        }
     }
 
     public void unregisterContract(Contract contract) {

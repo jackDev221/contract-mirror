@@ -38,18 +38,6 @@ public class CurvePoolTest {
     }
 
     @Test
-    public void initTest() {
-        Assertions.assertNotNull(config);
-        log.info(config.toString());
-        CurvePool pool
-            = (CurvePool) contractManager.registerContract(new CurvePool(config.getAddress(),
-                                                                         PoolType.convertFromContractType(
-                                                                             config.getType())));
-        Assertions.assertDoesNotThrow(() -> pool.init());
-        log.info(pool.info());
-    }
-
-    @Test
     public void handleTokenExchangeTest() {
         ContractLog log = new ContractLog();
         log.setTimeStamp(1677760023000L);
@@ -79,5 +67,17 @@ public class CurvePoolTest {
         Assertions.assertDoesNotThrow(() -> pool.init());
         Assertions.assertDoesNotThrow(() -> pool.onEvent(new KafkaMessage<ContractLog>(log),
                                                          86400000));
+    }
+
+    @Test
+    public void initTest() {
+        Assertions.assertNotNull(config);
+        log.info(config.toString());
+        CurvePool pool
+            = (CurvePool) contractManager.registerContract(new CurvePool(config.getAddress(),
+                                                                         PoolType.convertFromContractType(
+                                                                             config.getType())));
+        Assertions.assertDoesNotThrow(() -> pool.init());
+        log.info(pool.info());
     }
 }

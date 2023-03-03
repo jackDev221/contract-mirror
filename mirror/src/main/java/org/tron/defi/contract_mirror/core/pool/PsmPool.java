@@ -45,7 +45,7 @@ public class PsmPool extends Pool {
     }
 
     @Override
-    public void init() {
+    protected void doInitialize() {
         tokens.add((Contract) getUsddFromChain());
         tokens.add((Contract) getGemFromChain());
         gemToUsddDecimalFactor = BigInteger.valueOf(10)

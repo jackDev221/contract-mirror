@@ -83,7 +83,7 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
     }
 
     @Override
-    public void init() {
+    protected void doInitialize() {
         sync();
     }
 

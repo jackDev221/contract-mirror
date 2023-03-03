@@ -72,7 +72,7 @@ public class CurveCombinationPool extends Pool {
     }
 
     @Override
-    public void init() {
+    protected void doInitialize() {
         initUnderlyingPool();
         tokens.add((Contract) getTokenFromChain(TOKEN_ID));
         tokens.addAll(underlyingPool.getTokens());

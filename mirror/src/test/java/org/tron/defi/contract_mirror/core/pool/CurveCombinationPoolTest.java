@@ -33,7 +33,7 @@ public class CurveCombinationPoolTest {
             = (CurveCombinationPool) contractManager.registerContract(new CurveCombinationPool(
             config.getAddress(),
             PoolType.CURVE_COMBINATION4));
-        Assertions.assertDoesNotThrow(() -> pool.init());
+        Assertions.assertDoesNotThrow(() -> pool.doInitialize());
         log.info(pool.info());
     }
 

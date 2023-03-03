@@ -114,10 +114,13 @@ public class SunswapV1Factory extends SynchronizableContract {
 
     @Override
     protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
-        if (eventName.equals("NewExchange")) {
-            handleNewExchangeEvent(eventValues);
-        } else {
-            // do nothing
+        switch (eventName) {
+            case "NewExchange":
+                handleNewExchangeEvent(eventValues);
+                break;
+            default:
+                log.warn("Ignore event " + eventName);
+                break;
         }
     }
 
@@ -196,22 +199,8 @@ public class SunswapV1Factory extends SynchronizableContract {
     }
 
     private Pool getExchangeWithAddress(String tokenAddress, String poolAddress) {
-        Contract contract = contractManager.getContract(poolAddress);
-        Pool pool;
-        if (null == contract) {
-            pool = (Pool) contractManager.registerContract(new SunswapV1Pool(poolAddress));
-        } else if (!(contract instanceof ITRC20)) {
-            log.error("INVALID V1 ADDRESS " + poolAddress);
-            throw new ClassCastException();
-        } else if (!(contract instanceof SunswapV1Pool)) {
-            // wrap token by SunswapV1Pool
-            contractManager.unregisterContract(contract);
-            contract = contractManager.registerContract(new SunswapV1Pool((ITRC20) contract));
-            pool = (Pool) graph.replaceNode(new Node(contract)).getToken();
-        } else {
-            // already exist
-            pool = (Pool) contract;
-        }
+        Pool pool = contractManager.registerOrReplacePool(new SunswapV1Pool(poolAddress),
+                                                          SunswapV1Pool.class);
         IToken token = getTokenWithAddress(tokenAddress);
         pool.setTokens(new ArrayList<>(Arrays.asList(TRX.getInstance(), (Contract) token)));
         pool.init();
