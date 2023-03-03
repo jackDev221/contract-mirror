@@ -62,8 +62,7 @@ public class SunswapV1Abi extends Contract {
         ADD_LIQUIDITY("AddLiquidity", "address indexed,uint256 indexed,uint256 indexed"),
         REMOVE_LIQUIDITY("RemoveLiquidity", "address indexed,uint256 indexed,uint256 indexed"),
         SNAPSHOT("Snapshot", "address indexed,uint256 indexed,uint256 indexed"),
-        ADMIN_FEE_MINT("AdminFeeMint", "address indexed,address indexed,uint256"),
-        TRANSFER("Transfer", "address,address,uint256");
+        ADMIN_FEE_MINT("AdminFeeMint", "address indexed,address indexed,uint256");
         private static final Map<String, Events> signatureMap = new HashMap<>();
 
         static {
