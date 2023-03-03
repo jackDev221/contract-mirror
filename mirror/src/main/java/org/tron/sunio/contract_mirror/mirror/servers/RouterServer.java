@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.glassfish.jaxb.core.util.Which;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.tron.sunio.contract_mirror.mirror.config.RouterConfig;
@@ -80,51 +79,50 @@ public class RouterServer {
         log.info("getRouter:Receive router call:{}", routerInput);
         convertTrxInRouterInput(routerInput);
         RoutNode routNode = routNodeMap.get(routerInput.getFromToken());
-
-//        if (ObjectUtil.isNull(routNode)) {
-//            initRoutNodeMap(contractMaps);
-//            routNode = routNodeMap.get(routerInput.getFromToken());
-//        }
-        if (ObjectUtil.isNull(routNode)) {
-            return null;
-        }
-        List<List<StepInfo>> paths;
-        long t0 = System.currentTimeMillis();
-        String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
-        paths = cachedPaths.get(key);
-        if (ObjectUtil.isNull(paths)) {
-            paths = new ArrayList<>();
-            getPathsNoRecurrence(routNode, routerInput.getToToken(), paths, routerConfig.getMaxHops(), routerInput.isUseBaseTokens());
-//            getPaths(routNode, routerInput.getToToken(), new ArrayList<>(), paths, routerConfig.getMaxHops(), routerInput.isUseBaseTokens());
-            if (paths.size() != 0) {
-                cachedPaths.put(key, paths);
-            }
-        }
-        long t1 = System.currentTimeMillis();
-        log.info("getRouter finish get paths, size:{}, cast:{}", paths.size(), t1 - t0);
-        if (paths.size() == 0) {
-            return null;
-        }
         List<RoutItem> res = new ArrayList<>();
-        BigDecimal outAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getToDecimal()));
-        BigDecimal inAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getFromDecimal()));
-        for (List<StepInfo> path : paths) {
-            RoutItem routItem = getRoutItemByPaths(routerInput, path, contractMaps, inAmountUnit, outAmountUnit);
-            if (ObjectUtil.isNull(routItem)) {
-                continue;
+        if (!ObjectUtil.isNull(routNode)) {
+            List<List<StepInfo>> paths;
+            long t0 = System.currentTimeMillis();
+            String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
+            paths = cachedPaths.get(key);
+            if (ObjectUtil.isNull(paths)) {
+                paths = new ArrayList<>();
+                getPathsNoRecurrence(routNode, routerInput.getToToken(), paths, routerConfig.getMaxHops(),
+                        routerInput.isUseBaseTokens());
+                if (paths.size() != 0) {
+                    cachedPaths.put(key, paths);
+                }
             }
-            res.add(routItem);
+            long t1 = System.currentTimeMillis();
+            log.info("getRouter finish get paths, size:{}, cast:{}", paths.size(), t1 - t0);
+            if (paths.size() == 0) {
+                return null;
+            }
+
+            BigDecimal outAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getToDecimal()));
+            BigDecimal inAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getFromDecimal()));
+            for (List<StepInfo> path : paths) {
+                RoutItem routItem = getRoutItemByPaths(routerInput, path, contractMaps, inAmountUnit, outAmountUnit);
+                if (ObjectUtil.isNull(routItem)) {
+                    continue;
+                }
+                res.add(routItem);
+            }
+            long t2 = System.currentTimeMillis();
+            log.info("getRouter finish calc result, cast {}", t2 - t1);
+            res = res.stream().sorted(Comparator.comparing(RoutItem::getAmountV, (s1, s2) -> {
+                return (new BigDecimal(s2)).compareTo(new BigDecimal(s1));
+            })).collect(Collectors.toList());
+            if (res.size() > routerConfig.getMaxResultSize()) {
+                res = res.subList(0, routerConfig.getMaxResultSize() - 1);
+            }
+            long t3 = System.currentTimeMillis();
+            log.info("getRouter finish sorted result, cast {}", t3 - t2);
         }
-        long t2 = System.currentTimeMillis();
-        log.info("getRouter finish calc result, cast {}", t2 - t1);
-        res = res.stream().sorted(Comparator.comparing(RoutItem::getAmountV, (s1, s2) -> {
-            return (new BigDecimal(s2)).compareTo(new BigDecimal(s1));
-        })).collect(Collectors.toList());
-        if (res.size() > routerConfig.getMaxResultSize()) {
-            res = res.subList(0, routerConfig.getMaxResultSize() - 1);
+        // 数量不够补齐
+        for(int i = res.size(); i < routerConfig.getMaxResultSize(); i++){
+            res.add( RoutItem.getNullInstance());
         }
-        long t3 = System.currentTimeMillis();
-        log.info("getRouter finish sorted result, cast {}", t3 - t2);
         return res;
     }
 
@@ -142,7 +140,6 @@ public class RouterServer {
         }
 
     }
-
 
     public String[] getTokenPrice(String fromTokenAddr, String toTokenAddr, String fromTokenSymbol,
                                   String toTokenSymbol) throws Exception {

@@ -22,4 +22,15 @@ public class RoutItem {
     private BigInteger amountV;
     private String amount;
     private String fee;
+
+    public static RoutItem getNullInstance() {
+        // 对齐旧版的返回
+        RoutItem routItem = new RoutItem();
+        routItem.roadForAddr = null;
+        routItem.roadForName = null;
+        routItem.pool = null;
+        routItem.inUsd = "0.000000";
+        return routItem;
+    }
+
 }
