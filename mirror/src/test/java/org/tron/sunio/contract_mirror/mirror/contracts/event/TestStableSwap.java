@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.BaseStableSwapPool;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.CurveBasePool;
 import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.StableSwapPoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
@@ -19,12 +19,14 @@ public class TestStableSwap {
     public void testExchangeUnderlying() {
         long timestamp = 1677048099;
         ContractsHelper contractsHelper = new ContractsHelper();
-        Curve2Pool curve2Pool = new Curve2Pool(
+        CurveBasePool curve2Pool = new CurveBasePool(
                 "TTSVAK4j8RKqbQXr3a9eAy1KVjK5Tbnu1W",
+                ContractType.CONTRACT_CURVE_2POOL,
                 null,
-                contractsHelper,
+                null,
                 2,
                 1,
+                "",
                 Curve2PoolEvent.getSigMap()
         );
         CurveBasePoolData data = new CurveBasePoolData();
@@ -73,6 +75,7 @@ public class TestStableSwap {
                 2,
                 new BigInteger[]{new BigInteger("1000000000000000000"), new BigInteger("1000000000000000000")},
                 new BigInteger[]{new BigInteger("1"), new BigInteger("1")},
+                "",
                 null,
                 contractsHelper,
                 Curve2PoolEvent.getSigMap()

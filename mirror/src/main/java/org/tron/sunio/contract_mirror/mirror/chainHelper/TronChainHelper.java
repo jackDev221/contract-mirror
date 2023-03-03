@@ -60,4 +60,11 @@ public class TronChainHelper implements IChainHelper {
                 FunctionReturnDecoder.decode(result, function.getOutputParameters());
         return results;
     }
+
+    @Override
+    public String toString() {
+        return "TronChainHelper{" +
+                "tronGrpcClient=" + tronGrpcClient +
+                '}';
+    }
 }

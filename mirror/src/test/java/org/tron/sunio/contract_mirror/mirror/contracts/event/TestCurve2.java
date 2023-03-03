@@ -4,8 +4,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.util.Assert;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.CurveBasePool;
 import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
+import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.utils.EventLogUtils;
 
 import java.math.BigInteger;
@@ -13,12 +14,14 @@ import java.math.BigInteger;
 public class TestCurve2 {
     @Test
     public void testTokenExchange() {
-        Curve2Pool curve2Pool = new Curve2Pool(
+        CurveBasePool curve2Pool = new CurveBasePool(
                 "TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c",
+                ContractType.CONTRACT_CURVE_2POOL,
                 null,
                 null,
                 2,
                 1,
+                "",
                 Curve2PoolEvent.getSigMap()
         );
 
@@ -69,14 +72,17 @@ public class TestCurve2 {
 
     @Test
     public void testAddLiquidity() {
-        Curve2Pool curve2Pool = new Curve2Pool(
+        CurveBasePool curve2Pool = new CurveBasePool(
                 "TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c",
+                ContractType.CONTRACT_CURVE_2POOL,
                 null,
                 null,
                 2,
                 1,
+                "",
                 Curve2PoolEvent.getSigMap()
         );
+
 
         CurveBasePoolData data = new CurveBasePoolData();
         data.setReady(true);
@@ -110,12 +116,14 @@ public class TestCurve2 {
 
     @Test
     public void TestRemoveLiquidity(){
-        Curve2Pool curve2Pool = new Curve2Pool(
+        CurveBasePool curve2Pool = new CurveBasePool(
                 "TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c",
+                ContractType.CONTRACT_CURVE_2POOL,
                 null,
                 null,
                 2,
                 1,
+                "",
                 Curve2PoolEvent.getSigMap()
         );
 
@@ -147,14 +155,17 @@ public class TestCurve2 {
 
     @Test
     public void TestRemoveLiquidityInBalance(){
-        Curve2Pool curve2Pool = new Curve2Pool(
+        CurveBasePool curve2Pool = new CurveBasePool(
                 "TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c",
+                ContractType.CONTRACT_CURVE_2POOL,
                 null,
                 null,
                 2,
                 1,
+                "",
                 Curve2PoolEvent.getSigMap()
         );
+
 
         CurveBasePoolData data = new CurveBasePoolData();
         data.setReady(true);

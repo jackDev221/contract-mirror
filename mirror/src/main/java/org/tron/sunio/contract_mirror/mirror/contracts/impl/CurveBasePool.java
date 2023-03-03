@@ -1,12 +1,16 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import lombok.Data;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
+import org.tron.sunio.contract_mirror.mirror.contracts.ContractInfo;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
@@ -57,6 +61,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 
 @Slf4j
 public class CurveBasePool extends AbstractCurve {
+    @Getter
     protected int coinsCount;
     private static final BigInteger FEE_DENOMINATOR = BigInteger.TEN.pow(10);
     private static final BigInteger LENDING_PRECISION = BigInteger.TEN.pow(18);
@@ -68,16 +73,30 @@ public class CurveBasePool extends AbstractCurve {
     protected CurveBasePoolData curveBasePoolData;
     private int feeIndex;
 
-    public CurveBasePool(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper, int coinsCount, int feeIndex, Map<String, String> sigMap) {
+    public static CurveBasePool genInstance(ContractInfo contractInfo, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
+                                            Map<String, String> sigMap) {
+        CurveBasePool.ContractExtraData extraData = CurveBasePool.parseToExtraData(contractInfo.getExtra());
+        if (ObjectUtil.isNull(extraData)) {
+            return null;
+        }
+        return new CurveBasePool(contractInfo.getAddress(), contractInfo.getType(), iChainHelper,
+                iContractsHelper, extraData.getCoinsCount(), extraData.getFeeIndex(), extraData.getPoolName(), sigMap);
+    }
+
+
+    public CurveBasePool(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
+                         int coinsCount, int feeIndex, String poolName, Map<String, String> sigMap) {
         super(address, type, iChainHelper, iContractsHelper, sigMap);
         this.coinsCount = coinsCount;
         this.feeIndex = feeIndex;
+        this.poolName = poolName;
     }
 
     private CurveBasePoolData getVarCurveBasePoolData() {
         if (ObjectUtil.isNull(curveBasePoolData)) {
             curveBasePoolData = new CurveBasePoolData(coinsCount);
             curveBasePoolData.setAddress(address);
+            curveBasePoolData.setPoolName(poolName);
             curveBasePoolData.setType(type);
             curveBasePoolData.setUsing(true);
             curveBasePoolData.setReady(false);
@@ -919,6 +938,7 @@ public class CurveBasePool extends AbstractCurve {
                 iContractsHelper,
                 coinsCount,
                 feeIndex,
+                poolName,
                 sigMap
         );
         pool.setCurveBasePoolData(poolData);
@@ -1132,5 +1152,31 @@ public class CurveBasePool extends AbstractCurve {
 
         poolData.setTotalSupply(tokenSupply.subtract(token_amount));
         return token_amount;
+    }
+
+
+    @Override
+    public String toString() {
+        return "CurveBasePool{" +
+                "coinsCount=" + coinsCount +
+                ", curveBasePoolData=" + curveBasePoolData +
+                ", feeIndex=" + feeIndex +
+                '}';
+    }
+
+    @Data
+    public static class ContractExtraData {
+        private int coinsCount;
+        private int feeIndex;
+        private String poolName;
+    }
+
+    public static CurveBasePool.ContractExtraData parseToExtraData(String input) {
+        try {
+            return GsonUtil.gsonToObject(input, CurveBasePool.ContractExtraData.class);
+        } catch (Exception e) {
+            log.error("Parse psm failed, input:{} err:{}", e);
+        }
+        return null;
     }
 }

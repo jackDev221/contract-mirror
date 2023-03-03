@@ -29,6 +29,8 @@ public class TronGrpcClient {
     public final WalletSolidityGrpc.WalletSolidityBlockingStub blockingStubSolidity;
     public final ManagedChannel channel;
     public final ManagedChannel channelSolidity;
+    private String grpcEndpoint;
+    private String grpcEndpointSolidity;
 
     private ScheduledExecutorService scheduledExecutorService;
 
@@ -37,6 +39,8 @@ public class TronGrpcClient {
     private volatile ReferBlock referBlock = null;
 
     public TronGrpcClient(String grpcEndpoint, String grpcEndpointSolidity) {
+        this.grpcEndpoint = grpcEndpoint;
+        this.grpcEndpointSolidity = grpcEndpointSolidity;
         channel = ManagedChannelBuilder.forTarget(grpcEndpoint).usePlaintext().build();
         channelSolidity = ManagedChannelBuilder.forTarget(grpcEndpointSolidity).usePlaintext().build();
         blockingStub = WalletGrpc.newBlockingStub(channel);
@@ -185,5 +189,13 @@ public class TronGrpcClient {
 
     public GrpcAPI.TransactionExtention callWithoutBroadcast(SmartContractOuterClass.TriggerSmartContract request) {
         return blockingStub.triggerConstantContract(request);
+    }
+
+    @Override
+    public String toString() {
+        return "TronGrpcClient{" +
+                "grpcEndpoint='" + grpcEndpoint + '\'' +
+                ", grpcEndpointSolidity='" + grpcEndpointSolidity + '\'' +
+                '}';
     }
 }

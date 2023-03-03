@@ -32,6 +32,7 @@ public class CurveBasePoolData extends BaseContractData {
     private String futureOwner;
     private BigInteger transferOwnershipDeadline;
     private BigInteger totalSupply;
+    private String poolName;
 
     public CurveBasePoolData(int count) {
         coins = new String[count];

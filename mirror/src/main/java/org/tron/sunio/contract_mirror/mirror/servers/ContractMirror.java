@@ -273,4 +273,18 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
         // seconds
         return blockInfo.getTimeStamp() / 1000;
     }
+
+    @Override
+    public String toString() {
+        return "ContractMirror{" +
+                "EVENT_HANDLE_PERIOD=" + EVENT_HANDLE_PERIOD +
+                ", KAFKA_READY_CHECK_INTERVAL=" + KAFKA_READY_CHECK_INTERVAL +
+                ", KAFKA_PULL_TIMEOUT=" + KAFKA_PULL_TIMEOUT +
+                ", config=" + config +
+                ", tronChainHelper=" + tronChainHelper +
+                ", kafkaConfig=" + kafkaConfig +
+                ", firstFinishLoadData=" + firstFinishLoadData +
+                ", blockInfo=" + blockInfo +
+                '}';
+    }
 }

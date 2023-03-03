@@ -95,10 +95,6 @@ public class RouterServer {
             }
             long t1 = System.currentTimeMillis();
             log.info("getRouter finish get paths, size:{}, cast:{}", paths.size(), t1 - t0);
-            if (paths.size() == 0) {
-                return null;
-            }
-
             BigDecimal outAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getToDecimal()));
             BigDecimal inAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getFromDecimal()));
             for (List<StepInfo> path : paths) {
@@ -120,8 +116,8 @@ public class RouterServer {
             log.info("getRouter finish sorted result, cast {}", t3 - t2);
         }
         // 数量不够补齐
-        for(int i = res.size(); i < routerConfig.getMaxResultSize(); i++){
-            res.add( RoutItem.getNullInstance());
+        for (int i = res.size(); i < routerConfig.getMaxResultSize(); i++) {
+            res.add(RoutItem.getNullInstance());
         }
         return res;
     }
@@ -359,7 +355,7 @@ public class RouterServer {
                 }
             }
             boolean isNodeAvailing = (isPathContainToken(path, node.getContract(), node.getAddress())
-                    || !isTokenUsable(isUseBaseTokens, node.getAddress(), node.getSymbol()));
+                    || !isTokenUsable(isUseBaseTokens, node.getAddress(), node.getSymbol(), destToken));
             RoutNode nextRoot = this.routNodeMap.get(node.getAddress());
             if (ObjectUtil.isNull(nextRoot) || isNodeAvailing) {
                 continue;
@@ -399,7 +395,7 @@ public class RouterServer {
         }
         for (RoutNode subNode : routNode.getSubNodes()) {
             if (isPathContainToken(path, subNode.getContract(), subNode.getAddress())
-                    || !isTokenUsable(isUseBaseTokens, subNode.getAddress(), subNode.getSymbol())) {
+                    || !isTokenUsable(isUseBaseTokens, subNode.getAddress(), subNode.getSymbol(), destToken)) {
                 continue;
             }
             RoutNode nextRoot = this.routNodeMap.get(subNode.getAddress());
@@ -475,15 +471,14 @@ public class RouterServer {
         tokens.addAll(Arrays.asList(data.getBaseCoins()));
         symbols.addAll(Arrays.asList(data.getCoinSymbols()));
         symbols.addAll(Arrays.asList(data.getBaseCoinSymbols()));
-        String poolType = (tokens.size() - 1) == 2 ? POOL_TYPE_2_POOL : POOL_TYPE_3_POOL;
         String contract = data.getAddress();
         for (int i = 0; i < tokens.size(); i++) {
             if (i == 1) {
                 continue;
             }
             for (int j = i + 1; j < tokens.size(); j++) {
-                updateRoutNodeMap(tokens.get(i), symbols.get(i), tokens.get(j), symbols.get(j), poolType, contract);
-                updateRoutNodeMap(tokens.get(j), symbols.get(j), tokens.get(i), symbols.get(i), poolType, contract);
+                updateRoutNodeMap(tokens.get(i), symbols.get(i), tokens.get(j), symbols.get(j), data.getPoolName(), contract);
+                updateRoutNodeMap(tokens.get(j), symbols.get(j), tokens.get(i), symbols.get(i), data.getPoolName(), contract);
             }
         }
     }
@@ -524,7 +519,6 @@ public class RouterServer {
     private void initCurves(CurveBasePool curve) {
         CurveBasePoolData data = curve.getCurveBasePoolData();
         int count = data.getCoins().length;
-        String poolType = count == 2 ? POOL_TYPE_2_POOL : POOL_TYPE_3_POOL;
         String contract = data.getAddress();
         for (int i = 0; i < count; i++) {
             for (int j = i + 1; j < count; j++) {
@@ -532,8 +526,8 @@ public class RouterServer {
                 String token1 = data.getCoins()[j];
                 String token0Symbol = data.getCoinSymbols()[i];
                 String token1Symbol = data.getCoinSymbols()[j];
-                updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, poolType, contract);
-                updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, poolType, contract);
+                updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, data.getPoolName(), contract);
+                updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, data.getPoolName(), contract);
             }
         }
     }
@@ -596,8 +590,8 @@ public class RouterServer {
 
     }
 
-    private boolean isTokenUsable(boolean isUseBaseTokens, String tokenAddr, String tokenSymbol) {
-        if (!isUseBaseTokens) {
+    private boolean isTokenUsable(boolean isUseBaseTokens, String tokenAddr, String tokenSymbol, String destAddress) {
+        if (!isUseBaseTokens || destAddress.equalsIgnoreCase(tokenAddr)) {
             return true;
         }
         return baseTokensMap.containsKey(tokenAddr) || baseTokenSymbolsMap.containsKey(tokenSymbol);

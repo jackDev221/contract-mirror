@@ -18,7 +18,6 @@ import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.FunctionEncoder;
-import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.StaticArray;
 import org.web3j.abi.datatypes.generated.StaticArray2;
 import org.web3j.abi.datatypes.generated.StaticArray3;
@@ -54,11 +53,13 @@ public class BaseStableSwapPool extends AbstractCurve {
     private static final BigInteger A_PRECISION = new BigInteger("100");
     private static final long BASE_CACHE_EXPIRES = 600;
     private int coinsCount;
+    @Getter
     private int baseCoinsCount;
     @Getter
     private BigInteger[] rates;
     @Getter
     private BigInteger[] precisionMul;
+
 
     @Setter
     private StableSwapPoolData stableSwapPoolData;
@@ -70,24 +71,25 @@ public class BaseStableSwapPool extends AbstractCurve {
             return null;
         }
         return new BaseStableSwapPool(contractInfo.getAddress(), contractInfo.getType(), extraData.getBaseCoinsCount(),
-                extraData.getCoinsCount(), extraData.getRates(), extraData.getPrecisionMul(), iChainHelper, iContractsHelper, sigMap);
+                extraData.getCoinsCount(), extraData.getRates(), extraData.getPrecisionMul(), extraData.getPoolName(), iChainHelper, iContractsHelper, sigMap);
     }
 
     public BaseStableSwapPool(String address, ContractType type, int baseCoinsCount, int coinsCount, BigInteger[] rates,
-                              BigInteger[] precisionMul, IChainHelper iChainHelper,
+                              BigInteger[] precisionMul, String poolName, IChainHelper iChainHelper,
                               IContractsHelper iContractsHelper, Map<String, String> sigMap) {
         super(address, type, iChainHelper, iContractsHelper, sigMap);
         this.baseCoinsCount = baseCoinsCount;
         this.coinsCount = coinsCount;
         this.rates = rates;
         this.precisionMul = precisionMul;
+        this.poolName = poolName;
     }
-
 
     private StableSwapPoolData getVarStableSwapBasePoolData() {
         if (ObjectUtil.isNull(stableSwapPoolData)) {
             stableSwapPoolData = new StableSwapPoolData(coinsCount, baseCoinsCount);
             stableSwapPoolData.setAddress(address);
+            stableSwapPoolData.setPoolName(poolName);
             stableSwapPoolData.setType(type);
             stableSwapPoolData.setUsing(true);
             stableSwapPoolData.setReady(false);
@@ -264,6 +266,7 @@ public class BaseStableSwapPool extends AbstractCurve {
                 baseCoinsCount,
                 copyBigIntegerArray(rates),
                 copyBigIntegerArray(precisionMul),
+                poolName,
                 iChainHelper,
                 iContractsHelper,
                 sigMap
@@ -1259,6 +1262,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         private int baseCoinsCount;
         private BigInteger[] rates;
         private BigInteger[] precisionMul;
+        private String poolName;
     }
 
     public static ContractExtraData parseToExtraData(String input) {

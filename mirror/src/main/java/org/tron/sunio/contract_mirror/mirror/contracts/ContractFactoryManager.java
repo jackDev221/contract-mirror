@@ -17,8 +17,7 @@ import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Assemble3Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.Assemble4Pool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.BaseStableSwapPool;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve2Pool;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.Curve3Pool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.CurveBasePool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMTotalData;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
@@ -87,26 +86,21 @@ public class ContractFactoryManager {
                     ));
                     break;
                 case CONTRACT_CURVE_2POOL:
-                    iContractsHelper.addContract(new Curve2Pool(
-                            contractInfo.getAddress(),
-                            tronChainHelper,
-                            iContractsHelper,
-                            2,
-                            1,
-                            curve2PoolSigMap
-                    ));
-                    break;
                 case CONTRACT_CURVE_3POOL:
-                    iContractsHelper.addContract(new Curve3Pool(
-                            contractInfo.getAddress(),
-                            tronChainHelper,
-                            iContractsHelper,
-                            3,
-                            2,
-                            curve3PoolSigMap
-                    ));
-                    break;
-
+                    CurveBasePool curveBase = CurveBasePool.genInstance(
+                            contractInfo, tronChainHelper, iContractsHelper, null
+                    );
+                    if (ObjectUtil.isNotNull(curveBase)) {
+                        if (curveBase.getCoinsCount() == 2) {
+                            curveBase.setSigMap(curve2PoolSigMap);
+                        } else if (curveBase.getCoinsCount() == 3) {
+                            curveBase.setSigMap(curve3PoolSigMap);
+                        }
+                        iContractsHelper.addContract(curveBase);
+                    } else {
+                        log.error("Fail to create instance for address: {}, type: {}, extra: {}", contractInfo.getAddress(),
+                                contractInfo.getType(), contractInfo.getExtra());
+                    }
                 case CONTRACT_ASSEMBLE_3POOL:
                     iContractsHelper.addContract(new Assemble3Pool(
                             contractInfo.getAddress(),
@@ -140,8 +134,13 @@ public class ContractFactoryManager {
                     break;
                 case STABLE_SWAP_POOL:
                     BaseStableSwapPool instance = BaseStableSwapPool.genInstance(contractInfo, tronChainHelper,
-                            iContractsHelper, curve2PoolSigMap);
+                            iContractsHelper, null);
                     if (ObjectUtil.isNotNull(instance)) {
+                        if (instance.getBaseCoinsCount() == 2){
+                            instance.setSigMap(curve2PoolSigMap);
+                        } else if (instance.getBaseCoinsCount() == 3) {
+                            instance.setSigMap(curve3PoolSigMap);
+                        }
                         iContractsHelper.addContract(instance);
                     } else {
                         log.error("Fail to create instance for address: {}, type: {}, extra: {}", contractInfo.getAddress(),

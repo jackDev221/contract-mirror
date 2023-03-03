@@ -9,6 +9,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 public abstract class AbstractCurve extends BaseContract {
+    protected String poolName;
     public AbstractCurve(String address, ContractType type, IChainHelper iChainHelper,
                          IContractsHelper iContractsHelper, Map<String, String> sigMap) {
         super(address, type, iChainHelper, iContractsHelper, sigMap);

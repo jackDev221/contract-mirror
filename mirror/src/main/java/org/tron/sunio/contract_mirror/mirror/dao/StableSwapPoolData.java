@@ -65,6 +65,7 @@ public class StableSwapPoolData extends BaseContractData {
     private String futureOwner;
     private BigInteger lpTotalSupply;
     private BigInteger baseLpTotalSupply;
+    private String poolName;
 
     public StableSwapPoolData(int coinsCount, int baseCoinsCount) {
         coins = new String[coinsCount];
