@@ -59,10 +59,11 @@ public class SunswapV1Factory extends SynchronizableContract {
 
     @Override
     public String run(String method) {
-        if (0 == method.compareTo("tokenCount")) {
-            return String.valueOf(getTokenCount());
-        } else {
-            return super.run(method);
+        switch (method) {
+            case "tokenCount":
+                return String.valueOf(getTokenCount());
+            default:
+                return super.run(method);
         }
     }
 
@@ -167,7 +168,7 @@ public class SunswapV1Factory extends SynchronizableContract {
         for (int i = minId; i < maxId; i++) {
             IToken token = getTokenWithId(i);
             if (null == token) {
-                log.error("INVALID V1: " + i);
+                log.error("INVALID V1: {}", i);
                 handleInvalidToken();
                 continue; // invalid token
             }
@@ -183,7 +184,7 @@ public class SunswapV1Factory extends SynchronizableContract {
                 newExchange(contract.getAddress(), pool.getAddress());
             } catch (RuntimeException e) {
                 // TODO: is there any way to distinguish network error and invalid data ?
-                log.error("INVALID V1: " + i);
+                log.error("INVALID V1: {}", i);
                 handleInvalidToken();
             }
         }
@@ -221,7 +222,8 @@ public class SunswapV1Factory extends SynchronizableContract {
                    : (IToken) contractManager.registerContract(new TRC20(tokenAddress));
         } catch (ClassCastException e) {
             // invalid token address
-            log.error("INVALID TOKEN ADDRESS " + tokenAddress + " , error " + e.getMessage());
+            e.printStackTrace();
+            log.error("INVALID TOKEN ADDRESS {}", tokenAddress);
             return null;
         }
     }
@@ -272,6 +274,6 @@ public class SunswapV1Factory extends SynchronizableContract {
         } finally {
             wlock.unlock();
         }
-        log.info("New SunswapV1 " + pool.info());
+        log.info("New SunswapV1 {}", pool.info());
     }
 }

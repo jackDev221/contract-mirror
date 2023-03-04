@@ -10,7 +10,6 @@ import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRC20;
-import org.tron.defi.contract_mirror.core.token.TRX;
 import org.tron.defi.contract_mirror.utils.chain.TronContractTrigger;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.generated.Uint256;
@@ -33,12 +32,12 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     public BigInteger balanceOf(String address) {
-        return getLpToken().balanceOf(address);
+        return ((IToken) getLpToken()).balanceOf(address);
     }
 
     @Override
     public BigInteger balanceOfFromChain(String address) {
-        return getLpToken().balanceOfFromChain(address);
+        return ((IToken) getLpToken()).balanceOfFromChain(address);
     }
 
     @Override
@@ -48,7 +47,7 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     public void setBalance(String address, BigInteger balance) {
-        getLpToken().setBalance(address, balance);
+        ((IToken) getLpToken()).setBalance(address, balance);
     }
 
     @Override
@@ -90,12 +89,14 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     protected void getContractData() {
         wlock.lock();
         try {
-            TRX trx = (TRX) getTokens().get(0);
-            ITRC20 token = (ITRC20) getTokens().get(1);
+            IToken trx = (IToken) getTokens().get(0);
+            IToken token = (IToken) getTokens().get(1);
             trx.setBalance(getAddress(), trx.balanceOfFromChain(getAddress()));
             token.setBalance(getAddress(), token.balanceOfFromChain(getAddress()));
+            log.info("{} balance {}", trx.getSymbol(), trx.balanceOf(getAddress()));
+            log.info("{} balance {}", token.getSymbol(), token.balanceOf(getAddress()));
         } catch (Exception e) {
-            log.error(e.getMessage());
+            e.printStackTrace();
         } finally {
             wlock.unlock();
         }
@@ -103,10 +104,13 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
-        if (eventName.equals("Snapshot")) {
-            handleSnapshotEvent(eventValues);
-        } else {
-            log.warn("Ignore event " + eventName);
+        switch (eventName) {
+            case "Snapshot":
+                handleSnapshotEvent(eventValues);
+                break;
+            default:
+                log.warn("Ignore event {}", eventName);
+                break;
         }
     }
 
@@ -140,12 +144,18 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     }
 
     private void handleSnapshotEvent(EventValues eventValues) {
-        BigInteger trxBalance = ((Uint256) eventValues.getIndexedValues().get(1)).getValue();
-        BigInteger tokenBalance = ((Uint256) eventValues.getIndexedValues().get(2)).getValue();
+        BigInteger balance0 = ((Uint256) eventValues.getIndexedValues().get(1)).getValue();
+        BigInteger balance1 = ((Uint256) eventValues.getIndexedValues().get(2)).getValue();
         wlock.lock();
         try {
-            ((TRX) getTokens().get(0)).setBalance(getAddress(), trxBalance);
-            ((ITRC20) getTokens().get(1)).setBalance(getAddress(), tokenBalance);
+            IToken token0 = (IToken) getTokens().get(0);
+            IToken token1 = (IToken) getTokens().get(1);
+            BigInteger balanceBefore0 = token0.balanceOf(getAddress());
+            BigInteger balanceBefore1 = token1.balanceOf(getAddress());
+            token0.setBalance(getAddress(), balance0);
+            token1.setBalance(getAddress(), balance1);
+            log.info("{} balance {} -> {}", token0.getSymbol(), balanceBefore0, balance0);
+            log.info("{} balance {} -> {}", token1.getSymbol(), balanceBefore1, balance1);
         } finally {
             wlock.unlock();
         }

@@ -6,6 +6,7 @@ import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.Curve4Abi;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.token.ITRC20;
+import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRC20;
 import org.tron.defi.contract_mirror.utils.TokenMath;
 import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
@@ -53,6 +54,13 @@ public class CurveCombinationPool extends Pool {
     }
 
     @Override
+    public JSONObject getInfo() {
+        JSONObject info = super.getInfo();
+        info.put("base_pool", underlyingPool.getInfo());
+        return info;
+    }
+
+    @Override
     public boolean isReady() {
         if (!isEventAccept()) {
             return false;
@@ -62,13 +70,6 @@ public class CurveCombinationPool extends Pool {
         }
         ready = System.currentTimeMillis() > timestamp2;
         return ready;
-    }
-
-    @Override
-    public JSONObject getInfo() {
-        JSONObject info = super.getInfo();
-        info.put("base_pool", underlyingPool.getInfo());
-        return info;
     }
 
     @Override
@@ -88,12 +89,15 @@ public class CurveCombinationPool extends Pool {
 
     @Override
     protected void getContractData() {
+        log.info("getContractData {}", getAddress());
         wlock.lock();
         try {
             List<Type> response = abi.invoke(Curve4Abi.Functions.FEE, Collections.emptyList());
             fee = ((Uint256) response.get(0)).getValue();
             response = abi.invoke(Curve4Abi.Functions.ADMIN_FEE, Collections.emptyList());
             adminFee = ((Uint256) response.get(0)).getValue();
+            log.info("fee = {}", fee);
+            log.info("adminFee = {}", adminFee);
 
             response = abi.invoke(Curve4Abi.Functions.INITIAL_A, Collections.emptyList());
             initialA = ((Uint256) response.get(0)).getValue();
@@ -103,20 +107,29 @@ public class CurveCombinationPool extends Pool {
             futureA = ((Uint256) response.get(0)).getValue();
             response = abi.invoke(Curve4Abi.Functions.FUTURE_A_TIME, Collections.emptyList());
             timeFutureA = ((Uint256) response.get(0)).getValue().longValue();
+            log.info("initialA = {}", initialA);
+            log.info("timeInitialA = {}", timeInitialA);
+            log.info("futureA = {}", futureA);
+            log.info("timeFutureA = {}", timeFutureA);
 
             response = abi.invoke(Curve4Abi.Functions.BASE_VIRTUAL_PRICE, Collections.emptyList());
             virtualPrice = ((Uint256) response.get(0)).getValue();
             response = abi.invoke(Curve4Abi.Functions.BASE_CACHE_UPDATED, Collections.emptyList());
             timeUpdateVirtualPrice = ((Uint256) response.get(0)).getValue().longValue();
+            log.info("virtualPrice = {}", virtualPrice);
+            log.info("timeUpdateVirtualPrice = {}", timeUpdateVirtualPrice);
 
             getLpToken().setTotalSupply(getLpToken().getTotalSupplyFromChain());
+            log.info("totalSupply = {}", getLpToken().totalSupply());
 
             for (int i = 0; i < N_COINS; i++) {
                 response = abi.invoke(Curve4Abi.Functions.BALANCES, Collections.singletonList(i));
                 balances.set(i, ((Uint256) response.get(0)).getValue());
+                log.info("balance{} = {}", i, balances.get(i));
 
-                ITRC20 token = (ITRC20) getTokens().get(i);
+                IToken token = (IToken) getTokens().get(i);
                 token.setBalance(getAddress(), token.balanceOfFromChain(getAddress()));
+                log.info("{} balance {}", token.getSymbol(), token.balanceOf(getAddress()));
             }
         } finally {
             wlock.unlock();
@@ -313,6 +326,7 @@ public class CurveCombinationPool extends Pool {
     }
 
     private void handleAddLiquidityEvent(EventValues eventValues) {
+        log.info("handleAddLiquidityEvent {}", getAddress());
         String provider
             = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
                                                                             .get(0)).getValue());
@@ -335,55 +349,92 @@ public class CurveCombinationPool extends Pool {
         try {
             if (getLpToken().totalSupply().compareTo(BigInteger.ZERO) > 0) {
                 for (int i = 0; i < N_COINS; i++) {
-                    ITRC20 token = (ITRC20) getTokens().get(i);
-                    TokenMath.increaseBalance(token, getAddress(), amounts.get(i));
+                    IToken token = (IToken) getTokens().get(i);
+                    BigInteger balanceBefore = token.balanceOf(getAddress());
+                    BigInteger balanceAfter = TokenMath.increaseBalance(token,
+                                                                        getAddress(),
+                                                                        amounts.get(i));
+                    log.info("{} balance {} -> {}", token.getSymbol(), balanceBefore, balanceAfter);
 
                     BigInteger adminFeeN = fees.get(i).multiply(adminFee).divide(FEE_DENOMINATOR);
-                    balances.set(i,
-                                 TokenMath.safeSubtract(TokenMath.safeAdd(balances.get(i),
-                                                                          amounts.get(i)),
-                                                        adminFeeN));
+                    balanceBefore = balances.get(i);
+                    balanceAfter = TokenMath.safeSubtract(TokenMath.safeAdd(balanceBefore,
+                                                                            amounts.get(i)),
+                                                          adminFeeN);
+                    balances.set(i, balanceAfter);
+                    log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
                 }
             } else {
                 for (int i = 0; i < N_COINS; i++) {
-                    ITRC20 token = (ITRC20) getTokens().get(i);
-                    TokenMath.increaseBalance(token, getAddress(), amounts.get(i));
-                    balances.set(i, TokenMath.safeAdd(balances.get(i), amounts.get(i)));
+                    IToken token = (IToken) getTokens().get(i);
+                    BigInteger balanceBefore = token.balanceOf(getAddress());
+                    BigInteger balanceAfter = TokenMath.increaseBalance(token,
+                                                                        getAddress(),
+                                                                        amounts.get(i));
+                    log.info("{} balance {} -> {}", token.getSymbol(), balanceBefore, balanceAfter);
+
+                    balanceBefore = balances.get(i);
+                    balanceAfter = TokenMath.safeAdd(balances.get(i), amounts.get(i));
+                    balances.set(i, balanceAfter);
+                    log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
                 }
             }
             BigInteger amountMint = TokenMath.safeSubtract(tokenSupply, getLpToken().totalSupply());
-            TokenMath.increaseBalance(getLpToken(), provider, amountMint);
+            IToken token = (IToken) getLpToken();
+            BigInteger balanceBefore = token.balanceOf(provider);
+            BigInteger balanceAfter = TokenMath.increaseBalance(token, provider, amountMint);
             getLpToken().setTotalSupply(tokenSupply);
+            log.info("{} totalSupply {}, {} balance {} -> {}",
+                     token.getSymbol(),
+                     tokenSupply,
+                     provider,
+                     balanceBefore,
+                     balanceAfter);
         } finally {
             wlock.unlock();
         }
     }
 
     private void handleNewFeeEvent(EventValues eventValues) {
+        log.info("handleNewFeeEvent {}", getAddress());
         wlock.lock();
         try {
+            log.info("fee old = {}", fee);
+            log.info("adminFee old = {}", adminFee);
             fee = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
             adminFee = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
+            log.info("fee = {}", fee);
+            log.info("adminFee = {}", adminFee);
         } finally {
             wlock.unlock();
         }
     }
 
     private void handleRampAEvent(EventValues eventValues) {
+        log.info("handleRampAEvent {}", getAddress());
         wlock.lock();
         try {
+            log.info("initialA old = {}", initialA);
+            log.info("timeInitialA old = {}", timeInitialA);
+            log.info("futureA old = {}", futureA);
+            log.info("timeFutureA old = {}", timeFutureA);
             initialA = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
             futureA = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
             timeInitialA = ((Uint256) eventValues.getNonIndexedValues().get(2)).getValue()
                                                                                .longValue();
             timeFutureA = ((Uint256) eventValues.getNonIndexedValues().get(3)).getValue()
                                                                               .longValue();
+            log.info("initialA = {}", initialA);
+            log.info("timeInitialA = {}", timeInitialA);
+            log.info("futureA = {}", futureA);
+            log.info("timeFutureA = {}", timeFutureA);
         } finally {
             wlock.unlock();
         }
     }
 
     private void handleRemoveLiquidity(EventValues eventValues) {
+        log.info("handleRemoveLiquidity {}", getAddress());
         String provider
             = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
                                                                             .get(0)).getValue());
@@ -399,19 +450,36 @@ public class CurveCombinationPool extends Pool {
         wlock.lock();
         try {
             for (int i = 0; i < N_COINS; i++) {
-                ITRC20 token = (ITRC20) getTokens().get(i);
-                TokenMath.decreaseBalance(token, getAddress(), amounts.get(i));
-                balances.set(i, TokenMath.safeSubtract(balances.get(i), amounts.get(i)));
+                IToken token = (IToken) getTokens().get(i);
+                BigInteger balanceBefore = token.balanceOf(getAddress());
+                BigInteger balanceAfter = TokenMath.decreaseBalance(token,
+                                                                    getAddress(),
+                                                                    amounts.get(i));
+                log.info("{} balance {} -> {}", token.getSymbol(), balanceBefore, balanceAfter);
+
+                balanceBefore = balances.get(i);
+                balanceAfter = TokenMath.safeSubtract(balanceBefore, amounts.get(i));
+                balances.set(i, balanceAfter);
+                log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
             }
             BigInteger amountBurn = TokenMath.safeSubtract(getLpToken().totalSupply(), tokenSupply);
-            TokenMath.decreaseBalance(getLpToken(), provider, amountBurn);
+            IToken token = (IToken) getLpToken();
+            BigInteger balanceBefore = token.balanceOf(provider);
+            BigInteger balanceAfter = TokenMath.decreaseBalance(token, provider, amountBurn);
             getLpToken().setTotalSupply(tokenSupply);
+            log.info("{} totalSupply {}, {} balance {} -> {}",
+                     token.getSymbol(),
+                     tokenSupply,
+                     provider,
+                     balanceBefore,
+                     balanceAfter);
         } finally {
             wlock.unlock();
         }
     }
 
     private void handleRemoveLiquidityImbalance(EventValues eventValues) {
+        log.info("handleRemoveLiquidityImbalance {}", getAddress());
         String provider
             = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
                                                                             .get(0)).getValue());
@@ -433,23 +501,38 @@ public class CurveCombinationPool extends Pool {
         wlock.lock();
         try {
             for (int i = 0; i < N_COINS; i++) {
-                ITRC20 token = (ITRC20) getTokens().get(i);
-                TokenMath.decreaseBalance(token, getAddress(), amounts.get(i));
+                IToken token = (IToken) getTokens().get(i);
+                BigInteger balanceBefore = token.balanceOf(getAddress());
+                BigInteger balanceAfter = TokenMath.decreaseBalance(token,
+                                                                    getAddress(),
+                                                                    amounts.get(i));
+                log.info("{} balance {} -> {}", token.getSymbol(), balanceBefore, balanceAfter);
 
                 BigInteger adminFeeN = fees.get(i).multiply(adminFee).divide(FEE_DENOMINATOR);
-                balances.set(i,
-                             TokenMath.safeSubtract(balances.get(i),
-                                                    TokenMath.safeAdd(amounts.get(i), adminFeeN)));
+                balanceBefore = balances.get(i);
+                balanceAfter = TokenMath.safeSubtract(balanceBefore,
+                                                      TokenMath.safeAdd(amounts.get(i), adminFeeN));
+                balances.set(i, balanceAfter);
+                log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
             }
             BigInteger amountBurn = TokenMath.safeSubtract(getLpToken().totalSupply(), tokenSupply);
-            TokenMath.decreaseBalance(getLpToken(), provider, amountBurn);
+            IToken token = (IToken) getLpToken();
+            BigInteger balanceBefore = token.balanceOf(provider);
+            BigInteger balanceAfter = TokenMath.decreaseBalance(token, provider, amountBurn);
             getLpToken().setTotalSupply(tokenSupply);
+            log.info("{} totalSupply {}, {} balance {} -> {}",
+                     token.getSymbol(),
+                     tokenSupply,
+                     provider,
+                     balanceBefore,
+                     balanceAfter);
         } finally {
             wlock.unlock();
         }
     }
 
     private void handleStopRampAEvent(EventValues eventValues) {
+        log.info("handleStopRampAEvent {}", getAddress());
         wlock.unlock();
         try {
             initialA = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
@@ -457,12 +540,17 @@ public class CurveCombinationPool extends Pool {
                                                                                .longValue();
             futureA = initialA;
             timeFutureA = timeInitialA;
+            log.info("initialA = {}", initialA);
+            log.info("timeInitialA = {}", timeInitialA);
+            log.info("futureA = {}", futureA);
+            log.info("timeFutureA = {}", timeFutureA);
         } finally {
             wlock.unlock();
         }
     }
 
     private void handleTokenExchangeEvent(EventValues eventValues) {
+        log.info("handleTokenExchangeEvent {}", getAddress());
         int soldId = ((Int128) eventValues.getNonIndexedValues().get(0)).getValue().intValue();
         BigInteger amountSold = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
         int buyId = ((Int128) eventValues.getNonIndexedValues().get(2)).getValue().intValue();
@@ -479,22 +567,37 @@ public class CurveCombinationPool extends Pool {
                                          .divide(FEE_DENOMINATOR.subtract(fee));
         wlock.lock();
         try {
-            ITRC20 tokenSold = (ITRC20) getTokens().get(soldId);
-            ITRC20 tokenBuy = (ITRC20) getTokens().get(buyId);
-            TokenMath.increaseBalance(tokenSold, getAddress(), amountSold);
-            TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
+            IToken tokenSold = (IToken) getTokens().get(soldId);
+            IToken tokenBuy = (IToken) getTokens().get(buyId);
+
+            BigInteger balanceBefore = tokenSold.balanceOf(getAddress());
+            BigInteger balanceAfter = TokenMath.increaseBalance(tokenSold,
+                                                                getAddress(),
+                                                                amountSold);
+            log.info("{} balance {} -> {}", tokenSold.getSymbol(), balanceBefore, balanceAfter);
+
+            balanceBefore = tokenBuy.balanceOf(getAddress());
+            balanceAfter = TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
+            log.info("{} balance {} -> {}", tokenBuy.getSymbol(), balanceBefore, balanceAfter);
 
             // It's easy when amountSold is equal to token received by contract
-            balances.set(soldId, TokenMath.safeAdd(balances.get(soldId), amountSold));
-            balances.set(buyId,
-                         TokenMath.safeSubtract(balances.get(buyId),
-                                                TokenMath.safeAdd(amountBuy, dyAdminFee)));
+            balanceBefore = balances.get(soldId);
+            balanceAfter = TokenMath.safeAdd(balanceBefore, amountSold);
+            balances.set(soldId, balanceAfter);
+            log.info("balance{} {} -> {}", soldId, balanceBefore, balanceAfter);
+
+            balanceBefore = balances.get(buyId);
+            balanceAfter = TokenMath.safeSubtract(balanceBefore,
+                                                  TokenMath.safeAdd(amountBuy, dyAdminFee));
+            balances.set(buyId, balanceAfter);
+            log.info("balance{} {} -> {}", buyId, balanceBefore, balanceAfter);
         } finally {
             wlock.unlock();
         }
     }
 
     private void handleTokenExchangeUnderlyingEvent(EventValues eventValues, long eventTime) {
+        log.info("handleTokenExchangeUnderlyingEvent {}", getAddress());
         int soldId = ((Int128) eventValues.getNonIndexedValues().get(0)).getValue().intValue();
         BigInteger amountSold = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
         int buyId = ((Int128) eventValues.getNonIndexedValues().get(2)).getValue().intValue();
@@ -504,8 +607,8 @@ public class CurveCombinationPool extends Pool {
             return;
         }
 
-        ITRC20 tokenSold = (ITRC20) getTokens().get(soldId);
-        ITRC20 tokenBuy = (ITRC20) getTokens().get(buyId);
+        IToken tokenSold = (IToken) getTokens().get(soldId);
+        IToken tokenBuy = (IToken) getTokens().get(buyId);
 
         int i = soldId == TOKEN_ID ? TOKEN_ID : LP_TOKEN_ID;
         int j = buyId == TOKEN_ID ? TOKEN_ID : LP_TOKEN_ID;
@@ -522,13 +625,27 @@ public class CurveCombinationPool extends Pool {
         if (soldId != FEE_INDEX) {
             wlock.lock();
             try {
-                TokenMath.increaseBalance(tokenSold, getAddress(), amountSold);
-                TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
+                BigInteger balanceBefore = tokenSold.balanceOf(getAddress());
+                BigInteger balanceAfter = TokenMath.increaseBalance(tokenSold,
+                                                                    getAddress(),
+                                                                    amountSold);
+                log.info("{} balance {} -> {}", tokenSold.getSymbol(), balanceBefore, balanceAfter);
+
+                balanceBefore = tokenBuy.balanceOf(getAddress());
+                balanceAfter = TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
+                log.info("{} balance {} -> {}", tokenBuy.getSymbol(), balanceBefore, balanceAfter);
+
                 // It's easy when amountSold is equal to token received by contract
-                balances.set(i, TokenMath.safeAdd(balances.get(i), amountSold));
-                balances.set(j,
-                             TokenMath.safeSubtract(balances.get(j),
-                                                    TokenMath.safeAdd(amountBuy, dyAdminFee)));
+                balanceBefore = balances.get(i);
+                balanceAfter = TokenMath.safeAdd(balanceBefore, amountSold);
+                balances.set(i, balanceAfter);
+                log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
+
+                balanceBefore = balances.get(j);
+                balanceAfter = TokenMath.safeSubtract(balanceBefore,
+                                                      TokenMath.safeAdd(amountBuy, dyAdminFee));
+                balances.set(j, balanceAfter);
+                log.info("balance{} {} -> {}", j, balanceBefore, balanceAfter);
             } finally {
                 wlock.unlock();
             }
@@ -554,18 +671,32 @@ public class CurveCombinationPool extends Pool {
         assert dx.compareTo(BigInteger.ZERO) >= 0;
         wlock.lock();
         try {
-            TokenMath.increaseBalance(tokenSold, getAddress(), amountSold);
-            TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
-            balances.set(i, TokenMath.safeAdd(balances.get(i), dx));
-            balances.set(j,
-                         TokenMath.safeSubtract(balances.get(j),
-                                                TokenMath.safeAdd(amountBuy, dyAdminFee)));
+            BigInteger balanceBefore = tokenSold.balanceOf(getAddress());
+            BigInteger balanceAfter = TokenMath.increaseBalance(tokenSold,
+                                                                getAddress(),
+                                                                amountSold);
+            log.info("{} balance {} -> {}", tokenSold.getSymbol(), balanceBefore, balanceAfter);
+
+            balanceBefore = tokenBuy.balanceOf(getAddress());
+            balanceAfter = TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
+            log.info("{} balance {} -> {}", tokenBuy.getSymbol(), balanceBefore, balanceAfter);
+
+            balanceBefore = balances.get(i);
+            balanceAfter = TokenMath.safeAdd(balanceBefore, dx);
+            balances.set(i, balanceAfter);
+            log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
+
+            balanceBefore = balances.get(j);
+            balanceAfter = TokenMath.safeSubtract(balanceBefore,
+                                                  TokenMath.safeAdd(amountBuy, dyAdminFee));
+            balances.set(j, balanceAfter);
+            log.info("balance{} {} -> {}", j, balanceBefore, balanceAfter);
         } finally {
             wlock.unlock();
         }
     }
 
-    private void initUnderlyingPool() throws RuntimeException {
+    private void initUnderlyingPool() {
         List<Type> response = abi.invoke(Curve4Abi.Functions.BASE_POOL, Collections.emptyList());
         String poolAddress
             = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());

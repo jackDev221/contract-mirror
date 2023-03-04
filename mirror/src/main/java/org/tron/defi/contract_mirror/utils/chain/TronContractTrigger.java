@@ -41,10 +41,11 @@ public class TronContractTrigger implements ContractTrigger {
             if (accountSunNetworkResponse != null && accountSunNetworkResponse.getData() != null) {
                 return accountSunNetworkResponse.getData().getBalance();
             }
-        } catch (Throwable e) {
-            log.error("trigger error", e);
+            throw new IllegalArgumentException("NO RESPONSE");
+        } catch (Exception e) {
+            log.error("trigger error {}", e);
+            throw e;
         }
-        return 0;
     }
 
     @Override
@@ -63,6 +64,7 @@ public class TronContractTrigger implements ContractTrigger {
             constantRequest.setFeeLimit(tronConfig.getFeeLimit());
             SunNetworkResponse<TransactionResponse> constantResponse
                 = sunNetwork.getMainChainService().triggerConstantContract(constantRequest);
+            // TODO: handle with error code
             if (constantResponse == null ||
                 !constantResponse.getCode().equals(ErrorCodeEnum.SUCCESS.getCode()) ||
                 constantResponse.getData() == null ||
@@ -73,8 +75,8 @@ public class TronContractTrigger implements ContractTrigger {
                 throw new RuntimeException();
             }
             return constantResponse.getData().constantResult;
-        } catch (Throwable e) {
-            log.error("trigger error", e);
+        } catch (Exception e) {
+            log.error("trigger error {}", e);
             throw e;
         }
     }

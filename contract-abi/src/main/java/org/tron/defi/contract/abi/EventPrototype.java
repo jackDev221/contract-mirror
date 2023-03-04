@@ -53,7 +53,7 @@ public class EventPrototype {
         private final boolean indexed;
 
         Parameter(String description) {
-            String[] fields = description.split(" ");
+            String[] fields = description.strip().split(" ");
             if (fields.length > 2) {
                 throw new IllegalArgumentException();
             }

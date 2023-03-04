@@ -15,11 +15,9 @@ public class FunctionPrototype {
 
     public FunctionPrototype(String name, String inputParams, String outputParams) {
         this.name = name;
-        inputTypes = Arrays.stream(inputParams.split(","))
-                           .filter(type -> !type.isEmpty())
+        inputTypes = Arrays.stream(inputParams.split(",")).filter(type -> !type.isBlank())
                            .collect(Collectors.toList());
-        outputTypes = Arrays.stream(outputParams.split(","))
-                            .filter(type -> !type.isEmpty())
+        outputTypes = Arrays.stream(outputParams.split(",")).filter(type -> !type.isBlank())
                             .collect(Collectors.toList());
         rawSignature = name + "(" + inputParams + ")";
     }

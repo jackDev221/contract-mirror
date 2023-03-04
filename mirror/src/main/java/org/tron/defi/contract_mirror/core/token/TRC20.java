@@ -2,6 +2,7 @@ package org.tron.defi.contract_mirror.core.token;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.token.TRC20Abi;
 import org.tron.defi.contract_mirror.common.ContractType;
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 public class TRC20 extends Contract implements IToken, ITRC20 {
     private final ConcurrentHashMap<String, BigInteger> balances = new ConcurrentHashMap<>(30000);
     private String symbol;
@@ -53,12 +55,13 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
 
     @Override
     public String run(String method) {
-        if (0 == method.compareTo("symbol")) {
-            return getSymbol();
-        } else if (0 == method.compareTo("decimals")) {
-            return String.valueOf(getDecimals());
-        } else {
-            return super.run(method);
+        switch (method) {
+            case "symbol":
+                return getSymbol();
+            case "decimals":
+                return String.valueOf(getDecimals());
+            default:
+                return super.run(method);
         }
     }
 
@@ -125,8 +128,15 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
     }
 
     private String getSymbolFromChain() {
-        List<Type> response = abi.invoke(TRC20Abi.Functions.SYMBOL, Collections.emptyList());
-        symbol = ((Utf8String) response.get(0)).getValue();
+        // allow non-restrict TRC20
+        try {
+            List<Type> response = abi.invoke(TRC20Abi.Functions.SYMBOL, Collections.emptyList());
+            symbol = ((Utf8String) response.get(0)).getValue();
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            symbol = getContractType();
+            log.warn("{} symbol {}", getAddress(), symbol);
+        }
         return symbol;
     }
 }

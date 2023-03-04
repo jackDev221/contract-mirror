@@ -1,6 +1,5 @@
 package org.tron.defi.contract_mirror.utils.kafka;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
@@ -10,7 +9,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-@Slf4j
 public class FallbackRebalanceListener implements ConsumerRebalanceListener {
     private final KafkaConsumer<Long, String> consumer;
     private final String topic;
@@ -45,7 +43,7 @@ public class FallbackRebalanceListener implements ConsumerRebalanceListener {
                 consumer.seek(partitionOffset.getKey(), partitionOffset.getValue().offset());
             }
         } catch (Exception e) {
-            log.error("FallbackRebalanceListener: {}", e.getMessage());
+            e.printStackTrace();
         }
     }
 }

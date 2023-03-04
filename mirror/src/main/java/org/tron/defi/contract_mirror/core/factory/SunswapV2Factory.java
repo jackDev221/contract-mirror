@@ -55,10 +55,11 @@ public class SunswapV2Factory extends SynchronizableContract {
 
     @Override
     public String run(String method) {
-        if (0 == method.compareTo("getAllPairLen")) {
-            return String.valueOf(getAllPairLen());
-        } else {
-            return super.run(method);
+        switch (method) {
+            case "getAllPairLen":
+                return String.valueOf(getAllPairLen());
+            default:
+                return super.run(method);
         }
     }
 
@@ -119,7 +120,7 @@ public class SunswapV2Factory extends SynchronizableContract {
                 handleCreatePairEvent(eventValues);
                 break;
             default:
-                log.warn("Ignore event " + eventName);
+                log.warn("Ignore event {}", eventName);
                 break;
         }
     }
@@ -157,7 +158,6 @@ public class SunswapV2Factory extends SynchronizableContract {
         } catch (RuntimeException e) {
             // TODO: is there any way to distinguish network error and invalid data ?
             e.printStackTrace();
-            log.error(e.getMessage());
             handleInvalidPair(id);
             return null;
         }
@@ -217,7 +217,7 @@ public class SunswapV2Factory extends SynchronizableContract {
     }
 
     private void handleInvalidPair(int id) {
-        log.error("INVALID V2: " + id);
+        log.error("INVALID V2: {}", id);
         wlock.lock();
         try {
             if (id == pairs.size()) {
@@ -278,6 +278,6 @@ public class SunswapV2Factory extends SynchronizableContract {
         node0.addOutEdge(edge0);
         node1.addInEdge(edge0);
         node1.addOutEdge(edge1);
-        log.info("New SunswapV2 " + pair.info());
+        log.info("New SunswapV2 {}", pair.info());
     }
 }

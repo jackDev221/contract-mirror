@@ -107,8 +107,9 @@ public class EventService {
                 poolQueue = null == exists ? poolQueue : exists;
             }
             poolQueue.put(message);
-        } catch (Exception ex) {
-            log.error(ex.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error(e.getMessage());
             // lose message, need sync
             contract.sync();
         }
@@ -186,15 +187,15 @@ public class EventService {
                     // concurrent remove case
                     continue;
                 } catch (Exception ex) {
-                    log.error(ex.getMessage());
+                    ex.printStackTrace();
+                    log.error("PendingEventConsumer error {}", ex.getMessage());
                 }
                 if (pendingQueue.isEmpty()) {
-                    log.info("Wait pending message...");
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
                         // it's fine doing nothing
-                        log.info(e.getMessage());
+                        e.printStackTrace();
                     }
                 }
             }
@@ -236,7 +237,7 @@ public class EventService {
                         }
                     }
                 } catch (Exception e) {
-                    log.error(e.getMessage());
+                    e.printStackTrace();
                 }
             }
         }

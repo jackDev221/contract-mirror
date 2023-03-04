@@ -51,6 +51,7 @@ public class PsmPool extends Pool {
         gemToUsddDecimalFactor = BigInteger.valueOf(10)
                                            .pow(((IToken) tokens.get(0)).getDecimals() -
                                                 ((IToken) tokens.get(1)).getDecimals());
+        log.info("gemToUsddDecimalFactor = {}", gemToUsddDecimalFactor);
         updateName();
         initPoly();
         sync();
@@ -61,8 +62,9 @@ public class PsmPool extends Pool {
         wlock.lock();
         try {
             info = poly.getInfo(getAddress());
-            getGem().setBalance(getAddress(), info.getBalanceGem());
-            getUsdd().setBalance(getAddress(), info.getBalanceUsdd());
+            ((IToken) getGem()).setBalance(getAddress(), info.getBalanceGem());
+            ((IToken) getUsdd()).setBalance(getAddress(), info.getBalanceUsdd());
+            log.info("psm info {}", info);
         } finally {
             wlock.unlock();
         }
@@ -83,7 +85,7 @@ public class PsmPool extends Pool {
                 handleBuyGemEvent(eventValues);
                 break;
             default:
-                log.warn("Ignore event " + eventName);
+                log.warn("Ignore event {}", eventName);
                 break;
         }
     }
@@ -127,39 +129,54 @@ public class PsmPool extends Pool {
     }
 
     private void handleBuyGemEvent(EventValues eventValues) {
+        log.info("handleBuyGemEvent {}", getAddress());
         BigInteger gemAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
         BigInteger fee = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
         BigInteger usddAmount = gemAmount.multiply(gemToUsddDecimalFactor).add(fee);
         wlock.lock();
         try {
-            info.setBalanceGem(TokenMath.safeSubtract(info.getBalanceGem(), gemAmount));
-            info.setBalanceUsdd(TokenMath.safeAdd(info.getBalanceUsdd(), usddAmount));
-            getGem().setBalance(getAddress(), info.getBalanceGem());
-            getUsdd().setBalance(getAddress(), info.getBalanceUsdd());
+            BigInteger balanceBefore = info.getBalanceGem();
+            BigInteger balanceAfter = TokenMath.safeSubtract(balanceBefore, gemAmount);
+            info.setBalanceGem(balanceAfter);
+            log.info("Gem balance {} -> {}", balanceBefore, balanceAfter);
 
-            info.setAmountUsddToGem(TokenMath.safeAdd(info.getAmountUsddToGem(), usddAmount));
+            balanceBefore = info.getBalanceUsdd();
+            balanceAfter = TokenMath.safeAdd(balanceBefore, usddAmount);
+            info.setBalanceUsdd(balanceAfter);
+            log.info("USDD balance {} -> {}", balanceBefore, balanceAfter);
+
+            ((IToken) getGem()).setBalance(getAddress(), info.getBalanceGem());
+            ((IToken) getUsdd()).setBalance(getAddress(), info.getBalanceUsdd());
+
+            balanceBefore = info.getAmountUsddToGem();
+            balanceAfter = TokenMath.safeAdd(balanceBefore, usddAmount);
+            info.setAmountUsddToGem(balanceAfter);
+            log.info("AmountUsddToGem {} -> {}", balanceBefore, balanceAfter);
         } finally {
             wlock.unlock();
         }
     }
 
     private void handleFileEvent(EventValues eventValues) {
+        log.info("handleFileEvent {}", getAddress());
         String what = new String(((Bytes32) eventValues.getIndexedValues().get(0)).getValue());
         BigInteger value = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
         wlock.lock();
         try {
             switch (what) {
                 case "tin":
+                    log.info("feeToUsdd {} -> {}", info.getFeeToUsdd(), value);
                     info.setFeeToUsdd(value);
                     break;
                 case "tout":
+                    log.info("feeToGem {} -> {}", info.getFeeToGem(), value);
                     info.setFeeToGem(value);
                     break;
                 case "quota":
                     // do nothing
-                    break;
+                    throw new IllegalStateException("CAN NOT HANDLE QUOTA");
                 default:
-                    throw new IllegalArgumentException("UNKNOWN PARAMETER " + what);
+                    log.warn("UNKNOWN PARAMETER {}", what);
             }
         } finally {
             wlock.unlock();
@@ -167,18 +184,34 @@ public class PsmPool extends Pool {
     }
 
     private void handleSellGemEvent(EventValues eventValues) {
+        log.info("handleSellGemEvent {}", getAddress());
         BigInteger gemAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
         BigInteger fee = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
         BigInteger usddAmount = gemAmount.multiply(gemToUsddDecimalFactor).subtract(fee);
         wlock.lock();
         try {
-            info.setBalanceGem(TokenMath.safeAdd(info.getBalanceGem(), gemAmount));
-            info.setBalanceUsdd(TokenMath.safeSubtract(info.getBalanceUsdd(), usddAmount));
-            getGem().setBalance(getAddress(), info.getBalanceGem());
-            getUsdd().setBalance(getAddress(), info.getBalanceUsdd());
+            BigInteger balanceBefore = info.getBalanceGem();
+            BigInteger balanceAfter = TokenMath.safeAdd(balanceBefore, gemAmount);
+            info.setBalanceGem(balanceAfter);
+            log.info("Gem balance {} -> {}", balanceBefore, balanceAfter);
 
-            info.setAmountGemToUsdd(TokenMath.safeAdd(info.getAmountGemToUsdd(), gemAmount));
-            info.setAmountTotalToUsdd(TokenMath.safeAdd(info.getAmountTotalToUsdd(), gemAmount));
+            balanceBefore = info.getBalanceUsdd();
+            balanceAfter = TokenMath.safeSubtract(balanceBefore, usddAmount);
+            info.setBalanceUsdd(balanceAfter);
+            log.info("USDD balance {} -> {}", balanceBefore, balanceAfter);
+
+            ((IToken) getGem()).setBalance(getAddress(), info.getBalanceGem());
+            ((IToken) getUsdd()).setBalance(getAddress(), info.getBalanceUsdd());
+
+            balanceBefore = info.getAmountGemToUsdd();
+            balanceAfter = TokenMath.safeAdd(balanceBefore, gemAmount);
+            info.setAmountGemToUsdd(balanceAfter);
+            log.info("AmountGemToUsdd {} -> {}", balanceBefore, balanceAfter);
+
+            balanceBefore = info.getAmountTotalToUsdd();
+            balanceAfter = TokenMath.safeAdd(balanceBefore, gemAmount);
+            info.setAmountTotalToUsdd(balanceAfter);
+            log.info("AmountTotalToUsdd {} -> {}", balanceBefore, balanceAfter);
         } finally {
             wlock.unlock();
         }

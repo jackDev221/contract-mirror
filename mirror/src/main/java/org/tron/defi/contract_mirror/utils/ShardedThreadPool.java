@@ -21,7 +21,7 @@ public class ShardedThreadPool {
             executor.initialize();
             executors.add(executor);
         }
-        log.info("Initialized shared pool , shard num " + threadNum);
+        log.info("Initialized shared pool , shard num {}", threadNum);
     }
 
     public void execute(ShardTask task) {

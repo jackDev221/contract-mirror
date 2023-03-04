@@ -1,12 +1,12 @@
 package org.tron.defi.contract_mirror.utils;
 
-import org.tron.defi.contract_mirror.core.token.ITRC20;
+import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRX;
 
 import java.math.BigInteger;
 
 public class TokenMath {
-    public static BigInteger decreaseBalance(ITRC20 token, String address, BigInteger amount) {
+    public static BigInteger decreaseBalance(IToken token, String address, BigInteger amount) {
         BigInteger oldBalance = token.balanceOf(address);
         if (amount.compareTo(BigInteger.ZERO) == 0) {
             return oldBalance;
@@ -26,7 +26,7 @@ public class TokenMath {
         return newBalance;
     }
 
-    public static BigInteger increaseBalance(ITRC20 token, String address, BigInteger amount) {
+    public static BigInteger increaseBalance(IToken token, String address, BigInteger amount) {
         BigInteger oldBalance = token.balanceOf(address);
         if (amount.compareTo(BigInteger.ZERO) == 0) {
             return oldBalance;

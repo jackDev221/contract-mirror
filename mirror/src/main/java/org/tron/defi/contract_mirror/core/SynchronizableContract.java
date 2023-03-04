@@ -61,16 +61,16 @@ public abstract class SynchronizableContract extends Contract implements Synchro
         }
         EventPrototype prototype = getEvent(contractLog.getRawData().getTopics()[0]);
         if (null == prototype) {
-            log.warn("Unsupported event: " + contractLog);
+            log.warn("Unsupported event: {}", contractLog);
         } else {
             try {
-                log.info("On " + prototype.getRawSignature() + " event");
+                log.info("On {} event", prototype.getRawSignature());
                 EventValues eventValues = decodeEvent(contractLog);
                 handleEvent(prototype.getName(), eventValues, contractLog.getTimeStamp());
-                log.debug("Processed event " + contractLog);
+                log.debug("Processed event {}", contractLog);
             } catch (RuntimeException e) {
                 e.printStackTrace();
-                log.error("Failed event: " + contractLog);
+                log.error("Failed event {}", contractLog);
                 throw new IllegalStateException();
             }
         }

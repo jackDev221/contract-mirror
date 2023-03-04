@@ -40,6 +40,18 @@ public class TRX extends Contract implements IToken {
     }
 
     @Override
+    public String run(String method) {
+        switch (method) {
+            case "symbol":
+                return getSymbol();
+            case "decimals":
+                return String.valueOf(getDecimals());
+            default:
+                return super.run(method);
+        }
+    }
+
+    @Override
     public void transfer(String issuer, String to, BigInteger amount) {
         TokenMath.decreaseTRXBalance(issuer, amount);
         TokenMath.increaseTRXBalance(to, amount);

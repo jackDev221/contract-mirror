@@ -36,12 +36,12 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     public BigInteger balanceOf(String address) {
-        return getLpToken().balanceOf(address);
+        return ((IToken) getLpToken()).balanceOf(address);
     }
 
     @Override
     public BigInteger balanceOfFromChain(String address) {
-        return getLpToken().balanceOfFromChain(address);
+        return ((IToken) getLpToken()).balanceOfFromChain(address);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     public void setBalance(String address, BigInteger balance) {
-        getLpToken().setBalance(address, balance);
+        ((IToken) getLpToken()).setBalance(address, balance);
     }
 
     @Override
@@ -93,12 +93,14 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
     protected void getContractData() {
         wlock.lock();
         try {
-            ITRC20 token0 = (ITRC20) getTokens().get(0);
-            ITRC20 token1 = (ITRC20) getTokens().get(1);
+            IToken token0 = (IToken) getTokens().get(0);
+            IToken token1 = (IToken) getTokens().get(1);
             token0.setBalance(getAddress(), token0.balanceOfFromChain(getAddress()));
             token1.setBalance(getAddress(), token1.balanceOfFromChain(getAddress()));
+            log.info("{} balance {}", token0.getSymbol(), token0.balanceOf(getAddress()));
+            log.info("{} balance {}", token1.getSymbol(), token1.balanceOf(getAddress()));
         } catch (Exception e) {
-            log.error(e.getMessage());
+            e.printStackTrace();
         } finally {
             wlock.unlock();
         }
@@ -106,10 +108,13 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
-        if (eventName.equals("Sync")) {
-            handleSyncEvent(eventValues);
-        } else {
-            log.warn("Ignore event " + eventName);
+        switch (eventName) {
+            case "Sync":
+                handleSyncEvent(eventValues);
+                break;
+            default:
+                log.warn("Ignore event {}", eventName);
+                break;
         }
     }
 
@@ -158,7 +163,7 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
 
     private ITRC20 getTokenFromChain(int n) {
         if (n > 1) {
-            throw new IllegalArgumentException("n = " + n);
+            throw new IllegalArgumentException();
         }
         List<Type> response = abi.invoke((n == 0
                                           ? SunswapV2Abi.Functions.TOKEN0
@@ -177,8 +182,14 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
         BigInteger balance1 = ((Uint112) eventValues.getNonIndexedValues().get(1)).getValue();
         wlock.lock();
         try {
-            ((ITRC20) getTokens().get(0)).setBalance(getAddress(), balance0);
-            ((ITRC20) getTokens().get(1)).setBalance(getAddress(), balance1);
+            IToken token0 = (IToken) getTokens().get(0);
+            IToken token1 = (IToken) getTokens().get(1);
+            BigInteger balanceBefore0 = token0.balanceOf(getAddress());
+            BigInteger balanceBefore1 = token1.balanceOf(getAddress());
+            token0.setBalance(getAddress(), balance0);
+            token1.setBalance(getAddress(), balance1);
+            log.info("{} balance {} -> {}", token0.getSymbol(), balanceBefore0, balance0);
+            log.info("{} balance {} -> {}", token1.getSymbol(), balanceBefore1, balance1);
         } finally {
             wlock.unlock();
         }

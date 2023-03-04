@@ -86,7 +86,7 @@ public class ContractManager {
                 node1.addOutEdge(new Edge(node1, node0, pool));
             }
         }
-        log.info("INIT CURVE " + pool.info());
+        log.info("INIT CURVE {}", pool.info());
     }
 
     public void initPsm(String address, String polyAddress) {
@@ -104,7 +104,7 @@ public class ContractManager {
         }
         node0.addOutEdge(new Edge(node0, node1, pool));
         node1.addOutEdge(new Edge(node1, node0, pool));
-        log.info("INIT PSM " + pool.info());
+        log.info("INIT PSM {}", pool.info());
     }
 
     public void initSunswapV1(String address) {
@@ -112,7 +112,7 @@ public class ContractManager {
             = (SunswapV1Factory) registerContract(new SunswapV1Factory(address));
         sunswapV1Factory.setGraph(graph);
         sunswapV1Factory.sync();
-        log.info("INIT SunswapV1 Factory " + sunswapV1Factory.info());
+        log.info("INIT SunswapV1 Factory {}", sunswapV1Factory.info());
     }
 
     public void initSunswapV2(String address) {
@@ -120,12 +120,12 @@ public class ContractManager {
             = (SunswapV2Factory) registerContract(new SunswapV2Factory(address));
         sunswapV2Factory.setGraph(graph);
         sunswapV2Factory.sync();
-        log.info("INIT SunswapV2 Factory " + sunswapV2Factory.info());
+        log.info("INIT SunswapV2 Factory {}", sunswapV2Factory.info());
     }
 
     public void initTRX() {
         registerContract(TRX.getInstance());
-        log.info("INIT TRX " + TRX.getInstance().info());
+        log.info("INIT TRX {}", TRX.getInstance().info());
     }
 
     public Contract registerContract(Contract contract) {
@@ -142,10 +142,9 @@ public class ContractManager {
                 return (T) exist;
             } else if (ITRC20.class.isAssignableFrom(exist.getClass())) {
                 // wrap token
-                log.warn(pool.getAddress() +
-                         " from " +
-                         exist.getClass().getName() +
-                         " to " +
+                log.warn("{} from {} to {}",
+                         pool.getAddress(),
+                         exist.getClass().getName(),
                          clz.getName());
                 unregisterContract(exist);
                 try {
