@@ -16,8 +16,9 @@ public class Edge {
     }
 
     public boolean isEqual(Edge edge) {
-        return edge.getFrom().getToken().getAddress().equals(getFrom().getToken().getAddress()) &&
-               edge.getTo().getToken().getAddress().equals(getTo().getToken().getAddress()) &&
+        // assuming pool type never change
+        return edge.getFrom().isEqual(getFrom()) &&
+               edge.getTo().isEqual(getTo()) &&
                edge.getPool().getAddress().equals(getPool().getAddress());
     }
 }

@@ -1,17 +1,12 @@
 package org.tron.defi.contract_mirror.core.graph;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.tron.defi.contract_mirror.core.pool.SunswapV1Pool;
 import org.tron.defi.contract_mirror.core.token.TRC20;
 import org.tron.defi.contract_mirror.core.token.TRX;
 
 
-@Slf4j
-@ExtendWith(SpringExtension.class)
 public class EdgeTest {
     @Test
     public void isEqualTest() {
@@ -23,5 +18,8 @@ public class EdgeTest {
         Edge dummyEdge = new Edge(trxNode, dummyNode, dummyPool);
         Assertions.assertTrue(dummyEdge.isEqual(new Edge(trxNode, dummyNode, dummyPool)));
         Assertions.assertFalse(dummyEdge.isEqual(new Edge(dummyNode, trxNode, dummyPool)));
+        Assertions.assertFalse(dummyEdge.isEqual(new Edge(trxNode,
+                                                          new Node(dummyPool),
+                                                          dummyPool)));
     }
 }
