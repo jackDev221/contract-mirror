@@ -111,7 +111,7 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
 
     @Override
     public void setTronContractTrigger(TronContractTrigger trigger) {
-        super.setTronContractTrigger(tronContractTrigger);
+        super.setTronContractTrigger(trigger);
         // TRC20 must have symbol and decimals
         getSymbol();
         getDecimals();
