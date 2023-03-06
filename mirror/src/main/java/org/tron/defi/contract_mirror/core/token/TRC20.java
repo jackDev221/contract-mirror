@@ -144,7 +144,7 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
         } catch (RuntimeException e) {
             e.printStackTrace();
         }
-        if (symbol.isBlank()) {
+        if (null == symbol || symbol.isBlank()) {
             symbol = getContractType();
             log.warn("{} symbol {}", getAddress(), symbol);
         }
