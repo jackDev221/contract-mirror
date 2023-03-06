@@ -32,9 +32,10 @@ public abstract class SynchronizableContract extends Contract implements Synchro
     }
 
     @Override
-    public void onEvent(KafkaMessage<ContractLog> kafkaMessage, long syncPeriod) {
+    public void onEvent(KafkaMessage<ContractLog> kafkaMessage,
+                        long syncPeriod) throws InterruptedException {
         if (!isEventAccept()) {
-            throw new IllegalStateException();
+            throw new InterruptedException();
         }
         ContractLog contractLog = kafkaMessage.getMessage();
         if (timestamp0 > 0 &&

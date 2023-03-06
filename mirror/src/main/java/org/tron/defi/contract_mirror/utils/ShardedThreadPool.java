@@ -12,6 +12,10 @@ import java.util.ArrayList;
 public class ShardedThreadPool {
     private final ArrayList<ThreadPoolTaskExecutor> executors;
 
+    public int bucketNum() {
+        return executors.size();
+    }
+
     public ShardedThreadPool(ServerConfig.ThreadPoolConfig threadPoolConfig) {
         int threadNum = Math.max(1, threadPoolConfig.getThreadNum());
         executors = new ArrayList<>(threadNum);
@@ -25,10 +29,7 @@ public class ShardedThreadPool {
     }
 
     public void execute(ShardTask task) {
-        int shardId = task.getShardMethod().shard(task.getShardKey(), executors.size());
-        if (shardId >= executors.size()) {
-            throw new IndexOutOfBoundsException();
-        }
+        int shardId = task.getShardMethod().shard(task.getShardKey(), bucketNum());
         executors.get(shardId).execute(task);
     }
 

@@ -10,5 +10,6 @@ public interface Synchronizable {
 
     void sync();
 
-    void onEvent(KafkaMessage<ContractLog> kafkaMessage, long syncPeriod);
+    void onEvent(KafkaMessage<ContractLog> kafkaMessage,
+                 long syncPeriod) throws InterruptedException;
 }

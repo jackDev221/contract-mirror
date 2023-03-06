@@ -12,12 +12,12 @@ public class ContractService {
     @Autowired
     ContractManager contractManager;
     @Autowired
-    EventService eventService;
+    SyncEventService syncEventService;
 
     @PostConstruct
     public void init() {
         contractManager.init();
-        eventService.listen();
+        syncEventService.listen();
     }
 
     public String call(String address, String method) {
