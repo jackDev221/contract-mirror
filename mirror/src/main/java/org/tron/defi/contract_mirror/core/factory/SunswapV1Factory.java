@@ -166,19 +166,19 @@ public class SunswapV1Factory extends SynchronizableContract {
         }
         // TODO: parallelism optimization
         for (int i = minId; i < maxId; i++) {
-            IToken token = getTokenWithId(i);
-            if (null == token) {
-                handleInvalidToken(i);
-                continue; // invalid token
-            }
-            Contract contract = (Contract) token;
-            if (contract.getAddress().equals(TRX.getInstance().getAddress())) {
-                wlock.lock();
-                tokens.add(contract);
-                wlock.unlock();
-                continue;
-            }
             try {
+                IToken token = getTokenWithId(i);
+                if (null == token) {
+                    handleInvalidToken(i);
+                    continue; // invalid token
+                }
+                Contract contract = (Contract) token;
+                if (contract.getAddress().equals(TRX.getInstance().getAddress())) {
+                    wlock.lock();
+                    tokens.add(contract);
+                    wlock.unlock();
+                    continue;
+                }
                 Pool pool = getExchange(contract.getAddress());
                 newExchange(contract.getAddress(), pool.getAddress());
             } catch (RuntimeException e) {
