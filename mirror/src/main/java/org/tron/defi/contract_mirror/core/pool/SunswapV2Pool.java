@@ -99,8 +99,6 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
             token1.setBalance(getAddress(), token1.balanceOfFromChain(getAddress()));
             log.info("{} balance {}", token0.getSymbol(), token0.balanceOf(getAddress()));
             log.info("{} balance {}", token1.getSymbol(), token1.balanceOf(getAddress()));
-        } catch (Exception e) {
-            e.printStackTrace();
         } finally {
             wlock.unlock();
         }
