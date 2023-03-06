@@ -243,6 +243,7 @@ public class SunswapV1Factory extends SynchronizableContract {
     }
 
     private void handleNewExchangeEvent(EventValues eventValues) {
+        log.info("handleNewExchangeEvent {}", getAddress());
         String tokenAddress
             = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
                                                                             .get(0)).getValue());
