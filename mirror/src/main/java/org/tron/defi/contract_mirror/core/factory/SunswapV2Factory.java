@@ -186,6 +186,11 @@ public class SunswapV2Factory extends SynchronizableContract {
     }
 
     private Pool getPairByAddress(String pairAddress) {
+        Contract contract = contractManager.getContract(pairAddress);
+        if (null != contract && SunswapV2Pool.class.isAssignableFrom(contract.getClass())) {
+            // already exist
+            return (Pool) contract;
+        }
         SunswapV2Pool pair = contractManager.registerOrReplacePool(new SunswapV2Pool(pairAddress),
                                                                    SunswapV2Pool.class);
         Contract token0 = (Contract) pair.getToken0();

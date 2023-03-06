@@ -218,7 +218,7 @@ public class SunswapV1Factory extends SynchronizableContract {
             return null != contract
                    ? (IToken) contract
                    : (IToken) contractManager.registerContract(new TRC20(tokenAddress));
-        } catch (ClassCastException e) {
+        } catch (IllegalArgumentException | ClassCastException e) {
             // invalid token address
             e.printStackTrace();
             log.error("INVALID TOKEN ADDRESS {}", tokenAddress);
