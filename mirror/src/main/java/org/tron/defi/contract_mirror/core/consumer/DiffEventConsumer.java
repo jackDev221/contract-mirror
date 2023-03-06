@@ -10,8 +10,8 @@ import org.tron.defi.contract_mirror.dao.KafkaMessage;
 @Slf4j
 public class DiffEventConsumer implements IEventConsumer {
     private final ContractManager contractManager;
-    private double totalCount = 0;
-    private double diffCount = 0;
+    private long totalCount = 0;
+    private long diffCount = 0;
 
     public DiffEventConsumer(ContractManager contractManager) {
         this.contractManager = contractManager;
@@ -33,12 +33,16 @@ public class DiffEventConsumer implements IEventConsumer {
             diffCount += 1;
         }
         if (totalCount % 100 == 0) {
-            log.info("DIFF RATIO {}%", 100 * diffCount / totalCount);
+            log.info("DIFF RATIO {}%", getDiffPercentage());
         }
     }
 
     @Override
     public boolean isFallback(KafkaMessage<ContractLog> message) {
         return false;
+    }
+
+    public double getDiffPercentage() {
+        return 100.0d * diffCount / totalCount;
     }
 }

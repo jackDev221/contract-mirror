@@ -1,6 +1,7 @@
 package org.tron.defi.contract_mirror.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.tron.defi.contract_mirror.config.KafkaConfig;
 import org.tron.defi.contract_mirror.config.ServerConfig;
 import org.tron.defi.contract_mirror.core.ContractManager;
@@ -10,6 +11,7 @@ import org.tron.defi.contract_mirror.core.consumer.SharedEventConsumer;
 
 import java.util.Arrays;
 
+@Service
 public class DiffService extends EventService {
     @Autowired
     public DiffService(KafkaConfig kafkaConfig,
@@ -22,5 +24,7 @@ public class DiffService extends EventService {
                                                    new PendingEventConsumer(serverConfig,
                                                                             contractManager)),
                            new DiffEventConsumer(contractManager)));
+        contractManager.init();
+        listen();
     }
 }
