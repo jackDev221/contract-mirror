@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TRC20 extends Contract implements IToken, ITRC20 {
     private final ConcurrentHashMap<String, BigInteger> balances = new ConcurrentHashMap<>(30000);
     private String symbol;
-    private int decimals = 0;
+    private int decimals = Integer.MIN_VALUE;
     @Setter
     private BigInteger totalSupply;
 
@@ -46,10 +46,10 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
 
     @Override
     public int getDecimals() {
-        if (0 != decimals) {
-            return decimals;
+        if (Integer.MIN_VALUE == decimals) {
+            return getDecimalsFromChain();
         }
-        return getDecimalsFromChain();
+        return decimals;
     }
 
     @Override
@@ -133,9 +133,6 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
     private int getDecimalsFromChain() {
         List<Type> response = abi.invoke(TRC20Abi.Functions.DECIMALS, Collections.emptyList());
         decimals = ((Uint256) response.get(0)).getValue().intValue();
-        if (0 == decimals) {
-            throw new IllegalArgumentException("DECIMALS CANNOT BE 0");
-        }
         return decimals;
     }
 
