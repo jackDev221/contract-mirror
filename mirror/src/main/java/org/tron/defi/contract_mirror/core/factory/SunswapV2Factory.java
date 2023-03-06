@@ -54,6 +54,13 @@ public class SunswapV2Factory extends SynchronizableContract {
     }
 
     @Override
+    public JSONObject getInfo() {
+        JSONObject info = super.getInfo();
+        info.put("poolNum", getAllPairLen());
+        return info;
+    }
+
+    @Override
     public String run(String method) {
         switch (method) {
             case "getAllPairLen":
@@ -61,13 +68,6 @@ public class SunswapV2Factory extends SynchronizableContract {
             default:
                 return super.run(method);
         }
-    }
-
-    @Override
-    public JSONObject getInfo() {
-        JSONObject info = super.getInfo();
-        info.put("poolNum", getAllPairLen());
-        return info;
     }
 
     @Override
@@ -114,6 +114,16 @@ public class SunswapV2Factory extends SynchronizableContract {
     }
 
     @Override
+    protected boolean doDiff(String eventName) {
+        switch (eventName) {
+            case "PairCreated":
+                return diffLastPair();
+            default:
+                return false;
+        }
+    }
+
+    @Override
     protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
         switch (eventName) {
             case "PairCreated":
@@ -126,13 +136,18 @@ public class SunswapV2Factory extends SynchronizableContract {
     }
 
     public int getAllPairLen() {
-        if (pairs.size() > 0) {
-            return pairs.size();
+        rlock.lock();
+        try {
+            if (!pairs.isEmpty()) {
+                return pairs.size();
+            }
+        } finally {
+            rlock.unlock();
         }
         return getAllPairLenFromChain();
     }
 
-    public Pool getPairById(String token0, String token1) {
+    public Pool getPair(String token0, String token1) {
         ConcurrentHashMap<String, Pool> concurrentHashMap = pairMap.getOrDefault(token0, null);
         if (null == concurrentHashMap) {
             return null;
@@ -176,6 +191,25 @@ public class SunswapV2Factory extends SynchronizableContract {
                 continue; // invalid pair
             }
             newPair(pair.getAddress(), i + 1);
+        }
+    }
+
+    private boolean diffLastPair() {
+        log.info("diffLastPair {}", getAddress());
+        int allPairLen = getAllPairLen();
+        if (allPairLen != getAllPairLenFromChain()) {
+            return true;
+        }
+        int lastId = allPairLen - 1;
+        Contract pair = getPairById(lastId);
+        try {
+            Contract contract = getPairFromChain(lastId);
+            return contract != pair &&
+                   (null == pair ||
+                    null == contract ||
+                    !pair.getAddress().equals(contract.getAddress()));
+        } catch (RuntimeException e) {
+            return pair != null;
         }
     }
 

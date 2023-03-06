@@ -58,6 +58,13 @@ public class SunswapV1Factory extends SynchronizableContract {
     }
 
     @Override
+    public JSONObject getInfo() {
+        JSONObject info = super.getInfo();
+        info.put("poolNum", getTokenCount());
+        return info;
+    }
+
+    @Override
     public String run(String method) {
         switch (method) {
             case "tokenCount":
@@ -65,13 +72,6 @@ public class SunswapV1Factory extends SynchronizableContract {
             default:
                 return super.run(method);
         }
-    }
-
-    @Override
-    public JSONObject getInfo() {
-        JSONObject info = super.getInfo();
-        info.put("poolNum", getTokenCount());
-        return info;
     }
 
     @Override
@@ -114,6 +114,16 @@ public class SunswapV1Factory extends SynchronizableContract {
     }
 
     @Override
+    protected boolean doDiff(String eventName) {
+        switch (eventName) {
+            case "NewExchange":
+                return diffLastToken();
+            default:
+                return false;
+        }
+    }
+
+    @Override
     protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
         switch (eventName) {
             case "NewExchange":
@@ -136,7 +146,15 @@ public class SunswapV1Factory extends SynchronizableContract {
     }
 
     public int getTokenCount() {
-        return tokens.isEmpty() ? getTokenCountFromChain() : tokens.size();
+        rlock.lock();
+        try {
+            if (!tokens.isEmpty()) {
+                return tokens.size();
+            }
+        } finally {
+            rlock.unlock();
+        }
+        return getTokenCountFromChain();
     }
 
     public IToken getTokenWithId(int id) {
@@ -185,6 +203,25 @@ public class SunswapV1Factory extends SynchronizableContract {
                 // TODO: is there any way to distinguish network error and invalid data ?
                 handleInvalidToken(i);
             }
+        }
+    }
+
+    private boolean diffLastToken() {
+        log.info("diffLastToken {}", getAddress());
+        int tokenCount = getTokenCount();
+        if (tokenCount != getTokenCountFromChain()) {
+            return true;
+        }
+        int lastId = tokenCount - 1;
+        Contract token = (Contract) getTokenWithId(lastId);
+        try {
+            Contract contract = (Contract) getTokenWithIdFromChain(lastId);
+            return contract != token &&
+                   (null == token ||
+                    null == contract ||
+                    !token.getAddress().equals(contract.getAddress()));
+        } catch (RuntimeException e) {
+            return token != null;
         }
     }
 

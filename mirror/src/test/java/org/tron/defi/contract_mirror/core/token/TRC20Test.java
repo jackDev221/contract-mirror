@@ -23,8 +23,8 @@ public class TRC20Test {
     @Test
     public void getDecimalsTest() {
         String usdtAddress = tokenConfigList.getTokens().get("USDT");
-        TRC20 usdd = (TRC20) contractManager.registerContract(new TRC20(usdtAddress));
-        Assertions.assertEquals(6, usdd.getDecimals());
+        TRC20 usdt = (TRC20) contractManager.registerContract(new TRC20(usdtAddress));
+        Assertions.assertEquals(6, usdt.getDecimals());
     }
 
     @Test

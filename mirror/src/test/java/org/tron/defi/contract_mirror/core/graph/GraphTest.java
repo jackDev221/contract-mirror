@@ -3,15 +3,32 @@ package org.tron.defi.contract_mirror.core.graph;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.tron.defi.contract_mirror.TestApplication;
+import org.tron.defi.contract_mirror.config.TokenConfigList;
+import org.tron.defi.contract_mirror.core.ContractManager;
 import org.tron.defi.contract_mirror.core.pool.SunswapV1Pool;
 import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.core.token.TRC20;
 import org.tron.defi.contract_mirror.core.token.TRX;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = TestApplication.class)
 public class GraphTest {
+    private final String poolAddress = "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE";
+    @Autowired
+    private ContractManager contractManager;
+    @Autowired
+    private TokenConfigList tokenConfigList;
     private Graph graph;
     private Node trxNode;
-    private final SunswapV1Pool dummyPool = new SunswapV1Pool("");
+    private SunswapV1Pool dummyPool;
     private Node dummyNode;
 
     @Test
@@ -45,7 +62,8 @@ public class GraphTest {
         Assertions.assertEquals(1, dummyNode.inDegree());
         Assertions.assertEquals(1, dummyNode.outDegree());
 
-        Node newNode = new Node(new SunswapV1Pool((ITRC20) dummyNode.getToken()));
+        SunswapV1Pool pool = new SunswapV1Pool((ITRC20) dummyNode.getToken());
+        Node newNode = new Node(pool);
         newNode = graph.replaceNode(newNode);
         Assertions.assertNotEquals(dummyNode, newNode);
         Assertions.assertEquals(0, dummyNode.inDegree());
@@ -64,10 +82,16 @@ public class GraphTest {
 
     @BeforeEach
     void setUp() {
+        contractManager.initTRX();
+        String usdtAddress = tokenConfigList.getTokens().get("USDT");
+        TRC20 usdt = (TRC20) contractManager.registerContract(new TRC20(usdtAddress));
         graph = new Graph();
+        dummyPool
+            = (SunswapV1Pool) contractManager.registerContract(new SunswapV1Pool(poolAddress));
+        dummyPool.setTokens(new ArrayList<>(Arrays.asList(TRX.getInstance(), usdt)));
         // dummy -> trx
         trxNode = new Node(TRX.getInstance());
-        dummyNode = new Node(new TRC20(""));
+        dummyNode = new Node(usdt);
         Edge edge = new Edge(dummyNode, trxNode, dummyPool);
         dummyNode.addOutEdge(edge);
         trxNode.addInEdge(edge);

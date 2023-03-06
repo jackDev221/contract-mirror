@@ -71,6 +71,19 @@ public class PsmPool extends Pool {
     }
 
     @Override
+    protected boolean doDiff(String eventName) {
+        switch (eventName) {
+            case "File":
+            case "SellGem":
+            case "BuyGem":
+                log.info("Diff {} {}", eventName, getAddress());
+                return diffAll();
+            default:
+                return false;
+        }
+    }
+
+    @Override
     protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
         switch (eventName) {
             case "File":
@@ -103,6 +116,21 @@ public class PsmPool extends Pool {
     public ITRC20 getUsdd() {
         final int usddId = 0;
         return (ITRC20) tokens.get(usddId);
+    }
+
+    private boolean diffAll() {
+        PsmPoly.PsmInfo current = poly.getInfo(getAddress());
+        rlock.lock();
+        try {
+            if (!info.equals(current)) {
+                log.error("expect {}", current);
+                log.error("actual {}", info);
+                return true;
+            }
+            return false;
+        } finally {
+            rlock.unlock();
+        }
     }
 
     private ITRC20 getGemFromChain() {

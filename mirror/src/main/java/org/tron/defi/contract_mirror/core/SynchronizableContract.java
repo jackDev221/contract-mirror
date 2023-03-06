@@ -79,6 +79,27 @@ public abstract class SynchronizableContract extends Contract implements Synchro
         lastEventTimestamp = contractLog.getTimeStamp();
     }
 
+    @Override
+    public boolean diff(KafkaMessage<ContractLog> kafkaMessage) {
+        ContractLog contractLog = kafkaMessage.getMessage();
+        if (contractLog.getTimeStamp() != lastEventTimestamp) {
+            return false;
+        }
+        EventPrototype prototype = getEvent(contractLog.getRawData().getTopics()[0]);
+        if (null == prototype) {
+            log.warn("Unsupported event: {}", contractLog);
+        } else {
+            try {
+                return doDiff(prototype.getName());
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+            }
+        }
+        return false;
+    }
+
+    protected abstract boolean doDiff(String eventName);
+
     protected abstract void handleEvent(String eventName, EventValues eventValues, long eventTime);
 
     protected void checkEventTimestamp(long eventTime) {

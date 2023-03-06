@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.Curve4Abi;
+import org.tron.defi.contract.abi.pool.CurveAbi;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.core.token.IToken;
@@ -51,6 +52,65 @@ public class CurveCombinationPool extends Pool {
     public CurveCombinationPool(String address, PoolType type) {
         super(address);
         this.type = type;
+    }
+
+    @Override
+    public boolean doDiff(String eventName) {
+        switch (eventName) {
+            case "TokenExchange":
+                return diffBalances();
+            case "AddLiquidity":
+            case "RemoveLiquidity":
+            case "RemoveLiquidityImbalance":
+                return diffBalances() || diffLiquidity();
+            case "NewFee":
+                return diffFee();
+            case "RampA":
+            case "StopRampA":
+                return diffA();
+            default:
+                return false;
+        }
+    }
+
+    @Override
+    protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
+        switch (eventName) {
+            case "TokenExchange":
+                checkEventTimestamp(eventTime);
+                handleTokenExchangeEvent(eventValues);
+                break;
+            case "TokenExchangeUnderlying":
+                handleTokenExchangeUnderlyingEvent(eventValues, eventTime);
+                break;
+            case "AddLiquidity":
+                checkEventTimestamp(eventTime);
+                handleAddLiquidityEvent(eventValues);
+                break;
+            case "RemoveLiquidity":
+                checkEventTimestamp(eventTime);
+                handleRemoveLiquidity(eventValues);
+                break;
+            case "RemoveLiquidityOne":
+                // event can't handle
+                throw new IllegalStateException();
+            case "RemoveLiquidityImbalance":
+                checkEventTimestamp(eventTime);
+                handleRemoveLiquidityImbalance(eventValues);
+                break;
+            case "NewFee":
+                handleNewFeeEvent(eventValues);
+                break;
+            case "RampA":
+                handleRampAEvent(eventValues);
+                break;
+            case "StopRampA":
+                handleStopRampAEvent(eventValues);
+                break;
+            default:
+                log.warn("Ignore event " + eventName);
+                break;
+        }
     }
 
     @Override
@@ -137,48 +197,114 @@ public class CurveCombinationPool extends Pool {
     }
 
     @Override
-    protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
-        switch (eventName) {
-            case "TokenExchange":
-                checkEventTimestamp(eventTime);
-                handleTokenExchangeEvent(eventValues);
-                break;
-            case "TokenExchangeUnderlying":
-                handleTokenExchangeUnderlyingEvent(eventValues, eventTime);
-                break;
-            case "AddLiquidity":
-                checkEventTimestamp(eventTime);
-                handleAddLiquidityEvent(eventValues);
-                break;
-            case "RemoveLiquidity":
-                checkEventTimestamp(eventTime);
-                handleRemoveLiquidity(eventValues);
-                break;
-            case "RemoveLiquidityOne":
-                // event can't handle
-                throw new IllegalStateException();
-            case "RemoveLiquidityImbalance":
-                checkEventTimestamp(eventTime);
-                handleRemoveLiquidityImbalance(eventValues);
-                break;
-            case "NewFee":
-                handleNewFeeEvent(eventValues);
-                break;
-            case "RampA":
-                handleRampAEvent(eventValues);
-                break;
-            case "StopRampA":
-                handleStopRampAEvent(eventValues);
-                break;
-            default:
-                log.warn("Ignore event " + eventName);
-                break;
+    protected ContractAbi loadAbi() {
+        return tronContractTrigger.contractAt(Curve4Abi.class, getAddress());
+    }
+
+    private boolean diffA() {
+        log.info("diffA {}", getAddress());
+        List<Type> response = abi.invoke(CurveAbi.Functions.INITIAL_A, Collections.emptyList());
+        BigInteger expectA = ((Uint256) response.get(0)).getValue();
+        response = abi.invoke(CurveAbi.Functions.INITIAL_A_TIME, Collections.emptyList());
+        long expectTimeA = ((Uint256) response.get(0)).getValue().longValue();
+        response = abi.invoke(CurveAbi.Functions.FUTURE_A, Collections.emptyList());
+        BigInteger expectFutureA = ((Uint256) response.get(0)).getValue();
+        response = abi.invoke(CurveAbi.Functions.FUTURE_A_TIME, Collections.emptyList());
+        long expectTimeFutureA = ((Uint256) response.get(0)).getValue().longValue();
+        rlock.lock();
+        try {
+            if (0 != expectA.compareTo(initialA) ||
+                expectTimeA != timeInitialA ||
+                0 != expectFutureA.compareTo(futureA) ||
+                expectTimeFutureA != timeFutureA) {
+                log.info("expect initialA = {}", expectA);
+                log.info("expect timeInitialA = {}", expectTimeA);
+                log.info("expect futureA = {}", expectFutureA);
+                log.info("expect timeFutureA = {}", expectTimeFutureA);
+                log.info("local initialA = {}", initialA);
+                log.info("local timeInitialA = {}", timeInitialA);
+                log.info("local futureA = {}", futureA);
+                log.info("local timeFutureA = {}", timeFutureA);
+                return true;
+            }
+            return false;
+        } finally {
+            rlock.unlock();
         }
     }
 
-    @Override
-    protected ContractAbi loadAbi() {
-        return tronContractTrigger.contractAt(Curve4Abi.class, getAddress());
+    private boolean diffBalances() {
+        log.info("diffBalances {}", getAddress());
+        List<BigInteger> currentBalances = new ArrayList<>();
+        List<BigInteger> tokenBalances = new ArrayList<>();
+        for (int i = 0; i < N_COINS; i++) {
+            List<Type> response = abi.invoke(CurveAbi.Functions.BALANCES,
+                                             Collections.singletonList(i));
+            currentBalances.add(((Uint256) response.get(0)).getValue());
+        }
+        for (Contract token : getTokens()) {
+            tokenBalances.add(((IToken) token).balanceOfFromChain(getAddress()));
+        }
+        rlock.lock();
+        try {
+            for (int i = 0; i < N_COINS; i++) {
+                if (0 != currentBalances.get(i).compareTo(balances.get(i))) {
+                    log.error("expect balances {}", currentBalances);
+                    log.error("local balances {}", balances);
+                    return true;
+                }
+            }
+            for (int i = 0; i < tokenBalances.size(); i++) {
+                IToken token = (IToken) getTokens().get(i);
+                BigInteger balance = token.balanceOf(getAddress());
+                if (0 != tokenBalances.get(i).compareTo(balance)) {
+                    log.error("expect token{} balance {}", i, tokenBalances.get(i));
+                    log.error("local token{} balance {}", i, balance);
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            rlock.unlock();
+        }
+    }
+
+    private boolean diffFee() {
+        log.info("diffFee {}", getAddress());
+        List<Type> response = abi.invoke(CurveAbi.Functions.FEE, Collections.emptyList());
+        BigInteger currentFee = ((Uint256) response.get(0)).getValue();
+        response = abi.invoke(CurveAbi.Functions.ADMIN_FEE, Collections.emptyList());
+        BigInteger currentAdminFee = ((Uint256) response.get(0)).getValue();
+        rlock.lock();
+        try {
+            if (0 != currentFee.compareTo(fee) || 0 != currentAdminFee.compareTo(adminFee)) {
+                log.info("expect fee = {}", currentFee);
+                log.info("expect adminFee = {}", currentAdminFee);
+                log.info("local fee = {}", fee);
+                log.info("local adminFee = {}", adminFee);
+                return true;
+            }
+            return false;
+        } finally {
+            rlock.unlock();
+        }
+    }
+
+    private boolean diffLiquidity() {
+        log.info("diffLiquidity {}", getAddress());
+        BigInteger currentTotalSupply = getLpToken().getTotalSupplyFromChain();
+        rlock.lock();
+        try {
+            BigInteger totalSupply = getLpToken().totalSupply();
+            if (0 != currentTotalSupply.compareTo(totalSupply)) {
+                log.error("expect totalSupply {}", currentTotalSupply);
+                log.error("local totalSupply {}", totalSupply);
+                return true;
+            }
+            return false;
+        } finally {
+            rlock.unlock();
+        }
     }
 
     private BigInteger getA(long timestamp) {

@@ -41,13 +41,28 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     }
 
     @Override
-    public BigInteger getTotalSupplyFromChain() {
-        return getLpToken().getTotalSupplyFromChain();
+    public int getDecimals() {
+        return ((IToken) getLpToken()).getDecimals();
+    }
+
+    @Override
+    public String getSymbol() {
+        return ((IToken) getLpToken()).getSymbol();
     }
 
     @Override
     public void setBalance(String address, BigInteger balance) {
         ((IToken) getLpToken()).setBalance(address, balance);
+    }
+
+    @Override
+    public void transfer(String issuer, String to, BigInteger amount) {
+        ((IToken) getLpToken()).transfer(issuer, to, amount);
+    }
+
+    @Override
+    public BigInteger getTotalSupplyFromChain() {
+        return getLpToken().getTotalSupplyFromChain();
     }
 
     @Override
@@ -66,18 +81,25 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     }
 
     @Override
-    public int getDecimals() {
-        return ((IToken) getLpToken()).getDecimals();
+    protected boolean doDiff(String eventName) {
+        switch (eventName) {
+            case "Snapshot":
+                return diffBalances();
+            default:
+                return false;
+        }
     }
 
     @Override
-    public String getSymbol() {
-        return ((IToken) getLpToken()).getSymbol();
-    }
-
-    @Override
-    public void transfer(String issuer, String to, BigInteger amount) {
-        ((IToken) getLpToken()).transfer(issuer, to, amount);
+    protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
+        switch (eventName) {
+            case "Snapshot":
+                handleSnapshotEvent(eventValues);
+                break;
+            default:
+                log.warn("Ignore event {}", eventName);
+                break;
+        }
     }
 
     @Override
@@ -97,18 +119,6 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
             log.info("{} balance {}", token.getSymbol(), token.balanceOf(getAddress()));
         } finally {
             wlock.unlock();
-        }
-    }
-
-    @Override
-    protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
-        switch (eventName) {
-            case "Snapshot":
-                handleSnapshotEvent(eventValues);
-                break;
-            default:
-                log.warn("Ignore event {}", eventName);
-                break;
         }
     }
 
@@ -139,6 +149,21 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     public void setTronContractTrigger(TronContractTrigger tronContractTrigger) {
         super.setTronContractTrigger(tronContractTrigger);
         ((Contract) getLpToken()).setTronContractTrigger(tronContractTrigger);
+    }
+
+    private boolean diffBalances() {
+        log.info("diffBalances {}", getAddress());
+        IToken trx = (IToken) getTokens().get(0);
+        IToken token = (IToken) getTokens().get(1);
+        BigInteger balance0 = trx.balanceOfFromChain(getAddress());
+        BigInteger balance1 = token.balanceOfFromChain(getAddress());
+        rlock.lock();
+        try {
+            return 0 != trx.balanceOf(getAddress()).compareTo(balance0) ||
+                   0 != token.balanceOf(getAddress()).compareTo(balance1);
+        } finally {
+            rlock.unlock();
+        }
     }
 
     private void handleSnapshotEvent(EventValues eventValues) {
