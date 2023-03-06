@@ -155,15 +155,26 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
         log.info("diffBalances {}", getAddress());
         IToken trx = (IToken) getTokens().get(0);
         IToken token = (IToken) getTokens().get(1);
-        BigInteger balance0 = trx.balanceOfFromChain(getAddress());
-        BigInteger balance1 = token.balanceOfFromChain(getAddress());
+        BigInteger expectBalance0 = trx.balanceOfFromChain(getAddress());
+        BigInteger expectBalance1 = token.balanceOfFromChain(getAddress());
+        BigInteger localBalance0;
+        BigInteger localBalance1;
         rlock.lock();
         try {
-            return 0 != trx.balanceOf(getAddress()).compareTo(balance0) ||
-                   0 != token.balanceOf(getAddress()).compareTo(balance1);
+            localBalance0 = trx.balanceOf(getAddress());
+            localBalance1 = token.balanceOf(getAddress());
         } finally {
             rlock.unlock();
         }
+        if (0 != localBalance0.compareTo(expectBalance0) ||
+            0 != localBalance1.compareTo(expectBalance1)) {
+            log.info("expect balance0 {}", expectBalance0);
+            log.info("expect balance1 {}", expectBalance1);
+            log.info("local balance0 {}", localBalance0);
+            log.info("local balance1 {}", localBalance1);
+            return true;
+        }
+        return false;
     }
 
     private void handleSnapshotEvent(EventValues eventValues) {
