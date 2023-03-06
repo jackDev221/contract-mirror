@@ -7,9 +7,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.tron.defi.contract_mirror.application.Application;
+import org.tron.defi.contract_mirror.application.DiffApplication;
 import org.tron.defi.contract_mirror.controller.ContractController;
 import org.tron.defi.contract_mirror.service.ContractService;
-import org.tron.defi.contract_mirror.service.EventService;
+import org.tron.defi.contract_mirror.service.DiffService;
+import org.tron.defi.contract_mirror.service.SyncEventService;
 
 @EnableConfigurationProperties
 //@formatter:off
@@ -17,7 +19,9 @@ import org.tron.defi.contract_mirror.service.EventService;
     @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = Application.class),
     @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ContractController.class),
     @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ContractService.class),
-    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = EventService.class)
+    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = DiffApplication.class),
+    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = DiffService.class),
+    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = SyncEventService.class),
 })
 //@formatter:on
 @SpringBootApplication(scanBasePackages = {"org.tron.defi.contract_mirror"}, exclude = {
