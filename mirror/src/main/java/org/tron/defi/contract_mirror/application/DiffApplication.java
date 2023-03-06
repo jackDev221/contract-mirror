@@ -13,15 +13,22 @@ import org.tron.defi.contract_mirror.service.SyncEventService;
 
 @EnableConfigurationProperties
 //@formatter:off
-@ComponentScan(excludeFilters = {
-    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = Application.class),
-    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ContractController.class),
-    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ContractService.class),
-    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = SyncEventService.class),
-})
+@ComponentScan(
+    basePackages={"org.tron.defi.contract_mirror"},
+    excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = Application.class),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ContractController.class),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ContractService.class),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = SyncEventService.class),
+    }
+)
+@SpringBootApplication(
+    scanBasePackages = {"org.tron.defi.contract_mirror"},
+    exclude = {
+        DataSourceAutoConfiguration.class
+    }
+)
 //@formatter:on
-@SpringBootApplication(scanBasePackages = {"org.tron.defi.contract_mirror"}, exclude = {
-    DataSourceAutoConfiguration.class})
 public class DiffApplication {
     public static void main(String[] args) {
         SpringApplication.run(DiffApplication.class, args);

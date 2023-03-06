@@ -10,13 +10,20 @@ import org.tron.defi.contract_mirror.service.DiffService;
 
 @EnableConfigurationProperties
 //@formatter:off
-@ComponentScan(excludeFilters = {
-    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = DiffApplication.class),
-    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = DiffService.class),
-})
+@ComponentScan(
+    basePackages={"org.tron.defi.contract_mirror"},
+    excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = DiffApplication.class),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = DiffService.class),
+    }
+)
+@SpringBootApplication(
+    scanBasePackages = {"org.tron.defi.contract_mirror"},
+    exclude = {
+        DataSourceAutoConfiguration.class
+    }
+)
 //@formatter:on
-@SpringBootApplication(scanBasePackages = {"org.tron.defi.contract_mirror"}, exclude = {
-    DataSourceAutoConfiguration.class})
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
