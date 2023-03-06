@@ -8,6 +8,7 @@ import org.tron.defi.contract.abi.token.TRC20Abi;
 import org.tron.defi.contract_mirror.common.ContractType;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
+import org.tron.defi.contract_mirror.utils.chain.TronContractTrigger;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Uint256;
@@ -25,24 +26,6 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
     @Setter
     private BigInteger totalSupply;
 
-    @Override
-    public String getSymbol() {
-        if (null != symbol) {
-            return symbol;
-        }
-        return getSymbolFromChain();
-    }
-
-    @Override
-    public void transfer(String issuer, String to, BigInteger amount) {
-        BigInteger balance = balanceOf(issuer).subtract(amount);
-        if (balance.compareTo(BigInteger.ZERO) < 0) {
-            throw new IllegalStateException("NOT ENOUGH BALANCE " + issuer);
-        }
-        setBalance(issuer, balance);
-        setBalance(to, balanceOf(to).add(amount));
-    }
-
     public TRC20(String address) {
         super(address);
     }
@@ -53,16 +36,42 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
         return null == result ? balanceOfFromChain(address) : result;
     }
 
+    public BigInteger balanceOfFromChain(String address) {
+        String ethAddress = AddressConverter.TronBase58ToEthAddress(address);
+        System.out.println(ethAddress);
+        List<Type> response = abi.invoke(TRC20Abi.Functions.BALANCE_OF,
+                                         Collections.singletonList(ethAddress));
+        return ((Uint256) response.get(0)).getValue();
+    }
+
     @Override
-    public String run(String method) {
-        switch (method) {
-            case "symbol":
-                return getSymbol();
-            case "decimals":
-                return String.valueOf(getDecimals());
-            default:
-                return super.run(method);
+    public int getDecimals() {
+        if (0 != decimals) {
+            return decimals;
         }
+        return getDecimalsFromChain();
+    }
+
+    @Override
+    public String getSymbol() {
+        if (null != symbol) {
+            return symbol;
+        }
+        return getSymbolFromChain();
+    }
+
+    public void setBalance(String address, BigInteger balance) {
+        balances.put(address, balance);
+    }
+
+    @Override
+    public void transfer(String issuer, String to, BigInteger amount) {
+        BigInteger balance = balanceOf(issuer).subtract(amount);
+        if (balance.compareTo(BigInteger.ZERO) < 0) {
+            throw new IllegalStateException("NOT ENOUGH BALANCE " + issuer);
+        }
+        setBalance(issuer, balance);
+        setBalance(to, balanceOf(to).add(amount));
     }
 
     @Override
@@ -83,16 +92,29 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
         return info;
     }
 
-    public void setBalance(String address, BigInteger balance) {
-        balances.put(address, balance);
+    public BigInteger getTotalSupplyFromChain() {
+        List<Type> response = abi.invoke(TRC20Abi.Functions.TOTAL_SUPPLY, Collections.emptyList());
+        return ((Uint256) response.get(0)).getValue();
     }
 
     @Override
-    public int getDecimals() {
-        if (0 != decimals) {
-            return decimals;
+    public String run(String method) {
+        switch (method) {
+            case "symbol":
+                return getSymbol();
+            case "decimals":
+                return String.valueOf(getDecimals());
+            default:
+                return super.run(method);
         }
-        return getDecimalsFromChain();
+    }
+
+    @Override
+    public void setTronContractTrigger(TronContractTrigger trigger) {
+        super.setTronContractTrigger(tronContractTrigger);
+        // TRC20 must have symbol and decimals
+        getSymbol();
+        getDecimals();
     }
 
     @Override
@@ -108,32 +130,24 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
         transfer(from, issuer, amount);
     }
 
-    public BigInteger getTotalSupplyFromChain() {
-        List<Type> response = abi.invoke(TRC20Abi.Functions.TOTAL_SUPPLY, Collections.emptyList());
-        return ((Uint256) response.get(0)).getValue();
-    }
-
-    public BigInteger balanceOfFromChain(String address) {
-        String ethAddress = AddressConverter.TronBase58ToEthAddress(address);
-        System.out.println(ethAddress);
-        List<Type> response = abi.invoke(TRC20Abi.Functions.BALANCE_OF,
-                                         Collections.singletonList(ethAddress));
-        return ((Uint256) response.get(0)).getValue();
-    }
-
     private int getDecimalsFromChain() {
         List<Type> response = abi.invoke(TRC20Abi.Functions.DECIMALS, Collections.emptyList());
         decimals = ((Uint256) response.get(0)).getValue().intValue();
+        if (0 == decimals) {
+            throw new IllegalArgumentException("DECIMALS CANNOT BE 0");
+        }
         return decimals;
     }
 
     private String getSymbolFromChain() {
-        // allow non-restrict TRC20
+        // allow non-restrict TRC20 with no symbol
         try {
             List<Type> response = abi.invoke(TRC20Abi.Functions.SYMBOL, Collections.emptyList());
             symbol = ((Utf8String) response.get(0)).getValue();
         } catch (RuntimeException e) {
             e.printStackTrace();
+        }
+        if (symbol.isBlank()) {
             symbol = getContractType();
             log.warn("{} symbol {}", getAddress(), symbol);
         }

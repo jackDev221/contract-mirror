@@ -25,6 +25,8 @@ public class SharedEventConsumer extends Thread implements IEventConsumer {
         this.fallbackConsumer = fallbackConsumer;
         if (null != serverConfig.getEventPoolConfig()) {
             eventPool = new ShardedThreadPool(serverConfig.getEventPoolConfig());
+        } else {
+            log.info("No event pool config, handle event in consume thread");
         }
     }
 
@@ -37,7 +39,7 @@ public class SharedEventConsumer extends Thread implements IEventConsumer {
         }
         SynchronizableContract contractToSync = (SynchronizableContract) contract;
         if (isFallback(message)) {
-            fallbackConsumer.consume(message);
+            fallbackConsume(contractToSync, message);
         } else if (contractToSync.isEventAccept()) {
             if (null == eventPool) {
                 // handle immediately
@@ -62,6 +64,7 @@ public class SharedEventConsumer extends Thread implements IEventConsumer {
             contract.sync();
             return;
         }
+        log.warn("Fallback {}", message.getMessage());
         fallbackConsumer.consume(message);
     }
 
