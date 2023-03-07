@@ -57,10 +57,6 @@ public class RouterServer {
     private static final String TUSD = "TUSD";
     private static final String POOL_TYPE_V1 = "v1";
     private static final String POOL_TYPE_V2 = "v2";
-    private static final String POOL_TYPE_2_POOL = "2pool";
-    private static final String POOL_TYPE_3_POOL = "3pool";
-    private static final String POOL_TYPE_4_POOL = "4pool";
-    private static final String POOL_TYPE_PSM = "psm";
 
     private ConcurrentMap<String, RoutNode> routNodeMap = new ConcurrentHashMap<>();
     // 之后考虑用缓存
@@ -183,13 +179,13 @@ public class RouterServer {
         BigDecimal dAmount = new BigDecimal(swapResult.amount);
         BigDecimal dIn = new BigDecimal(routerInput.getIn());
         routItem.setAmountV(swapResult.amount);
-        String amount = dAmount.divide(outAmountUnit, 6, RoundingMode.UP).toString();
+        String amount = dAmount.divide(outAmountUnit, routerInput.getToDecimal(), RoundingMode.DOWN).toString();
         routItem.setAmount(amount);
         BigDecimal fee = new BigDecimal(swapResult.fee).multiply(new BigDecimal(routerInput.getIn()))
-                .divide(inAmountUnit, 6, RoundingMode.UP);
+                .divide(inAmountUnit, routerInput.getFromDecimal(), RoundingMode.DOWN);
         routItem.setFee(fee.toString());
-        routItem.setInUsd(routerInput.getFromPrice().multiply(dIn).divide(inAmountUnit, RoundingMode.UP).toString());
-        routItem.setOutUsd(routerInput.getToPrice().multiply(dAmount).divide(outAmountUnit, RoundingMode.UP).toString());
+        routItem.setInUsd(routerInput.getFromPrice().multiply(dIn).divide(inAmountUnit, RoundingMode.DOWN).toString());
+        routItem.setOutUsd(routerInput.getToPrice().multiply(dAmount).divide(outAmountUnit, RoundingMode.DOWN).toString());
         return routItem;
     }
 
@@ -235,11 +231,18 @@ public class RouterServer {
             if (i == -2 || j == -2) {
                 res.amount = BigInteger.ZERO;
             } else {
+                int maxCoin = baseStableSwapPool.getCoinsCount() - 1;
+                int metaJ = j - maxCoin < 0 ? j : maxCoin;
                 long timestamp = System.currentTimeMillis() / 1000;
-                res.fee = preFee + (1 - preFee) * baseStableSwapPool.calcFee(timestamp, j);
                 if (i + j == -1) {
+                    res.fee = preFee + (1 - preFee) * baseStableSwapPool.calcFee(timestamp, j);
                     res.amount = curve.exchange(i, j, amount, BigInteger.ZERO, timestamp);
                 } else {
+                    if (i - maxCoin < 0 || j - maxCoin < 0) {
+                        res.fee = preFee + (1 - preFee) * baseStableSwapPool.calcFee(timestamp, metaJ);
+                    } else {
+                        res.fee = preFee + (1 - preFee) * baseStableSwapPool.calcBasePoolFee(timestamp, metaJ);
+                    }
                     res.amount = curve.exchangeUnderlying(i, j, amount, BigInteger.ZERO, timestamp);
                 }
             }
@@ -354,10 +357,10 @@ public class RouterServer {
                     return true;
                 }
             }
-            boolean isNodeAvailing = (isPathContainToken(path, node.getContract(), node.getAddress())
-                    || !isTokenUsable(isUseBaseTokens, node.getAddress(), node.getSymbol(), destToken));
+            boolean isNodeAvailing = (!isPathContainToken(path, node.getContract(), node.getAddress())
+                    && isTokenUsable(isUseBaseTokens, node.getAddress(), node.getSymbol(), node.getAddress(), destToken));
             RoutNode nextRoot = this.routNodeMap.get(node.getAddress());
-            if (ObjectUtil.isNull(nextRoot) || isNodeAvailing) {
+            if (ObjectUtil.isNull(nextRoot) || !isNodeAvailing) {
                 continue;
             }
             StepInfo stepInfo = StepInfo.builder()
@@ -384,7 +387,7 @@ public class RouterServer {
         return true;
     }
 
-    private boolean getPaths(RoutNode routNode, String destToken, List<StepInfo> path, List<List<StepInfo>> paths, int maxHops,
+    private boolean getPaths(RoutNode routNode, String fromToken, String destToken, List<StepInfo> path, List<List<StepInfo>> paths, int maxHops,
                              boolean isUseBaseTokens) {
         if (path.size() > maxHops) {
             return false;
@@ -395,7 +398,7 @@ public class RouterServer {
         }
         for (RoutNode subNode : routNode.getSubNodes()) {
             if (isPathContainToken(path, subNode.getContract(), subNode.getAddress())
-                    || !isTokenUsable(isUseBaseTokens, subNode.getAddress(), subNode.getSymbol(), destToken)) {
+                    || !isTokenUsable(isUseBaseTokens, subNode.getAddress(), subNode.getSymbol(), fromToken, destToken)) {
                 continue;
             }
             RoutNode nextRoot = this.routNodeMap.get(subNode.getAddress());
@@ -410,7 +413,7 @@ public class RouterServer {
                     .build();
             List<StepInfo> pathCopy = path.stream().collect(Collectors.toList());
             pathCopy.add(stepInfo);
-            getPaths(nextRoot, destToken, pathCopy, paths, maxHops, isUseBaseTokens);
+            getPaths(nextRoot, fromToken, destToken, pathCopy, paths, maxHops, isUseBaseTokens);
 
         }
         return false;
@@ -491,8 +494,8 @@ public class RouterServer {
         String token0Symbol = USDD;
         String token1Symbol = tokenInfo[0];
         String contract = data.getAddress();
-        updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, POOL_TYPE_PSM, contract);
-        updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, POOL_TYPE_PSM, contract);
+        updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, data.getPoolName(), contract);
+        updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, data.getPoolName(), contract);
     }
 
     private String[] getPSMTokenInfo(ContractType contractType) {
@@ -590,11 +593,11 @@ public class RouterServer {
 
     }
 
-    private boolean isTokenUsable(boolean isUseBaseTokens, String tokenAddr, String tokenSymbol, String destAddress) {
+    private boolean isTokenUsable(boolean isUseBaseTokens, String tokenAddr, String tokenSymbol, String fromAddress, String destAddress) {
         if (!isUseBaseTokens || destAddress.equalsIgnoreCase(tokenAddr)) {
             return true;
         }
-        return baseTokensMap.containsKey(tokenAddr) || baseTokenSymbolsMap.containsKey(tokenSymbol);
+        return baseTokensMap.containsKey(tokenAddr) || baseTokenSymbolsMap.containsKey(tokenSymbol) || fromAddress.equalsIgnoreCase(tokenAddr);
     }
 
     @Data

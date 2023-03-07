@@ -31,6 +31,7 @@ public class PSMData extends BaseContractData {
     private BigInteger maxSwapUSDD; // info[3]
     private BigInteger usddBalance; // info[5]
     private BigInteger usdBalance; //   info[4]
+    private String poolName;
 
     public PSMData copySelf() {
         return DeepCopyUtils.deepCopy(this, PSMData.class);

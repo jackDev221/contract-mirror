@@ -55,6 +55,7 @@ public class PSM extends BaseContract {
     @Setter
     private PSMData psmData;
     private String polyAddress;
+    private String poolName;
     @Setter
     private PSMTotalData psmTotalData;
 
@@ -65,21 +66,23 @@ public class PSM extends BaseContract {
         if (ObjectUtil.isNull(extraData)) {
             return null;
         }
-        return new PSM(contractInfo.getType(), contractInfo.getAddress(), extraData.getPoly(), iChainHelper,
-                iContractsHelper, psmTotalData, sigMap);
+        return new PSM(contractInfo.getType(), contractInfo.getAddress(), extraData.getPoly(), extraData.getPoolName(),
+                iChainHelper, iContractsHelper, psmTotalData, sigMap);
     }
 
-    public PSM(ContractType type, String address, String polyAddress, IChainHelper iChainHelper, IContractsHelper
+    public PSM(ContractType type, String address, String polyAddress, String poolName, IChainHelper iChainHelper, IContractsHelper
             iContractsHelper, PSMTotalData psmTotalData, Map<String, String> sigMap) {
         super(address, type, iChainHelper, iContractsHelper, sigMap);
         this.polyAddress = polyAddress;
         this.psmTotalData = psmTotalData;
+        this.poolName = poolName;
     }
 
     private PSMData getVarPsmData() {
         if (ObjectUtil.isNull(psmData)) {
             psmData = new PSMData();
             psmData.setPolyAddress(polyAddress);
+            psmData.setPoolName(poolName);
             psmData.setAddress(address);
             psmData.setType(type);
             psmData.setAddExchangeContracts(false);
@@ -385,6 +388,7 @@ public class PSM extends BaseContract {
     @Data
     public static class ContractExtraData {
         private String poly;
+        private String poolName;
     }
 
     public static ContractExtraData parseToExtraData(String input) {

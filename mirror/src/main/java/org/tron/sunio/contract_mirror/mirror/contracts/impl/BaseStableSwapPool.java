@@ -52,6 +52,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     private static final BigInteger PRECISION = BigInteger.TEN.pow(18);
     private static final BigInteger A_PRECISION = new BigInteger("100");
     private static final long BASE_CACHE_EXPIRES = 600;
+    @Getter
     private int coinsCount;
     @Getter
     private int baseCoinsCount;
@@ -262,8 +263,8 @@ public class BaseStableSwapPool extends AbstractCurve {
         BaseStableSwapPool pool = new BaseStableSwapPool(
                 data.getAddress(),
                 type,
-                coinsCount,
                 baseCoinsCount,
+                coinsCount,
                 copyBigIntegerArray(rates),
                 copyBigIntegerArray(precisionMul),
                 poolName,
@@ -292,6 +293,11 @@ public class BaseStableSwapPool extends AbstractCurve {
         BigDecimal feeAdmin = fee.multiply(adminFeeV).multiply(new BigDecimal(PRECISION))
                 .divide(new BigDecimal(FEE_DENOMINATOR), 6, RoundingMode.UP).divide(new BigDecimal(rates[j]), 6, RoundingMode.UP);
         return fee.add(feeAdmin).doubleValue();
+    }
+
+    public double calcBasePoolFee(long timestamp, int j) {
+        AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(this.getVarStableSwapBasePoolData().getBasePool())).copySelf();
+        return curve.calcFee(timestamp, j);
     }
 
     @Override
@@ -887,13 +893,10 @@ public class BaseStableSwapPool extends AbstractCurve {
             dyAdminFee = dyAdminFee.multiply(PRECISION).divide(rates[metaJ]);
             BigInteger balanceI = data.getBalances()[metaI].add(dxWFee);
             BigInteger balanceJ = data.getBalances()[metaJ].subtract(dy).subtract(dyAdminFee);
-            System.out.println(balanceI);
-            System.out.println(balanceJ);
             data.updateBalances(metaI, balanceI);
             data.updateBalances(metaJ, balanceJ);
 
             if (baseJ >= 0) {
-                //dy= 31721347864730507
                 AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(basePool)).copySelf();
                 dy = curve.removeLiquidityOneCoin(dy, baseJ, BigInteger.ZERO, timestamp);
             }
