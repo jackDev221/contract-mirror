@@ -56,6 +56,7 @@ public class PendingEventConsumer implements IEventConsumer {
                 poolQueue = null == exists ? poolQueue : exists;
             }
             poolQueue.put(message);
+            log.info("{} pending messages {}", contract.getAddress(), poolQueue.size());
         } catch (Exception e) {
             e.printStackTrace();
             log.error(e.getMessage());
@@ -73,6 +74,7 @@ public class PendingEventConsumer implements IEventConsumer {
     private class ConsumeTask implements Runnable {
         @Override
         public void run() {
+            log.info("ConsumeTask start");
             // double while loop for try catch optimization
             while (true) {
                 try {
@@ -103,6 +105,7 @@ public class PendingEventConsumer implements IEventConsumer {
                     = (SynchronizableContract) contractManager.getContract(address);
                 if (!synchronizableContract.isEventAccept()) {
                     // pool not ready for message
+                    log.info("{} is not accepting event", address);
                     continue;
                 }
                 // take messages
@@ -110,6 +113,7 @@ public class PendingEventConsumer implements IEventConsumer {
                                                                                            null);
                 if (null == messages) {
                     // taken by other consumer
+                    log.warn("pending messages for {} is taken by other consumer", address);
                     continue;
                 }
                 log.info("Processing " + messages.size() + " pending messages for " + address);
@@ -129,7 +133,8 @@ public class PendingEventConsumer implements IEventConsumer {
                         // try put back
                         messages = pendingQueue.put(address, messages);
                         if (null != messages) {
-                            // extreme case, messages disordered
+                            // extreme case, messages is disordered
+                            log.error("pending messages for {} is disordered, re-sync", address);
                             synchronizableContract.sync();
                         }
                     }
