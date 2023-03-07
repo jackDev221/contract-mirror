@@ -17,9 +17,10 @@ public class SyncEventService extends EventService {
                             ServerConfig serverConfig,
                             ContractManager contractManager) {
         super(kafkaConfig);
-        init(Collections.singletonList(new SharedEventConsumer(serverConfig,
-                                                               contractManager,
-                                                               new PendingEventConsumer(serverConfig,
-                                                                                        contractManager))));
+        setEventConsumers(Collections.singletonList(new SharedEventConsumer(serverConfig,
+                                                                            contractManager,
+                                                                            new PendingEventConsumer(
+                                                                                serverConfig,
+                                                                                contractManager))));
     }
 }

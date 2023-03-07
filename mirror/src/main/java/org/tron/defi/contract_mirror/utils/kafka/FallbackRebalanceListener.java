@@ -1,5 +1,6 @@
 package org.tron.defi.contract_mirror.utils.kafka;
 
+import lombok.Getter;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
@@ -13,6 +14,8 @@ public class FallbackRebalanceListener implements ConsumerRebalanceListener {
     private final KafkaConsumer<Long, String> consumer;
     private final String topic;
     private final long fallbackTimeMs;
+    @Getter
+    private long initialEndOffset;
 
     public FallbackRebalanceListener(KafkaConsumer<Long, String> consumer,
                                      String topic,
@@ -30,6 +33,9 @@ public class FallbackRebalanceListener implements ConsumerRebalanceListener {
     @Override
     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
         try {
+            consumer.endOffsets(partitions).values().forEach(x -> {
+                initialEndOffset = Math.max(initialEndOffset, x.longValue());
+            });
             long startTime = System.currentTimeMillis() - fallbackTimeMs;
             Map<TopicPartition, Long> partitionTimes = new HashMap<>();
             for (TopicPartition topicPartition : partitions) {

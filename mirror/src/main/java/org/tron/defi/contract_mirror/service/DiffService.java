@@ -17,24 +17,25 @@ import java.util.Arrays;
 @Slf4j
 @Service
 public class DiffService extends EventService {
-
-
     @Autowired
-    public DiffService(KafkaConfig kafkaConfig, ServerConfig serverConfig, ContractManager contractManager) {
+    public DiffService(KafkaConfig kafkaConfig,
+                       ServerConfig serverConfig,
+                       ContractManager contractManager) {
         super(kafkaConfig);
         serverConfig.setEventPoolConfig(null);  // force handle event synchronously
-        init(Arrays.asList(new SharedEventConsumer(serverConfig,
-                                                   contractManager,
-                                                   new PendingEventConsumer(serverConfig,
-                                                                            contractManager)),
-                           new DiffEventConsumer(contractManager)));
+        setEventConsumers(Arrays.asList(new SharedEventConsumer(serverConfig,
+                                                                contractManager,
+                                                                new PendingEventConsumer(
+                                                                    serverConfig,
+                                                                    contractManager)),
+                                        new DiffEventConsumer(contractManager)));
         contractManager.init();
         listen();
     }
 
     @Override
     protected void consume(KafkaMessage<ContractLog> message) {
-        if (message.getOffset() < consumerEndOffset) {
+        if (message.getOffset() < getInitialEndOffset()) {
             // wait to the latest offset
             return;
         }
