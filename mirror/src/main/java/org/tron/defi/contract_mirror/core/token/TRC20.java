@@ -38,7 +38,6 @@ public class TRC20 extends Contract implements IToken, ITRC20 {
 
     public BigInteger balanceOfFromChain(String address) {
         String ethAddress = AddressConverter.TronBase58ToEthAddress(address);
-        System.out.println(ethAddress);
         List<Type> response = abi.invoke(TRC20Abi.Functions.BALANCE_OF,
                                          Collections.singletonList(ethAddress));
         return ((Uint256) response.get(0)).getValue();
