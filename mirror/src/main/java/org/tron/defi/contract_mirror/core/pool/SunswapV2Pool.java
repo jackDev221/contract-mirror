@@ -15,8 +15,10 @@ import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Uint112;
+import org.web3j.abi.datatypes.generated.Uint32;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -113,14 +115,17 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     protected void getContractData() {
+        List<BigInteger> reserves = getReservesFromChain();
+        timestamp0 = reserves.get(2).longValue() * 1000;   // updateTime
         wlock.lock();
         try {
             IToken token0 = (IToken) getTokens().get(0);
             IToken token1 = (IToken) getTokens().get(1);
-            token0.setBalance(getAddress(), token0.balanceOfFromChain(getAddress()));
-            token1.setBalance(getAddress(), token1.balanceOfFromChain(getAddress()));
+            token0.setBalance(getAddress(), reserves.get(0));
+            token1.setBalance(getAddress(), reserves.get(1));
             log.info("{} balance {}", token0.getSymbol(), token0.balanceOf(getAddress()));
             log.info("{} balance {}", token1.getSymbol(), token1.balanceOf(getAddress()));
+            log.info("updateTime {}", timestamp0);
         } finally {
             wlock.unlock();
         }
@@ -169,12 +174,37 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
         return getTokenFromChain(1);
     }
 
+    public List<BigInteger> getReserves() {
+        IToken token0 = (IToken) getToken0();
+        IToken token1 = (IToken) getToken1();
+        rlock.lock();
+        try {
+            return Arrays.asList(token0.balanceOf(getAddress()),
+                                 token1.balanceOf(getAddress()),
+                                 BigInteger.valueOf(lastEventTimestamp));
+        } finally {
+            rlock.unlock();
+        }
+    }
+
+    public List<BigInteger> getReservesFromChain() {
+        List<Type> response = abi.invoke(SunswapV2Abi.Functions.GET_RESERVERS,
+                                         Collections.emptyList());
+        return Arrays.asList(((Uint112) response.get(0)).getValue(),
+                             ((Uint112) response.get(1)).getValue(),
+                             ((Uint32) response.get(2)).getValue());
+    }
+
     private boolean diffBalances() {
         log.info("diffBalances {}", getAddress());
         IToken token0 = (IToken) getTokens().get(0);
         IToken token1 = (IToken) getTokens().get(1);
-        BigInteger expectBalance0 = token0.balanceOfFromChain(getAddress());
-        BigInteger expectBalance1 = token1.balanceOfFromChain(getAddress());
+        List<BigInteger> reserves = getReservesFromChain();
+        long updateTime = reserves.get(2).longValue() * 1000;
+        if (updateTime != lastEventTimestamp) {
+            log.warn("balances has been changed [{}, {}]", lastEventTimestamp, updateTime);
+            return false;
+        }
         BigInteger localBalance0;
         BigInteger localBalance1;
         rlock.lock();
@@ -184,10 +214,10 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
         } finally {
             rlock.unlock();
         }
-        if (0 != localBalance0.compareTo(expectBalance0) ||
-            0 != localBalance1.compareTo(expectBalance1)) {
-            log.info("expect balance0 {}", expectBalance0);
-            log.info("expect balance1 {}", expectBalance1);
+        if (0 != localBalance0.compareTo(reserves.get(0)) ||
+            0 != localBalance1.compareTo(reserves.get(1))) {
+            log.info("expect balance0 {}", reserves.get(0));
+            log.info("expect balance1 {}", reserves.get(1));
             log.info("local balance0 {}", localBalance0);
             log.info("local balance1 {}", localBalance1);
             return true;

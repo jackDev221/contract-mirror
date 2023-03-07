@@ -15,8 +15,10 @@ import org.tron.defi.contract_mirror.core.ContractManager;
 import org.tron.defi.contract_mirror.dao.BlockInfo;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)
@@ -29,6 +31,12 @@ public class SunswapV2PoolTest {
     @Test
     public void initTest() {
         Assertions.assertDoesNotThrow(() -> pool.init());
+    }
+
+    @Test
+    public void getReservesFromChainTest() {
+        List<BigInteger> reserves = pool.getReservesFromChain();
+        log.info(reserves.toString());
     }
 
     @Test
