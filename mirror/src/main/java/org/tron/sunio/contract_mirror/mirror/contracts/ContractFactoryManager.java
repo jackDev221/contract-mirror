@@ -101,6 +101,7 @@ public class ContractFactoryManager {
                         log.error("Fail to create instance for address: {}, type: {}, extra: {}", contractInfo.getAddress(),
                                 contractInfo.getType(), contractInfo.getExtra());
                     }
+                    break;
                 case CONTRACT_ASSEMBLE_3POOL:
                     iContractsHelper.addContract(new Assemble3Pool(
                             contractInfo.getAddress(),
