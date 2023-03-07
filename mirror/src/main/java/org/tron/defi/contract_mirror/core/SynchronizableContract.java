@@ -81,8 +81,11 @@ public abstract class SynchronizableContract extends Contract implements Synchro
 
     @Override
     public boolean diff(KafkaMessage<ContractLog> kafkaMessage) {
+        if (!isReady()) {
+            return false;
+        }
         ContractLog contractLog = kafkaMessage.getMessage();
-        if (contractLog.getTimeStamp() != lastEventTimestamp) {
+        if (contractLog.getTimeStamp() != lastEventTimestamp || contractLog.isRemoved()) {
             return false;
         }
         EventPrototype prototype = getEvent(contractLog.getRawData().getTopics()[0]);

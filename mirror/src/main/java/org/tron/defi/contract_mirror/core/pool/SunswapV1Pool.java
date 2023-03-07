@@ -178,6 +178,7 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     }
 
     private void handleSnapshotEvent(EventValues eventValues) {
+        log.info("handleSnapshotEvent {}", getAddress());
         BigInteger balance0 = ((Uint256) eventValues.getIndexedValues().get(1)).getValue();
         BigInteger balance1 = ((Uint256) eventValues.getIndexedValues().get(2)).getValue();
         wlock.lock();

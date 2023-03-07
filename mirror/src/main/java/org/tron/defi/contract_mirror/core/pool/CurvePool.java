@@ -130,7 +130,9 @@ public class CurvePool extends Pool {
         if (ready) {
             return true;
         }
-        ready = System.currentTimeMillis() > timestamp2;
+        ready = lastEventTimestamp == 0
+                ? System.currentTimeMillis() > timestamp2
+                : lastEventTimestamp > timestamp2;
         return ready;
     }
 
