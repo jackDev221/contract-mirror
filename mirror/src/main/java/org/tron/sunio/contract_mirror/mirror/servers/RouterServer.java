@@ -605,7 +605,10 @@ public class RouterServer {
         if (!isUseBaseTokens || destAddress.equalsIgnoreCase(tokenAddr)) {
             return true;
         }
-        return baseTokensMap.containsKey(tokenAddr) || baseTokenSymbolsMap.containsKey(tokenSymbol) || fromAddress.equalsIgnoreCase(tokenAddr);
+        if (fromAddress.equalsIgnoreCase(tokenAddr)) {
+            return false;
+        }
+        return baseTokensMap.containsKey(tokenAddr) || baseTokenSymbolsMap.containsKey(tokenSymbol);
     }
 
     @Data
