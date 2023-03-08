@@ -36,6 +36,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_GET_TOKEN;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_GET_TOKEN_WITH_ID;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN_COUNT;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.V1_FACTORY;
 
 @Slf4j
 public class SwapFactoryV1 extends BaseFactory {
@@ -105,6 +106,11 @@ public class SwapFactoryV1 extends BaseFactory {
             result.add(swapV1);
         }
         return result;
+    }
+
+    @Override
+    public String getVersion() {
+        return V1_FACTORY;
     }
 
     @Override

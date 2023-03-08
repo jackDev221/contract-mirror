@@ -34,6 +34,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE_TO;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_FEE_TO_SETTER;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_GET_PAIR;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.V2_FACTORY;
 
 @Slf4j
 public class SwapFactoryV2 extends BaseFactory {
@@ -82,7 +83,10 @@ public class SwapFactoryV2 extends BaseFactory {
         return this;
     }
 
-
+    @Override
+    public String getVersion() {
+        return V2_FACTORY;
+    }
     @Override
     public List<BaseContract> getListContracts(CMPool cmPool) {
         List<BaseContract> result = new ArrayList<>();

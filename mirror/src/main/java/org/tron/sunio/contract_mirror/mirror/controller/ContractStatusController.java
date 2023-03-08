@@ -24,6 +24,8 @@ import java.util.List;
 
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.CONTRACT_CONST_METHOD;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.CONTRACT_ROUTING;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.CONTRACT_VERSION;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_VERSION;
 
 
 @RestController
@@ -86,6 +88,21 @@ public class ContractStatusController {
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
             e.printStackTrace();
+            return RestResultGenerator.genErrorWithMessage(e.getMessage());
+        }
+    }
+
+    @GetMapping(value = CONTRACT_VERSION)
+    public ResultResponse<Object> queryContractVersion(
+            @ApiParam(name = "address", value = "合约地址") @PathVariable("address") String address) {
+        BaseContract baseContract = contractMirror.getContract(address);
+        if (ObjectUtil.isNull(baseContract)) {
+            return RestResultGenerator.genErrorResult(ResponseEnum.SERVER_ERROR);
+        }
+        try {
+            var res = baseContract.handRequest(METHOD_VERSION, "");
+            return RestResultGenerator.genResult(res);
+        } catch (Exception e) {
             return RestResultGenerator.genErrorWithMessage(e.getMessage());
         }
     }

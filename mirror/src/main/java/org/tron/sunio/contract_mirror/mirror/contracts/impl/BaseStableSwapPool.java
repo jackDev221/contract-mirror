@@ -422,6 +422,11 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     @Override
+    public String getVersion() {
+        return this.poolName;
+    }
+
+    @Override
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         return null;
     }

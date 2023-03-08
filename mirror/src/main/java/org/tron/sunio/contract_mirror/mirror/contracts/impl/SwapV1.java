@@ -40,6 +40,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TONE_BALANCE;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOTAL_SUPPLY;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.SWAP_V1_NO_FEE;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.V1_VERSION;
 
 @Slf4j
 public class SwapV1 extends BaseContract {
@@ -154,6 +155,11 @@ public class SwapV1 extends BaseContract {
     @Override
     public <T> T getStatus() {
         return (T) getVarSwapV1Data();
+    }
+
+    @Override
+    public String getVersion() {
+        return  V1_VERSION;
     }
 
     /*

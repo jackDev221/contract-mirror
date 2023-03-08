@@ -47,6 +47,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN0;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOKEN1;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_TOTAL_SUPPLY;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.V2_VERSION;
 
 @Slf4j
 public class SwapV2Pair extends BaseContract {
@@ -153,6 +154,11 @@ public class SwapV2Pair extends BaseContract {
         swapV2PairData.setReady(isReady);
         swapV2PairData.setAddExchangeContracts(isAddExchangeContracts);
         isDirty = true;
+    }
+
+    @Override
+    public String getVersion() {
+        return V2_VERSION;
     }
 
     @Override

@@ -9,10 +9,18 @@ public interface ContractMirrorConst {
     String KAFKA_TOPIC_CONTRACT_LOG = "contractlog";
     String KAFKA_TOPIC_CONTRACT_EVENT_LOG = "contractevent";
     String CONTRACT_CONST_METHOD = "/contract/{address}/{method}";
+    String CONTRACT_VERSION = "/version/{address}";
     String CONTRACT_ROUTING = "/routingInV2";
     BigInteger SWAP_V1_NO_FEE = BigInteger.TWO.pow(128).subtract(BigInteger.ONE);
 
+    // version
+    String V1_VERSION = "v1";
+    String V1_FACTORY = "v1factory";
+    String V2_VERSION = "v2";
+    String V2_FACTORY = "v2factory";
+
     //Methods
+    String METHOD_VERSION = "version";
     String METHOD_STATUS = "status";
     //SwapV1Factory
     String METHOD_GET_EXCHANGE = "getExchange";

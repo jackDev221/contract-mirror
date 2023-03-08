@@ -195,6 +195,11 @@ public class PSM extends BaseContract {
     }
 
     @Override
+    public String getVersion() {
+        return this.poolName;
+    }
+
+    @Override
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_GEM_JOIN:

@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_STATUS;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_VERSION;
 
 @Slf4j
 public abstract class BaseContract extends ContractObj {
@@ -53,11 +54,16 @@ public abstract class BaseContract extends ContractObj {
 
     public abstract <T> T getStatus();
 
+    public abstract String getVersion();
+
     public abstract <T> T handleSpecialRequest(String method, String params) throws Exception;
 
     public <T> T handRequest(String method, String params) throws Exception {
         if (method.equalsIgnoreCase(METHOD_STATUS)) {
             return getStatus();
+        }
+        if (method.equalsIgnoreCase(METHOD_VERSION)) {
+            return (T) getVersion();
         }
         return handleSpecialRequest(method, params);
     }

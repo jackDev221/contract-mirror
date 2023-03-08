@@ -50,6 +50,11 @@ public class BaseFactory extends BaseContract implements IContractFactory {
     }
 
     @Override
+    public String getVersion() {
+        return null;
+    }
+
+    @Override
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         return null;
     }
