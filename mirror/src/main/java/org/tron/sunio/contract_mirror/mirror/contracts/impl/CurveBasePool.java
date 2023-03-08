@@ -956,6 +956,11 @@ public class CurveBasePool extends AbstractCurve {
         return fee.add(feeAdmin).doubleValue();
     }
 
+    @Override
+    public double calcBasePoolFee(long timestamp, int j) {
+        return 0;
+    }
+
     public BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp, CurveBasePoolData poolData) throws Exception {
         BigInteger[] rates = getRates();
         BigInteger[] oldBalances = poolData.copyBalances();

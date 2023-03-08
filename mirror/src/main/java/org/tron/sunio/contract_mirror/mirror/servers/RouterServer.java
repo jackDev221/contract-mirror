@@ -238,13 +238,13 @@ public class RouterServer {
                 if (i + j == -1) {
                     i = i == -1 ? 1 : 0;
                     j = j == -1 ? 1 : 0;
-                    res.fee = preFee + (1 - preFee) * baseStableSwapPool.calcFee(timestamp, j);
+                    res.fee = preFee + (1 - preFee) * curve.calcFee(timestamp, j);
                     res.amount = curve.exchange(i, j, amount, BigInteger.ZERO, timestamp);
                 } else {
                     if (i - maxCoin < 0 || j - maxCoin < 0) {
-                        res.fee = preFee + (1 - preFee) * baseStableSwapPool.calcFee(timestamp, metaJ);
+                        res.fee = preFee + (1 - preFee) * curve.calcFee(timestamp, metaJ);
                     } else {
-                        res.fee = preFee + (1 - preFee) * baseStableSwapPool.calcBasePoolFee(timestamp, metaJ);
+                        res.fee = preFee + (1 - preFee) * curve.calcBasePoolFee(timestamp, metaJ);
                     }
                     res.amount = curve.exchangeUnderlying(i, j, amount, BigInteger.ZERO, timestamp);
                 }

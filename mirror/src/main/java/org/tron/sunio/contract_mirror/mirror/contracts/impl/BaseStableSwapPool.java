@@ -295,6 +295,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         return fee.add(feeAdmin).doubleValue();
     }
 
+    @Override
     public double calcBasePoolFee(long timestamp, int j) {
         AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(this.getVarStableSwapBasePoolData().getBasePool())).copySelf();
         return curve.calcFee(timestamp, j);

@@ -10,6 +10,7 @@ import java.util.Map;
 
 public abstract class AbstractCurve extends BaseContract {
     protected String poolName;
+
     public AbstractCurve(String address, ContractType type, IChainHelper iChainHelper,
                          IContractsHelper iContractsHelper, Map<String, String> sigMap) {
         super(address, type, iChainHelper, iContractsHelper, sigMap);
@@ -48,6 +49,8 @@ public abstract class AbstractCurve extends BaseContract {
     public abstract AbstractCurve copySelf();
 
     public abstract double calcFee(long timestamp, int j);
+
+    public abstract double calcBasePoolFee(long timestamp, int j);
 
     @Override
     public boolean initDataFromChain1() {
