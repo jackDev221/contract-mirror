@@ -237,4 +237,28 @@ public class TestSwapV1 {
         Assert.isTrue(swapV1Data1.getTokenBalance().compareTo(tokenBalance) == 0, "Step1 tokenBalance not equal");
         Assert.isTrue(swapV1Data1.getLpTotalSupply().compareTo(lpSupply) == 0, "Step1 lpSupply not equal");
     }
+
+    //
+    @Test
+    public void testA(){
+        SwapV1 v1 = new SwapV1(
+                "TXk8rQSAvPvBBNtqSoY6nCfsXWCSSpTVQF",
+                "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+                null,null, "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t", null
+        );
+        SwapV1Data data =  v1.getSwapV1Data();
+        data.setTokenSymbol("USDT");
+        data.setTokenBalance(new BigInteger("24775747467188"));
+        data.setLpTotalSupply(new BigInteger("335049647863144"));
+        data.setTrxBalance(new BigInteger("373323222484643"));
+
+        v1.setSwapV1Data(data);
+        try {
+          BigInteger re =   v1.trxToTokenInput(new BigInteger("10000000000"), BigInteger.ZERO, v1.getSwapV1Data());
+          System.out.println(re);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
 }

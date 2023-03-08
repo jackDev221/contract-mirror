@@ -456,6 +456,7 @@ public class BaseStableSwapPool extends AbstractCurve {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventTokenExchange fail!, unique id :%s",
                     address, type, handleEventExtraData.getUniqueId()));
         }
+        vpRate(handleEventExtraData.getTimeStamp());
         int i = ((BigInteger) eventValues.getNonIndexedValues().get(0).getValue()).intValue();
         BigInteger dx = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         int j = ((BigInteger) eventValues.getNonIndexedValues().get(2).getValue()).intValue();
@@ -492,7 +493,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         StableSwapPoolData curveData = this.getVarStableSwapBasePoolData();
         StaticArray<Uint256> amounts = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(0);
         StaticArray<Uint256> fees = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(1);
-
+        vpRate(handleEventExtraData.getTimeStamp());
         List<Uint256> amountsNew = new ArrayList<>();
         for (int i = 0; i < coinsCount; i++) {
             BigInteger amountWFee = getAmountWFee(i, (BigInteger) amounts.getValue().get(i).getValue());
@@ -541,6 +542,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         }
         StableSwapPoolData curveData = this.getVarStableSwapBasePoolData();
         StaticArray<Uint256> amounts = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(0);
+        vpRate(handleEventExtraData.getTimeStamp());
         List<Uint256> amountsNew = new ArrayList<>();
         for (int i = 0; i < coinsCount; i++) {
             BigInteger origin = curveData.getBalances()[i];
@@ -590,6 +592,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         StableSwapPoolData curveData = this.getVarStableSwapBasePoolData();
         StaticArray<Uint256> amounts = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(0);
         StaticArray<Uint256> fees = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(1);
+        vpRate(handleEventExtraData.getTimeStamp());
         List<Uint256> amountsNew = new ArrayList<>();
         for (int i = 0; i < coinsCount; i++) {
             BigInteger originBalance = curveData.getBalances()[i];

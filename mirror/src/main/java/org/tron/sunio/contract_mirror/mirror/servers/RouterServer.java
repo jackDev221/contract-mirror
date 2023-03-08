@@ -169,9 +169,10 @@ public class RouterServer {
             roadForName.add(info.getTokenName());
             pool.add(info.getPoolType());
             toToken = info.getTokenAddress();
-            swapResult = swapToken(fromToken, toToken, swapResult.amount, swapResult.fee, contractMaps.get(info.getContract()));
+            BigInteger inputAmount = swapResult.amount;
+            swapResult = swapToken(fromToken, toToken, inputAmount, swapResult.fee, contractMaps.get(info.getContract()));
             if (swapResult.amount.compareTo(BigInteger.ZERO) == 0) {
-                log.error("Cal:from {}, to: {},  contract:{}, amount is zero", fromToken, toToken, info.getContract());
+                log.error("Calc :from {}, to: {},  contract:{}, input : {} return amount is zero", fromToken, toToken, info.getContract(), inputAmount);
                 return null;
             }
             fromToken = toToken;
@@ -235,6 +236,8 @@ public class RouterServer {
                 int metaJ = j - maxCoin < 0 ? j : maxCoin;
                 long timestamp = System.currentTimeMillis() / 1000;
                 if (i + j == -1) {
+                    i = i == -1 ? 1 : 0;
+                    j = j == -1 ? 1 : 0;
                     res.fee = preFee + (1 - preFee) * baseStableSwapPool.calcFee(timestamp, j);
                     res.amount = curve.exchange(i, j, amount, BigInteger.ZERO, timestamp);
                 } else {
@@ -537,6 +540,9 @@ public class RouterServer {
 
     private void initV1(SwapV1 swapV1) {
         SwapV1Data data = swapV1.getSwapV1Data();
+        if (data.getTokenBalance().compareTo(BigInteger.ZERO) <= 0 || data.getTrxBalance().compareTo(BigInteger.ZERO) <= 0) {
+            return;
+        }
         String token0 = EMPTY_ADDRESS;
         String token1 = data.getTokenAddress();
         String token0Symbol = TRX_SYMBOL;
@@ -549,6 +555,9 @@ public class RouterServer {
 
     private void initV2(SwapV2Pair swapV2Pair) {
         SwapV2PairData data = swapV2Pair.getSwapV2PairData();
+        if (data.getReserve0().compareTo(BigInteger.ZERO) <= 0 || data.getReserve1().compareTo(BigInteger.ZERO) <= 0) {
+            return;
+        }
         String token0 = data.getToken0();
         String token1 = data.getToken1();
         String token0Symbol = data.getToken0Symbol();
