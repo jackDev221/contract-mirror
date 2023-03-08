@@ -16,7 +16,7 @@ import java.math.BigInteger;
 public class TestSwapV1 {
     public static String FACTORY_ADDRESS = "TXFouUxm4Qs3c1VxfQtCo4xMxbpwE3aWDM";
     public static String Contract_ADDRESS = "TFRWUrJ4Yp8zxZn7xvyoVFfhe4iHnhLvuC";
-    public static String  TOKEN_ADDRESS =  "TQz9i4JygMCzizdVu8NE4BdqesrsHv1L93";
+    public static String TOKEN_ADDRESS = "TQz9i4JygMCzizdVu8NE4BdqesrsHv1L93";
 
     private ContractsHelper getContractsHelp() {
         ContractsHelper contractsHelper = new ContractsHelper();
@@ -82,7 +82,7 @@ public class TestSwapV1 {
         BigInteger trxBalance = new BigInteger("4314674368935");
         BigInteger tokenBalance = new BigInteger("809465378148457871205899353");
         BigInteger lpSupply = new BigInteger("41614279169");
-        SwapV1Data swapV1Data1 =  swapV1.getSwapV1Data();
+        SwapV1Data swapV1Data1 = swapV1.getSwapV1Data();
         System.out.println(swapV1Data1);
         Assert.isTrue(swapV1Data1.getTrxBalance().compareTo(trxBalance) == 0, "Step1 trxBalance not equal");
         Assert.isTrue(swapV1Data1.getTokenBalance().compareTo(tokenBalance) == 0, "Step1 tokenBalance not equal");
@@ -138,7 +138,7 @@ public class TestSwapV1 {
         BigInteger trxBalance = new BigInteger("4314672280873");
         BigInteger tokenBalance = new BigInteger("809464986412169845445309056");
         BigInteger lpSupply = new BigInteger("41614259030");
-        SwapV1Data swapV1Data1 =  swapV1.getSwapV1Data();
+        SwapV1Data swapV1Data1 = swapV1.getSwapV1Data();
         System.out.println(swapV1Data1);
         Assert.isTrue(swapV1Data1.getTrxBalance().compareTo(trxBalance) == 0, "Step1 trxBalance not equal");
         Assert.isTrue(swapV1Data1.getTokenBalance().compareTo(tokenBalance) == 0, "Step1 tokenBalance not equal");
@@ -184,7 +184,7 @@ public class TestSwapV1 {
         BigInteger trxBalance = new BigInteger("4314675280873");
         BigInteger tokenBalance = new BigInteger("809464425278452519877826622");
         BigInteger lpSupply = new BigInteger("41614259030");
-        SwapV1Data swapV1Data1 =  swapV1.getSwapV1Data();
+        SwapV1Data swapV1Data1 = swapV1.getSwapV1Data();
         System.out.println(swapV1Data1);
         Assert.isTrue(swapV1Data1.getTrxBalance().compareTo(trxBalance) == 0, "Step1 trxBalance not equal");
         Assert.isTrue(swapV1Data1.getTokenBalance().compareTo(tokenBalance) == 0, "Step1 tokenBalance not equal");
@@ -231,34 +231,11 @@ public class TestSwapV1 {
         BigInteger trxBalance = new BigInteger("4314673686586");
         BigInteger tokenBalance = new BigInteger("809464725278452519877826622");
         BigInteger lpSupply = new BigInteger("41614259030");
-        SwapV1Data swapV1Data1 =  swapV1.getSwapV1Data();
+        SwapV1Data swapV1Data1 = swapV1.getSwapV1Data();
         System.out.println(swapV1Data1);
         Assert.isTrue(swapV1Data1.getTrxBalance().compareTo(trxBalance) == 0, "Step1 trxBalance not equal");
         Assert.isTrue(swapV1Data1.getTokenBalance().compareTo(tokenBalance) == 0, "Step1 tokenBalance not equal");
         Assert.isTrue(swapV1Data1.getLpTotalSupply().compareTo(lpSupply) == 0, "Step1 lpSupply not equal");
     }
 
-    //
-    @Test
-    public void testA(){
-        SwapV1 v1 = new SwapV1(
-                "TXk8rQSAvPvBBNtqSoY6nCfsXWCSSpTVQF",
-                "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
-                null,null, "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t", null
-        );
-        SwapV1Data data =  v1.getSwapV1Data();
-        data.setTokenSymbol("USDT");
-        data.setTokenBalance(new BigInteger("24775747467188"));
-        data.setLpTotalSupply(new BigInteger("335049647863144"));
-        data.setTrxBalance(new BigInteger("373323222484643"));
-
-        v1.setSwapV1Data(data);
-        try {
-          BigInteger re =   v1.trxToTokenInput(new BigInteger("10000000000"), BigInteger.ZERO, v1.getSwapV1Data());
-          System.out.println(re);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
-    }
 }

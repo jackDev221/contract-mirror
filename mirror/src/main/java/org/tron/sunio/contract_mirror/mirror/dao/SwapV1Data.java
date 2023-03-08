@@ -24,6 +24,7 @@ public class SwapV1Data extends BaseContractData {
     private BigInteger lpTotalSupply;
     private String tokenName;
     private String tokenSymbol;
+    private long tokenDecimals;
 
     public SwapV1Data copySelf() {
         return DeepCopyUtils.deepCopy(this, SwapV1Data.class);

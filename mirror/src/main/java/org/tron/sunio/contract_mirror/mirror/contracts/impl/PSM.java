@@ -307,7 +307,6 @@ public class PSM extends BaseContract {
     }
 
     private static BigInteger covertToUSDXDecimal(BigInteger value, ContractType type) {
-        System.out.println("covertToUSDXDecimal" + value);
         if (type == ContractType.CONTRACT_PSM_TUSD) {
             return value;
         }

@@ -19,6 +19,8 @@ public class SwapV2PairData extends BaseContractData {
     private String factory;
     private String token0;
     private String token1;
+    private long token0Decimals;
+    private long token1Decimals;
     private BigInteger reserve0;
     private BigInteger reserve1;
     private BigInteger kLast;

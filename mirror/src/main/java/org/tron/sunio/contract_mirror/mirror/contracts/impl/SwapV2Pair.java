@@ -132,6 +132,10 @@ public class SwapV2Pair extends BaseContract {
         swapV2PairData.setToken1Symbol(token1Symbol);
         long decimals = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "decimals").longValue();
         swapV2PairData.setDecimals(decimals);
+        long token0Decimals = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, token0, "decimals").longValue();
+        swapV2PairData.setToken0Decimals(token0Decimals);
+        long token1Decimals = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, token1, "decimals").longValue();
+        swapV2PairData.setToken1Decimals(token1Decimals);
         BigInteger kLast = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "kLast");
         swapV2PairData.setKLast(kLast);
         BigInteger lpTotalSupply = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "totalSupply");

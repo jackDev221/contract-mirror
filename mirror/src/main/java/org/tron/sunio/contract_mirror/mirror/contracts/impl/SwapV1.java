@@ -80,6 +80,7 @@ public class SwapV1 extends BaseContract {
         String tokenName = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "name");
         String tokenSymbol = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "symbol");
         long decimals = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "decimals").longValue();
+        long tokenDecimals = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, tokenAddress, "decimals").longValue();
         BigInteger lpTotalSupply = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "totalSupply");
         BigInteger tokenBalance = CallContractUtil.tokenBalance(iChainHelper, this.getAddress(), tokenAddress);
         BigInteger trxBalance = getBalance(address);
@@ -91,6 +92,7 @@ public class SwapV1 extends BaseContract {
         v1Data.setTrxBalance(trxBalance);
         v1Data.setLpTotalSupply(lpTotalSupply);
         v1Data.setKLast(kLast);
+        v1Data.setTokenDecimals(tokenDecimals);
         v1Data.setTokenBalance(tokenBalance);
         v1Data.setTokenName(tokenName);
         v1Data.setTokenSymbol(tokenSymbol);

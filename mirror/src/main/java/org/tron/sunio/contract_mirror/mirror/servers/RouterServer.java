@@ -83,7 +83,7 @@ public class RouterServer {
             paths = cachedPaths.get(key);
             if (ObjectUtil.isNull(paths)) {
                 paths = new ArrayList<>();
-                getPathsNoRecurrence(routNode, routerInput.getToToken(), paths, routerConfig.getMaxHops(),
+                getPathsNoRecurrence(routNode, routerInput.getFromToken(), routerInput.getToToken(), paths, routerConfig.getMaxHops(),
                         routerInput.isUseBaseTokens());
                 if (paths.size() != 0) {
                     cachedPaths.put(key, paths);
@@ -172,7 +172,7 @@ public class RouterServer {
             BigInteger inputAmount = swapResult.amount;
             swapResult = swapToken(fromToken, toToken, inputAmount, swapResult.fee, contractMaps.get(info.getContract()));
             if (swapResult.amount.compareTo(BigInteger.ZERO) == 0) {
-                log.error("Calc :from {}, to: {},  contract:{}, input : {} return amount is zero", fromToken, toToken, info.getContract(), inputAmount);
+                log.error("Calc :from {}, to: {},  contract:{}, input : {}, path:{} return amount is zero", fromToken, toToken, info.getContract(), inputAmount, path);
                 return null;
             }
             fromToken = toToken;
@@ -342,7 +342,7 @@ public class RouterServer {
         return false;
     }
 
-    private boolean getPathsNoRecurrence(RoutNode routNode, String destToken, List<List<StepInfo>> paths, int maxHops,
+    private boolean getPathsNoRecurrence(RoutNode routNode, String fromToken, String destToken, List<List<StepInfo>> paths, int maxHops,
                                          boolean isUseBaseTokens) {
         List<CacheNode> cacheNodes = new ArrayList<>();
         cacheNodes.add(new CacheNode(routNode));
@@ -360,12 +360,14 @@ public class RouterServer {
                     return true;
                 }
             }
-            boolean isNodeAvailing = (!isPathContainToken(path, node.getContract(), node.getAddress())
-                    && isTokenUsable(isUseBaseTokens, node.getAddress(), node.getSymbol(), node.getAddress(), destToken));
+
+            boolean isNodeAvailing = isTokenUsable(isUseBaseTokens, node.getAddress(), node.getSymbol(), fromToken, destToken)
+                    && !isPathContainToken(path, node.getContract(), node.getAddress());
             RoutNode nextRoot = this.routNodeMap.get(node.getAddress());
             if (ObjectUtil.isNull(nextRoot) || !isNodeAvailing) {
                 continue;
             }
+
             StepInfo stepInfo = StepInfo.builder()
                     .contract(node.getContract())
                     .tokenAddress(node.getAddress())
@@ -478,14 +480,9 @@ public class RouterServer {
         symbols.addAll(Arrays.asList(data.getCoinSymbols()));
         symbols.addAll(Arrays.asList(data.getBaseCoinSymbols()));
         String contract = data.getAddress();
-        for (int i = 0; i < tokens.size(); i++) {
-            if (i == 1) {
-                continue;
-            }
-            for (int j = i + 1; j < tokens.size(); j++) {
-                updateRoutNodeMap(tokens.get(i), symbols.get(i), tokens.get(j), symbols.get(j), data.getPoolName(), contract);
-                updateRoutNodeMap(tokens.get(j), symbols.get(j), tokens.get(i), symbols.get(i), data.getPoolName(), contract);
-            }
+        for (int j = 1; j < tokens.size(); j++) {
+            updateRoutNodeMap(tokens.get(0), symbols.get(0), tokens.get(j), symbols.get(j), data.getPoolName(), contract);
+            updateRoutNodeMap(tokens.get(j), symbols.get(j), tokens.get(0), symbols.get(0), data.getPoolName(), contract);
         }
     }
 
@@ -540,7 +537,8 @@ public class RouterServer {
 
     private void initV1(SwapV1 swapV1) {
         SwapV1Data data = swapV1.getSwapV1Data();
-        if (data.getTokenBalance().compareTo(BigInteger.ZERO) <= 0 || data.getTrxBalance().compareTo(BigInteger.ZERO) <= 0) {
+        if (data.getTokenBalance().compareTo(BigInteger.TEN.pow((int) data.getTokenDecimals() + 1)) < 0
+                || data.getTrxBalance().compareTo(BigInteger.TEN.pow(7)) < 0) {
             return;
         }
         String token0 = EMPTY_ADDRESS;
@@ -555,7 +553,8 @@ public class RouterServer {
 
     private void initV2(SwapV2Pair swapV2Pair) {
         SwapV2PairData data = swapV2Pair.getSwapV2PairData();
-        if (data.getReserve0().compareTo(BigInteger.ZERO) <= 0 || data.getReserve1().compareTo(BigInteger.ZERO) <= 0) {
+        if (data.getReserve0().compareTo(BigInteger.TEN.pow((int) data.getToken0Decimals() + 1)) < 0 ||
+                data.getReserve1().compareTo(BigInteger.TEN.pow((int) data.getToken1Decimals() + 1)) < 0) {
             return;
         }
         String token0 = data.getToken0();
