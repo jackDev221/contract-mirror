@@ -66,6 +66,12 @@ public abstract class Pool extends SynchronizableContract {
 
     protected abstract void doInitialize();
 
+    protected abstract void getContractData();
+
+    public int cost() {
+        return 1;
+    }
+
     public void init() {
         if (initialized) {
             return;
@@ -73,8 +79,6 @@ public abstract class Pool extends SynchronizableContract {
         doInitialize();
         initialized = true;
     }
-
-    protected abstract void getContractData();
 
     public void replaceToken(Contract newToken) {
         for (int i = 0; i < tokens.size(); i++) {

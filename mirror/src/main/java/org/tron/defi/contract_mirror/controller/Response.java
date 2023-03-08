@@ -3,9 +3,15 @@ package org.tron.defi.contract_mirror.controller;
 import lombok.Data;
 
 @Data
-public class Response {
-    private Code code;
-    private String Content;
+public class Response<T> {
+    private int code;
+    private String message;
+    private T data;
+
+    public void setCode(Code code) {
+        this.code = code.ordinal();
+        message = code.name();
+    }
 
     public enum Code {
         SUCCESS,

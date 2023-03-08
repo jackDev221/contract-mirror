@@ -36,6 +36,9 @@ public class ContractManager {
         initTRX();
         for (ContractConfigList.ContractConfig contractConfig : contractConfigList.getContracts()) {
             switch (contractConfig.getType()) {
+                case WTRX_TOKEN:
+                    initWTRX(contractConfig.getAddress());
+                    break;
                 case SUNSWAP_FACTORY_V1:
                     initSunswapV1(contractConfig.getAddress());
                     break;
@@ -52,6 +55,12 @@ public class ContractManager {
                     break;
             }
         }
+    }
+
+    public void initTRX() {
+        registerContract(TRX.getInstance());
+        graph.addNode(new Node(TRX.getInstance()));
+        log.info("INIT TRX {}", TRX.getInstance().info());
     }
 
     public void initCurve(String address, ContractType type) {
@@ -123,9 +132,21 @@ public class ContractManager {
         log.info("INIT SunswapV2 Factory {}", sunswapV2Factory.info());
     }
 
-    public void initTRX() {
-        registerContract(TRX.getInstance());
-        log.info("INIT TRX {}", TRX.getInstance().info());
+    public void initWTRX(String address) {
+        WTRX wtrx = (WTRX) registerContract(new WTRX(address));
+        wtrx.init();
+        Node trxNode = graph.getNode(TRX.getInstance().getAddress());
+        assert null != trxNode;
+        Node wtrxNode = graph.getNode(wtrx.getAddress());
+        if (null == wtrxNode) {
+            wtrxNode = graph.addNode(new Node(wtrx));
+        }
+        Edge edge0 = new Edge(trxNode, wtrxNode, wtrx);
+        Edge edge1 = new Edge(wtrxNode, trxNode, wtrx);
+        trxNode.addInEdge(edge1);
+        trxNode.addOutEdge(edge0);
+        wtrxNode.addInEdge(edge0);
+        wtrxNode.addOutEdge(edge1);
     }
 
     public Contract registerContract(Contract contract) {

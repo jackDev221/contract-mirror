@@ -15,7 +15,9 @@ public enum ContractType {
     // tokens
     TRX_TOKEN,
     TRC20_TOKEN,
-    SSP_LP_TOKEN;
+    WTRX_TOKEN,
+    // poly
+    PSM_POLY;
 
     public static ContractType contractType(String name) {
         for (ContractType value : ContractType.values()) {

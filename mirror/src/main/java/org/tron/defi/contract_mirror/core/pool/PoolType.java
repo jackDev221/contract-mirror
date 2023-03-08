@@ -10,7 +10,7 @@ public enum PoolType {
     CURVE3,
     CURVE_COMBINATION4,
     PSM,
-    PSM_POLY;
+    WTRX;
 
     public static PoolType convertFromContractType(ContractType type) {
         switch (type) {

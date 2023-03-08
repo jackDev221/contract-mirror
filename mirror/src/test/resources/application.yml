@@ -32,6 +32,8 @@ kafka:
 #contractList
 contract-list:
   contracts:
+    - address: TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR
+      type: WTRX_TOKEN
     - address: TXk8rQSAvPvBBNtqSoY6nCfsXWCSSpTVQF
       type: SUNSWAP_FACTORY_V1
     - address: TKWJdrQkqHisa1X8HUdHEfREvTzw4pMAaY
@@ -57,3 +59,16 @@ token-list:
   tokens:
     TRX: T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
     USDT: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+
+router:
+  strategy: DEFAULT
+  maxCost: 3
+  topN: 3
+  tokenWhiteList:
+    - 9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
+    - TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S
+    - TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+    - TMwFHYXLJaRUPeW6421aqXL4ZEzPRFGkGT
+    - TUpMhErZL2fhh4sVNULAbNKLokS4GjC1F4,
+    - TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn
+    - TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8

@@ -1,9 +1,9 @@
-package org.tron.defi.contract_mirror.core.pool;
+package org.tron.defi.contract_mirror.core;
 
 import lombok.Data;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.PsmPolyAbi;
-import org.tron.defi.contract_mirror.core.Contract;
+import org.tron.defi.contract_mirror.common.ContractType;
 import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
 import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.Type;
@@ -20,7 +20,7 @@ public class PsmPoly extends Contract {
 
     @Override
     public String getContractType() {
-        return PoolType.PSM_POLY.name();
+        return ContractType.PSM_POLY.name();
     }
 
     @Override

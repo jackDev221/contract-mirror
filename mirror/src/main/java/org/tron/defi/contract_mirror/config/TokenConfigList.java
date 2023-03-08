@@ -14,11 +14,4 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "token-list")
 public class TokenConfigList {
     private Map<String, String> tokens = new HashMap<>();
-
-    @Data
-    public static class TokenConfig {
-        String symbol;
-        String address;
-    }
-
 }

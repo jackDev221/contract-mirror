@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.PsmAbi;
 import org.tron.defi.contract_mirror.core.Contract;
+import org.tron.defi.contract_mirror.core.PsmPoly;
 import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRC20;
@@ -42,6 +43,12 @@ public class PsmPool extends Pool {
         }
         ready = System.currentTimeMillis() > timestamp2;
         return ready;
+    }
+
+    @Override
+    public int cost() {
+        return 0 == info.getFeeToGem().compareTo(BigInteger.ZERO) &&
+               0 == info.getFeeToUsdd().compareTo(BigInteger.ZERO) ? 0 : 1;
     }
 
     @Override
