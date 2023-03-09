@@ -18,10 +18,16 @@ import java.util.Map;
 
 @Slf4j
 public class BaseFactory extends BaseContract implements IContractFactory {
+    protected boolean hasNewContract;
+    protected List<BaseContract> newSubContracts = new ArrayList<>();
     private List<Integer> unFinshLoadSub = new ArrayList<>();
 
     public BaseFactory(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper, Map<String, String> sigMap) {
         super(address, type, iChainHelper, iContractsHelper, sigMap);
+    }
+
+    public boolean hasFinishLoadSubContract(){
+        return !hasNewContract && isAddExchangeContracts;
     }
 
     @Override

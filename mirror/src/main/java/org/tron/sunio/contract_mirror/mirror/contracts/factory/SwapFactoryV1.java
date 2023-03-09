@@ -85,7 +85,12 @@ public class SwapFactoryV1 extends BaseFactory {
     @Override
     public List<BaseContract> getListContracts(CMPool cmPool) {
         log.info("SwapFactoryV1: getListContracts");
-        List<BaseContract> result = new ArrayList<>();
+        List<BaseContract> result = newSubContracts;
+        newSubContracts = new ArrayList<>();
+        this.hasNewContract = false;
+        if (isAddExchangeContracts) {
+            return result;
+        }
         SwapFactoryV1Data v1Data = this.getVarFactoryV1Data();
         long totalTokens = v1Data.getTokenCount();
 //        totalTokens = 3;
@@ -105,6 +110,7 @@ public class SwapFactoryV1 extends BaseFactory {
 
             result.add(swapV1);
         }
+
         return result;
     }
 
@@ -141,7 +147,7 @@ public class SwapFactoryV1 extends BaseFactory {
                 break;
             case SwapV1FactoryEvent
                     .EVENT_NAME_NEW_EXCHANGE:
-                result = handEventNewExchange(topics, data);
+                result = handEventNewExchange(topics, data, handleEventExtraData);
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
@@ -239,12 +245,29 @@ public class SwapFactoryV1 extends BaseFactory {
         return HandleResult.genHandleSuccess();
     }
 
-    private HandleResult handEventNewExchange(String[] topics, String data) {
+    private HandleResult handEventNewExchange(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         log.info("SwapFactoryV1:{}, handEventNewExchange, topics:{} data:{} ", address, topics, data);
-        isAddExchangeContracts = false;
+        EventValues eventValues = getEventValue(
+                SwapV1FactoryEvent.EVENT_NAME_NEW_EXCHANGE,
+                SwapV1FactoryEvent.EVENT_NAME_NEW_EXCHANGE_BODY,
+                topics,
+                data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handEventNewExchange fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
+        }
+        String token = (String) eventValues.getIndexedValues().get(0).getValue();
+        String exchange = (String) eventValues.getIndexedValues().get(1).getValue();
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
-        factoryV1Data.setAddExchangeContracts(false);
+        factoryV1Data.getTokenToExchangeMap().put(token, exchange);
+        factoryV1Data.getExchangeToTokenMap().put(exchange, token);
+        factoryV1Data.getIdTokenMap().put((int) factoryV1Data.getTokenCount(), token);
         factoryV1Data.setTokenCount(factoryV1Data.getTokenCount() + 1);
+        SwapV1 swapV1 = new SwapV1(this.address, exchange,
+                this.iChainHelper, this.getIContractsHelper(), token, v1SigMap);
+        this.newSubContracts.add(swapV1);
+        this.hasNewContract = true;
         this.isDirty = true;
         return HandleResult.genHandleSuccess();
     }

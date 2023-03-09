@@ -440,6 +440,35 @@ public class RouterServer {
         showRoads();
     }
 
+    public void addRoutNodeMap(Map<String, BaseContract> contractMaps, List<String> addContracts) {
+        log.info("Start addRoutNodeMap");
+        for (String addr : addContracts) {
+            BaseContract baseContract = contractMaps.get(addr);
+            if (ObjectUtil.isNull(baseContract)) {
+                continue;
+            }
+            switch (baseContract.getType()) {
+                case SWAP_V1:
+                    initV1((SwapV1) baseContract);
+                    break;
+                case SWAP_V2_PAIR:
+                    initV2((SwapV2Pair) baseContract);
+                    break;
+                case CONTRACT_CURVE_2POOL:
+                case CONTRACT_CURVE_3POOL:
+                    initCurves((CurveBasePool) baseContract);
+                    break;
+                case CONTRACT_PSM:
+                    initPSM((PSM) baseContract);
+                    break;
+                case STABLE_SWAP_POOL:
+                    initStableSwapPool((BaseStableSwapPool) baseContract);
+                    break;
+            }
+        }
+        showRoads();
+    }
+
     private void showRoads() {
         if (IS_DEBUG) {
             for (RoutNode routNode : this.routNodeMap.values()) {

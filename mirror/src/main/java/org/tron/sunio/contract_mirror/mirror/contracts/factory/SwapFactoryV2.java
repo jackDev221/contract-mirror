@@ -15,6 +15,7 @@ import org.tron.sunio.contract_mirror.mirror.pool.process.out.BaseProcessOut;
 import org.tron.sunio.contract_mirror.mirror.pool.process.out.SwapV2FactoryExOut;
 import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
+import org.web3j.abi.EventValues;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.Utils;
@@ -27,7 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent.EVENT_NAME_PAIR_CREATED_MINT;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent.EVENT_NAME_NEW_PAIR_CREATED_BODY;
+import static org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent.EVENT_NAME_PAIR_CREATED;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_ALL_PAIRS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.METHOD_ALL_PAIRS_LENGTH;
@@ -87,9 +89,15 @@ public class SwapFactoryV2 extends BaseFactory {
     public String getVersion() {
         return V2_FACTORY;
     }
+
     @Override
     public List<BaseContract> getListContracts(CMPool cmPool) {
-        List<BaseContract> result = new ArrayList<>();
+        List<BaseContract> result = newSubContracts;
+        newSubContracts = new ArrayList<>();
+        this.hasNewContract = false;
+        if (isAddExchangeContracts) {
+            return result;
+        }
         long pairCount = this.getVarFactoryV2Data().getPairCount();
 //        pairCount = 3;
         List<BaseProcessOut> outs = this.getListContractsBase(cmPool, (int) pairCount);
@@ -142,8 +150,8 @@ public class SwapFactoryV2 extends BaseFactory {
     protected HandleResult handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         HandleResult result;
         switch (eventName) {
-            case EVENT_NAME_PAIR_CREATED_MINT:
-                result = handleCreatePair(topics, data);
+            case EVENT_NAME_PAIR_CREATED:
+                result = handleCreatePair(topics, data, handleEventExtraData);
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
@@ -197,7 +205,7 @@ public class SwapFactoryV2 extends BaseFactory {
             throw new RuntimeException("Decode failed");
         }
         String token0 = WalletUtil.hexStringToTron((String) res.get(0).getValue());
-        String token1 = WalletUtil.hexStringToTron((String) res.get(0).getValue());
+        String token1 = WalletUtil.hexStringToTron((String) res.get(1).getValue());
         var tokensToPairMaps = this.getVarFactoryV2Data().getTokensToPairMaps();
         if (tokensToPairMaps.containsKey(token0)) {
             return (T) tokensToPairMaps.get(token0).getOrDefault(token1, "");
@@ -206,8 +214,34 @@ public class SwapFactoryV2 extends BaseFactory {
         }
     }
 
-    private HandleResult handleCreatePair(String[] _topics, String _data) {
-        isAddExchangeContracts = false;
+    private HandleResult handleCreatePair(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
+        log.info("SwapFactoryV1:{}, handleCreatePair, topics:{} data:{} ", address, topics, data);
+        EventValues eventValues = getEventValue(
+                EVENT_NAME_PAIR_CREATED,
+                EVENT_NAME_NEW_PAIR_CREATED_BODY,
+                topics,
+                data,
+                handleEventExtraData.getUniqueId());
+        if (ObjectUtil.isNull(eventValues)) {
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleCreatePair fail!, unique id :%s",
+                    address, type, handleEventExtraData.getUniqueId()));
+        }
+        String token0 = (String) eventValues.getIndexedValues().get(0).getValue();
+        String token1 = (String) eventValues.getIndexedValues().get(1).getValue();
+        String pairAddress = (String) eventValues.getNonIndexedValues().get(0).getValue();
+        SwapV2Pair swapV2Pair = new SwapV2Pair(
+                pairAddress,
+                this.address,
+                this.iChainHelper,
+                this.getIContractsHelper(),
+                v2PairSigMap
+
+        );
+
+        newSubContracts.add(swapV2Pair);
+        hasNewContract = true;
+        updateTokenToPairs(pairAddress, token0, token1);
+        updateTokenToPairs(pairAddress, token0, token1);
         SwapFactoryV2Data factoryV2Data = this.getVarFactoryV2Data();
         factoryV2Data.setAddExchangeContracts(false);
         factoryV2Data.setPairCount(factoryV2Data.getPairCount() + 1);

@@ -1,5 +1,6 @@
 package org.tron.sunio.contract_mirror.mirror.servers;
 
+import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 import org.tron.sunio.contract_mirror.mirror.tools.TimeTool;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -60,7 +62,7 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
     private KafkaConsumer<String, String> consumer;
     private KafkaProducer<String, String> producer;
 
-    private ConcurrentMap<String, BaseContract> contractHashMap =  new ConcurrentHashMap<>();
+    private ConcurrentMap<String, BaseContract> contractHashMap = new ConcurrentHashMap<>();
 
     private BlockInfo blockInfo;
 
@@ -210,7 +212,8 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
                 cmPool.waitFinish();
             }
             // 工程合约更新完毕，且需要添加子合约。
-            int addContractNum = contractFactoryManager.updateMirrorContracts(this);
+//            int addContractNum =
+            Pair<Integer, List<String>> addRes = contractFactoryManager.updateMirrorContracts(this, firstFinishLoadData);
             boolean needSleep = false;
             ConsumerRecords<String, String> records = kafkaConsumerPoll(KAFKA_PULL_TIMEOUT);
             for (ConsumerRecord<String, String> record : records) {
@@ -242,10 +245,19 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
             if (needSleep) {
                 TimeTool.sleep(config.getBlockInterval());
             } else {
-                if (!firstFinishLoadData && unReadyContract == 0 && addContractNum == 0) {
+                if (!firstFinishLoadData && unReadyContract == 0 && addRes.getKey().intValue() == 0) {
                     this.routerServer.initRoutNodeMap(this.contractHashMap);
                     firstFinishLoadData = true;
                 }
+
+                if (firstFinishLoadData) {
+                    // v1 v2
+                    List<String> addContractAddrs = addRes.getValue();
+                    if (addContractAddrs.size() > 0) {
+                        this.routerServer.addRoutNodeMap(this.contractHashMap, addContractAddrs);
+                    }
+                }
+
             }
         } catch (Exception e) {
             e.printStackTrace();

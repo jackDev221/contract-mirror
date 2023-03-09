@@ -1,5 +1,6 @@
 package org.tron.sunio.contract_mirror.mirror.contracts;
 
+import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -134,7 +135,7 @@ public class ContractFactoryManager {
                     BaseStableSwapPool instance = BaseStableSwapPool.genInstance(contractInfo, tronChainHelper,
                             iContractsHelper, null);
                     if (ObjectUtil.isNotNull(instance)) {
-                        if (instance.getBaseCoinsCount() == 2){
+                        if (instance.getBaseCoinsCount() == 2) {
                             instance.setSigMap(curve2PoolSigMap);
                         } else if (instance.getBaseCoinsCount() == 3) {
                             instance.setSigMap(curve3PoolSigMap);
@@ -183,14 +184,14 @@ public class ContractFactoryManager {
     }
 
 
-    public int updateMirrorContracts(IContractsHelper iContractsHelper) {
+    public Pair<Integer, List<String>> updateMirrorContracts(IContractsHelper iContractsHelper, boolean firstFinishLoadData) {
         updatePsmTotalData(iContractsHelper);
-//        log.info("ContractFactoryManager: start updateMirrorContracts");
         int addContracts = 0;
+        List<String> subContractAddrs = new ArrayList<>();
         for (String addr : this.contractFactoryHashMap.keySet()) {
             IContractFactory iContractFactory = this.contractFactoryHashMap.get(addr);
             BaseFactory baseContract = iContractFactory.getBaseContract();
-            if (!baseContract.isReady() || baseContract.isAddExchangeContracts()) {
+            if (!baseContract.isReady() || baseContract.hasFinishLoadSubContract()) {
                 continue;
             }
             if (!iContractsHelper.containsContract(addr)) {
@@ -205,6 +206,9 @@ public class ContractFactoryManager {
                 }
                 iContractsHelper.addContract(baseContract1);
                 addContracts++;
+                if (firstFinishLoadData) {
+                    subContractAddrs.add(baseContract1.getAddress());
+                }
             }
             baseContract.resetLoadSubContractState();
             baseContract.updateBaseInfo(baseContract.isUsing, baseContract.isReady, baseContract.isAddExchangeContracts);
@@ -212,6 +216,6 @@ public class ContractFactoryManager {
         if (addContracts > 0) {
             log.info("ContractFactoryManager: start updateMirrorContracts, add contracts:{}", addContracts);
         }
-        return addContracts;
+        return Pair.of(addContracts, subContractAddrs);
     }
 }
