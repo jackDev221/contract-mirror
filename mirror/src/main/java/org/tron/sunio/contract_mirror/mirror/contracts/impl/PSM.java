@@ -56,6 +56,7 @@ public class PSM extends BaseContract {
     private PSMData psmData;
     private String polyAddress;
     private String poolName;
+    private String token;
     @Setter
     private PSMTotalData psmTotalData;
 
@@ -66,8 +67,10 @@ public class PSM extends BaseContract {
         if (ObjectUtil.isNull(extraData)) {
             return null;
         }
-        return new PSM(contractInfo.getType(), contractInfo.getAddress(), extraData.getPoly(), extraData.getPoolName(),
+        PSM psm = new PSM(contractInfo.getType(), contractInfo.getAddress(), extraData.getPoly(), extraData.getPoolName(),
                 iChainHelper, iContractsHelper, psmTotalData, sigMap);
+        psm.token = extraData.token;
+        return psm;
     }
 
     public PSM(ContractType type, String address, String polyAddress, String poolName, IChainHelper iChainHelper, IContractsHelper
@@ -84,6 +87,7 @@ public class PSM extends BaseContract {
             psmData.setPolyAddress(polyAddress);
             psmData.setPoolName(poolName);
             psmData.setAddress(address);
+            psmData.setToken(token);
             psmData.setType(type);
             psmData.setAddExchangeContracts(false);
             psmData.setUsing(true);
@@ -111,6 +115,10 @@ public class PSM extends BaseContract {
         psmData.setTin(tin);
         BigInteger tout = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "tout");
         psmData.setTout(tout);
+        int decimals = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, token, "decimals").intValue();
+        psmData.setTokenDecimal(decimals);
+        String tokenSymbol = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, token, "symbol");
+        psmData.setTokenSymbol(tokenSymbol);
         loadInfosField(psmData);
         isDirty = true;
         return true;
@@ -264,11 +272,11 @@ public class PSM extends BaseContract {
     }
 
     public void doSellGem(PSMData psmData, BigInteger sumValue, BigInteger fee, PSMTotalData psmTotalData) {
-        sumValue = covertToUSDDDecimal(sumValue, type);
+        sumValue = covertToUSDDDecimal(sumValue, psmData.getTokenDecimal());
         BigInteger value = sumValue.subtract(fee);
         psmData.setSwappedUSDD(psmData.getSwappedUSDD().add(value));
         psmData.setUsddBalance(psmData.getUsddBalance().subtract(sumValue));
-        psmData.setUsdBalance(psmData.getUsdBalance().add(covertToUSDXDecimal(sumValue, type)));
+        psmData.setUsdBalance(psmData.getUsdBalance().add(covertToUSDXDecimal(sumValue, psmData.getTokenDecimal())));
 
         BigInteger totalSwappedUSDD = psmData.getTotalSwappedUSDD();
         if (psmTotalData.isFinishInit()) {
@@ -296,11 +304,11 @@ public class PSM extends BaseContract {
     }
 
     public void doBuyGem(BigInteger value, BigInteger fee, PSMData psmData, PSMTotalData psmTotalData) {
-        value = covertToUSDDDecimal(value, type);
+        value = covertToUSDDDecimal(value, psmData.getTokenDecimal());
         BigInteger sumValue = fee.add(value);
         psmData.setSwappedUSDD(psmData.getSwappedUSDD().subtract(value));
         psmData.setUsddBalance(psmData.getUsddBalance().add(sumValue));
-        psmData.setUsdBalance(psmData.getUsdBalance().subtract(covertToUSDXDecimal(sumValue, type)));
+        psmData.setUsdBalance(psmData.getUsdBalance().subtract(covertToUSDXDecimal(sumValue, psmData.getTokenDecimal())));
 
         BigInteger totalSwappedUSDD = psmData.getTotalSwappedUSDD();
         if (psmTotalData.isFinishInit()) {
@@ -311,23 +319,23 @@ public class PSM extends BaseContract {
         psmTotalData.setTotalSwappedUSDD(totalSwappedUSDD);
     }
 
-    private static BigInteger covertToUSDXDecimal(BigInteger value, ContractType type) {
-        if (type == ContractType.CONTRACT_PSM_TUSD) {
+    private static BigInteger covertToUSDXDecimal(BigInteger value, int tokenDecimal) {
+        if (tokenDecimal == USDD_DECIMAL) {
             return value;
         }
         return value.divide(BigInteger.TEN.pow(USDD_DECIMAL - USD_DECIMAL));
     }
 
-    private static BigInteger covertToUSDDDecimal(BigInteger value, ContractType type) {
-        if (type == ContractType.CONTRACT_PSM_TUSD) {
+    private static BigInteger covertToUSDDDecimal(BigInteger value, int tokenDecimal) {
+        if (tokenDecimal == USDD_DECIMAL) {
             return value;
         }
         return value.multiply(BigInteger.TEN.pow(USDD_DECIMAL - USD_DECIMAL));
     }
 
-    public BigInteger[] calcUSDXToUSDD(BigInteger input, ContractType type, BigInteger tin) {
+    public BigInteger[] calcUSDXToUSDD(BigInteger input, int tokenDecimal, BigInteger tin) {
         BigInteger value = input.multiply(BigInteger.TEN.pow(18).subtract(tin)).divide(BigInteger.TEN.pow(18));
-        BigInteger fee = covertToUSDDDecimal(value, type).multiply(tin).divide(BigInteger.TEN.pow(18));
+        BigInteger fee = covertToUSDDDecimal(value, tokenDecimal).multiply(tin).divide(BigInteger.TEN.pow(18));
         return new BigInteger[]{value, fee};
     }
 
@@ -352,11 +360,11 @@ public class PSM extends BaseContract {
         return convertibleAmount;
     }
 
-    public BigInteger[] calcUSDDToUSDX(BigInteger input, ContractType type, BigInteger tout) {
+    public BigInteger[] calcUSDDToUSDX(BigInteger input, int tokenDecimal, BigInteger tout) {
         BigDecimal inputD = new BigDecimal(input.multiply(BigInteger.TEN.pow(18)));
         BigInteger feeTemp = BigInteger.TEN.pow(18).add(tout);
         BigInteger value = inputD.divide(new BigDecimal(feeTemp), 0, RoundingMode.DOWN).toBigInteger();
-        value = covertToUSDXDecimal(value, type);
+        value = covertToUSDXDecimal(value, tokenDecimal);
         BigInteger fee = value.multiply(BigInteger.TEN.pow(12)).multiply(tout).divide(BigInteger.TEN.pow(18));
         return new BigInteger[]{value, fee};
     }
@@ -393,6 +401,7 @@ public class PSM extends BaseContract {
     public static class ContractExtraData {
         private String poly;
         private String poolName;
+        private String token;
     }
 
     public static ContractExtraData parseToExtraData(String input) {

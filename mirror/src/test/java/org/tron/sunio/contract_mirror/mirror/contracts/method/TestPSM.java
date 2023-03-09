@@ -11,18 +11,19 @@ import java.math.BigInteger;
 public class TestPSM {
     @Test
     public void testCalcUSDDToUSDX() {
-        PSM psm = new PSM(ContractType.CONTRACT_PSM_USDC, "", "", "", null,
+        PSM psm = new PSM(ContractType.CONTRACT_PSM, "", "", "", null,
                 null, null, null);
-        BigInteger[] res = psm.calcUSDDToUSDX(new BigInteger("100000000000000000000"), ContractType.CONTRACT_PSM_USDC, new BigInteger("11234567890123456"));
+        BigInteger[] res = psm.calcUSDDToUSDX(new BigInteger("100000000000000000000"), 6, new BigInteger("11234567890123456"));
         Assert.isTrue(res[0].compareTo(new BigInteger("98889024")) == 0, "Value not equal");
         Assert.isTrue(res[1].compareTo(new BigInteger("1110975453716047803")) == 0, "Fee not eqaul");
     }
 
     @Test
     public void testCalcUSDXToUSDD() {
-        PSM psm = new PSM(ContractType.CONTRACT_PSM_USDC, "", "", "", null,
+        PSM psm = new PSM(ContractType.CONTRACT_PSM, "", "", "", null,
                 null, null, null);
-        BigInteger[] res = psm.calcUSDXToUSDD(new BigInteger("1101359"), ContractType.CONTRACT_PSM_USDC, new BigInteger("1234567890123456"));
+
+        BigInteger[] res = psm.calcUSDXToUSDD(new BigInteger("1101359"), 6, new BigInteger("1234567890123456"));
         Assert.isTrue(res[0].compareTo(new BigInteger("1099999")) == 0, "Value not equal");
         Assert.isTrue(res[1].compareTo(new BigInteger("1358023444567911")) == 0, "Fee not eqaul");
     }

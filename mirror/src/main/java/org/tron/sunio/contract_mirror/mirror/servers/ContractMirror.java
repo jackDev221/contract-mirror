@@ -25,8 +25,9 @@ import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 import org.tron.sunio.contract_mirror.mirror.tools.TimeTool;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 
 @Service
@@ -59,7 +60,7 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
     private KafkaConsumer<String, String> consumer;
     private KafkaProducer<String, String> producer;
 
-    private HashMap<String, BaseContract> contractHashMap = new HashMap<>();
+    private ConcurrentMap<String, BaseContract> contractHashMap =  new ConcurrentHashMap<>();
 
     private BlockInfo blockInfo;
 

@@ -20,7 +20,6 @@ import org.tron.sunio.contract_mirror.mirror.dao.PSMData;
 import org.tron.sunio.contract_mirror.mirror.dao.StableSwapPoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
-import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.price.TokenPrice;
 import org.tron.sunio.contract_mirror.mirror.router.CacheNode;
 import org.tron.sunio.contract_mirror.mirror.router.StepInfo;
@@ -51,12 +50,6 @@ public class RouterServer {
     private static final String SPLIT = "_";
     private static final String TRX_SYMBOL = "TRX";
     private static final String USDD = "USDD";
-    private static final String USDT = "USDT";
-    private static final String USDC = "USDC";
-    private static final String USDJ = "USDJ";
-    private static final String TUSD = "TUSD";
-    private static final String POOL_TYPE_V1 = "v1";
-    private static final String POOL_TYPE_V2 = "v2";
 
     private ConcurrentMap<String, RoutNode> routNodeMap = new ConcurrentHashMap<>();
     // 之后考虑用缓存
@@ -206,10 +199,7 @@ public class RouterServer {
             case CONTRACT_CURVE_3POOL:
                 swapResult = curveSwap(fromAddress, toAddress, amount, preFee, baseContract);
                 break;
-            case CONTRACT_PSM_USDT:
-            case CONTRACT_PSM_USDC:
-            case CONTRACT_PSM_USDJ:
-            case CONTRACT_PSM_TUSD:
+            case CONTRACT_PSM:
                 swapResult = psmSwap(fromAddress, toAddress, amount, preFee, baseContract);
                 break;
             case STABLE_SWAP_POOL:
@@ -263,10 +253,10 @@ public class RouterServer {
             PSM psm = (PSM) baseContract;
             PSMData data = psm.getPsmData();
             if (fromAddress.equalsIgnoreCase(data.getUsdd())) {
-                res.amount = psm.calcUSDDToUSDX(amount, data.getType(), data.getTout())[0];
+                res.amount = psm.calcUSDDToUSDX(amount, data.getTokenDecimal(), data.getTout())[0];
                 res.fee = preFee + (1 - preFee) * psm.calcUSDDToUSDXFee(data.getTout());
             } else {
-                res.amount = psm.calcUSDXToUSDD(amount, data.getType(), data.getTin())[1];
+                res.amount = psm.calcUSDXToUSDD(amount, data.getTokenDecimal(), data.getTin())[1];
                 res.fee = preFee + (1 - preFee) * psm.calcUSDXToUSDDFee(data.getTin());
             }
 
@@ -439,10 +429,7 @@ public class RouterServer {
                 case CONTRACT_CURVE_3POOL:
                     initCurves((CurveBasePool) baseContract);
                     break;
-                case CONTRACT_PSM_USDT:
-                case CONTRACT_PSM_USDC:
-                case CONTRACT_PSM_USDJ:
-                case CONTRACT_PSM_TUSD:
+                case CONTRACT_PSM:
                     initPSM((PSM) baseContract);
                     break;
                 case STABLE_SWAP_POOL:
@@ -488,35 +475,13 @@ public class RouterServer {
 
     private void initPSM(PSM psm) {
         PSMData data = psm.getPsmData();
-        String[] tokenInfo = getPSMTokenInfo(psm.getType());
         String token0 = data.getUsdd();
-        String token1 = tokenInfo[1];
+        String token1 = data.getToken();
         String token0Symbol = USDD;
-        String token1Symbol = tokenInfo[0];
+        String token1Symbol = data.getTokenSymbol();
         String contract = data.getAddress();
         updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, data.getPoolName(), contract);
         updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, data.getPoolName(), contract);
-    }
-
-    private String[] getPSMTokenInfo(ContractType contractType) {
-        String[] res;
-        switch (contractType) {
-            case CONTRACT_PSM_USDT:
-                res = new String[]{USDT, routerConfig.getUsdt()};
-                break;
-            case CONTRACT_PSM_USDC:
-                res = new String[]{USDC, routerConfig.getUsdc()};
-                break;
-            case CONTRACT_PSM_USDJ:
-                res = new String[]{USDJ, routerConfig.getUsdj()};
-                break;
-            case CONTRACT_PSM_TUSD:
-                res = new String[]{TUSD, routerConfig.getTusd()};
-                break;
-            default:
-                res = null;
-        }
-        return res;
     }
 
     private void initCurves(CurveBasePool curve) {
@@ -546,7 +511,7 @@ public class RouterServer {
         String token0Symbol = TRX_SYMBOL;
         String token1Symbol = data.getTokenSymbol();
         String contract = data.getAddress();
-        String poolType = POOL_TYPE_V1;
+        String poolType = swapV1.getVersion();
         updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, poolType, contract);
         updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, poolType, contract);
     }
@@ -562,7 +527,7 @@ public class RouterServer {
         String token0Symbol = data.getToken0Symbol();
         String token1Symbol = data.getToken1Symbol();
         String contract = data.getAddress();
-        String poolType = POOL_TYPE_V2;
+        String poolType = swapV2Pair.getVersion();
         updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, poolType, contract);
         updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, poolType, contract);
     }

@@ -17,9 +17,10 @@ public class TestPSM {
 
     @Test
     public void testBuyGem() {
-        PSM psm = new PSM(ContractType.CONTRACT_PSM_USDC, "TFDUZ6FAtXptkY3dKHk2oRarCckyDYRkEL",
+        PSM psm = new PSM(ContractType.CONTRACT_PSM, "TFDUZ6FAtXptkY3dKHk2oRarCckyDYRkEL",
                 "TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r", "", null, null, new PSMTotalData(), PSMEvent.getSigMap());
         PSMData psmData = psm.getPsmData();
+        psmData.setTokenDecimal(6);
         psmData.setReady(true);
         psmData.setAddress("TFDUZ6FAtXptkY3dKHk2oRarCckyDYRkEL");
         psmData.setPolyAddress("TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r");
@@ -35,6 +36,7 @@ public class TestPSM {
         psmData.setTin(new BigInteger("1234567890123456"));
         psmData.setTout(new BigInteger("11234567890123456"));
         System.out.println(psm.getPsmData());
+        psm.setPsmData(psmData);
         psm.setReady(true);
         IContractEventWrap log0 = EventLogUtils.generateContractEvent(
                 "tx0",

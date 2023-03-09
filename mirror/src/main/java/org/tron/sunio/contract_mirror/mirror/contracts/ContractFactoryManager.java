@@ -120,10 +120,7 @@ public class ContractFactoryManager {
                     ));
                     break;
 
-                case CONTRACT_PSM_USDT:
-                case CONTRACT_PSM_USDC:
-                case CONTRACT_PSM_USDJ:
-                case CONTRACT_PSM_TUSD:
+                case CONTRACT_PSM:
                     PSM psm = PSM.genInstance(contractInfo, tronChainHelper, iContractsHelper, psmTotalData, psmSigMap);
                     if (ObjectUtil.isNotNull(psm)) {
                         psmContracts.add(contractInfo.getAddress());

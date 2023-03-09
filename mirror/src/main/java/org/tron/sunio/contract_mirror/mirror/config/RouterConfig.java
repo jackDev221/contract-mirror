@@ -15,10 +15,6 @@ public class RouterConfig {
     private String priceUrl;
     private String baseTokens;//address
     private String baseTokenSymbols;//address
-    private String usdt;
-    private String usdc;
-    private String usdj;
-    private String tusd;
     private int maxHops;
     private int maxResultSize;
 }

@@ -13,7 +13,6 @@ import java.math.BigInteger;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class PSMData extends BaseContractData {
-//    private String tokenName;
     private String polyAddress;
     private String gemJoin;
     private String usdd;
@@ -32,6 +31,9 @@ public class PSMData extends BaseContractData {
     private BigInteger usddBalance; // info[5]
     private BigInteger usdBalance; //   info[4]
     private String poolName;
+    private String tokenSymbol;
+    private String token;
+    private int tokenDecimal;
 
     public PSMData copySelf() {
         return DeepCopyUtils.deepCopy(this, PSMData.class);
