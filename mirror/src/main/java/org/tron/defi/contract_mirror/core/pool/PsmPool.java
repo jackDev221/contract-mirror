@@ -60,7 +60,6 @@ public class PsmPool extends Pool {
                                            .pow(((IToken) tokens.get(0)).getDecimals() -
                                                 ((IToken) tokens.get(1)).getDecimals());
         log.info("gemToUsddDecimalFactor = {}", gemToUsddDecimalFactor);
-        updateName();
         initPoly();
         sync();
     }

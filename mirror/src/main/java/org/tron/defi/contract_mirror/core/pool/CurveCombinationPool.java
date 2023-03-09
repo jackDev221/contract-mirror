@@ -152,7 +152,6 @@ public class CurveCombinationPool extends Pool {
             throw new IllegalArgumentException("UNDERLYING LP_TOKEN MISMATCH");
         }
         lpToken = getLpTokenFromChain();
-        updateName();
         sync();
     }
 

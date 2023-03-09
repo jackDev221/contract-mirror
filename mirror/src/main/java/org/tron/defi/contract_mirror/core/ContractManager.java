@@ -3,7 +3,6 @@ package org.tron.defi.contract_mirror.core;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.tron.defi.contract_mirror.common.ContractType;
 import org.tron.defi.contract_mirror.config.ContractConfigList;
 import org.tron.defi.contract_mirror.core.factory.SunswapV1Factory;
 import org.tron.defi.contract_mirror.core.factory.SunswapV2Factory;
@@ -48,10 +47,10 @@ public class ContractManager {
                 case CURVE_2POOL:
                 case CURVE_3POOL:
                 case CURVE_COMBINATION_4POOL:
-                    initCurve(contractConfig.getAddress(), contractConfig.getType());
+                    initCurve(contractConfig);
                     break;
                 case PSM_POOL:
-                    initPsm(contractConfig.getAddress(), contractConfig.getPolyAddress());
+                    initPsm(contractConfig);
                     break;
             }
         }
@@ -63,20 +62,22 @@ public class ContractManager {
         log.info("INIT TRX {}", TRX.getInstance().info());
     }
 
-    public void initCurve(String address, ContractType type) {
-        PoolType poolType = PoolType.convertFromContractType(type);
+    public void initCurve(ContractConfigList.ContractConfig config) {
+        PoolType poolType = PoolType.convertFromContractType(config.getType());
         Pool pool;
-        switch (type) {
+        switch (config.getType()) {
             case CURVE_2POOL:
             case CURVE_3POOL:
-                pool = (Pool) registerContract(new CurvePool(address, poolType));
+                pool = (Pool) registerContract(new CurvePool(config.getAddress(), poolType));
                 break;
             case CURVE_COMBINATION_4POOL:
-                pool = (Pool) registerContract(new CurveCombinationPool(address, poolType));
+                pool = (Pool) registerContract(new CurveCombinationPool(config.getAddress(),
+                                                                        poolType));
                 break;
             default:
-                throw new IllegalArgumentException(type.name());
+                throw new IllegalArgumentException(config.getType().name());
         }
+        pool.setName(config.getName());
         pool.init();
         int n = pool.getTokens().size();
         for (int i = 0; i < n - 1; i++) {
@@ -117,8 +118,10 @@ public class ContractManager {
         log.info("INIT CURVE {}", pool.info());
     }
 
-    public void initPsm(String address, String polyAddress) {
-        PsmPool pool = (PsmPool) registerContract(new PsmPool(address, polyAddress));
+    public void initPsm(ContractConfigList.ContractConfig config) {
+        PsmPool pool = (PsmPool) registerContract(new PsmPool(config.getAddress(),
+                                                              config.getPolyAddress()));
+        pool.setName(config.getName());
         pool.init();
         Contract usdd = (Contract) pool.getUsdd();
         Node node0 = graph.getNode(usdd.getAddress());

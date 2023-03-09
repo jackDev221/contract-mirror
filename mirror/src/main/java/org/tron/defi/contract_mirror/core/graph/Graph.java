@@ -9,6 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Graph {
     private final ConcurrentHashMap<String, Node> nodes = new ConcurrentHashMap<>();
 
+    public int getNodeNum() {
+        return nodes.size();
+    }
+
     public Node addNode(Node node) {
         Node exist = nodes.putIfAbsent(node.getToken().getAddress(), node);
         return null != exist ? exist : node;

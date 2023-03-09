@@ -3,6 +3,7 @@ package org.tron.defi.contract_mirror.core.pool;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
+import lombok.Setter;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.SynchronizableContract;
 import org.tron.defi.contract_mirror.core.token.ITRC20;
@@ -20,6 +21,7 @@ public abstract class Pool extends SynchronizableContract {
     protected final Lock rlock = rwlock.readLock();
     protected final Lock wlock = rwlock.writeLock();
     @Getter
+    @Setter
     protected String name;
     @Getter
     protected PoolType type = PoolType.UNKNOWN;

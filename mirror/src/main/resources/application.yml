@@ -38,19 +38,25 @@ contract-list:
       type: SUNSWAP_FACTORY_V1
     - address: TKWJdrQkqHisa1X8HUdHEfREvTzw4pMAaY
       type: SUNSWAP_FACTORY_V2
-    - address: TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c
+    - name: 2pool
+      address: TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c
       type: CURVE_2POOL
-    - address: TKcEU8ekq2ZoFzLSGFYCUY6aocJBX9X31b
+    - name: old3pool
+      address: TKcEU8ekq2ZoFzLSGFYCUY6aocJBX9X31b
       type: CURVE_3POOL
-    - address: TQx6CdLHqjwVmJ45ecRzodKfVumAsdoRXH
+    - name: oldusdcpool
+      address: TQx6CdLHqjwVmJ45ecRzodKfVumAsdoRXH
       type: CURVE_COMBINATION_4POOL
-    - address: TM9gWuCdFGNMiT1qTq1bgw4tNhJbsESfjA
+    - name: usdtpsm
+      address: TM9gWuCdFGNMiT1qTq1bgw4tNhJbsESfjA
       type: PSM_POOL
       polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
-    - address: TUcj1rpMgJCcFZULyq7uLbkmfh9xMnYTmA
+    - name: usdcpsm
+      address: TUcj1rpMgJCcFZULyq7uLbkmfh9xMnYTmA
       type: PSM_POOL
       polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
-    - address: TY2op6AKcEkFhv8hxNJj3FBUfjManxYLSe
+    - name: tusdpsm
+      address: TY2op6AKcEkFhv8hxNJj3FBUfjManxYLSe
       type: PSM_POOL
       polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
 

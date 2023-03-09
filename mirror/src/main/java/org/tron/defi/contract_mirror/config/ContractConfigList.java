@@ -18,9 +18,9 @@ public class ContractConfigList {
 
     @Data
     public static class ContractConfig {
+        private String name;
         private String address;
         private ContractType type;
         private String polyAddress;
     }
 }
-

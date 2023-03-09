@@ -178,7 +178,6 @@ public class CurvePool extends Pool {
             tokens.add((Contract) getTokenFromChain(i));
         }
         lpToken = getLpTokenFromChain();
-        updateName();
         sync();
     }
 

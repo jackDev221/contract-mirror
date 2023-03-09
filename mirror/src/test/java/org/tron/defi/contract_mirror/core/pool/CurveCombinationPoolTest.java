@@ -41,7 +41,7 @@ public class CurveCombinationPoolTest {
     public void setUp() {
         for (ContractConfigList.ContractConfig contractConfig : contractConfigList.getContracts()) {
             if (CURVE_3POOL == contractConfig.getType()) {
-                contractManager.initCurve(contractConfig.getAddress(), contractConfig.getType());
+                contractManager.initCurve(contractConfig);
             } else if (CURVE_COMBINATION_4POOL == contractConfig.getType()) {
                 config = contractConfig;
                 break;
