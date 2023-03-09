@@ -137,6 +137,40 @@ public class CurvePool extends Pool {
     }
 
     @Override
+    public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        return null;
+    }
+
+    @Override
+    public BigInteger getAmountOut(String from, String to, BigInteger amountIn) {
+        int fromTokenId = getTokenId(from);
+        int toTokenId = getTokenId(to);
+        return getDeltaY(fromTokenId, toTokenId, amountIn, System.currentTimeMillis() / 1000);
+    }
+
+    public BigInteger calcTokenAmount(List<BigInteger> amounts, boolean deposit, long timestamp) {
+        if (amounts.size() != getN()) {
+            throw new IllegalArgumentException();
+        }
+        rlock.lock();
+        try {
+            // NOTICE: will add read lock in read lock, be aware of write locks
+            BigInteger A = getA(timestamp);
+            BigInteger D0 = getD(getXP(balances), A);
+            List<BigInteger> newBalance = new ArrayList<>();
+            for (int i = 0; i < getN(); i++) {
+                newBalance.add(deposit
+                               ? TokenMath.safeAdd(balances.get(i), amounts.get(i))
+                               : TokenMath.safeSubtract(balances.get(i), amounts.get(i)));
+            }
+            BigInteger D1 = getD(getXP(newBalance), A);
+            return D1.subtract(D0).abs().multiply(getLpToken().totalSupply()).divide(D0);
+        } finally {
+            rlock.unlock();
+        }
+    }
+
+    @Override
     protected void doInitialize() {
         int n = getN();
         tokens.ensureCapacity(n);
@@ -199,9 +233,63 @@ public class CurvePool extends Pool {
         return tokens.size() > 0 ? tokens.size() : CURVE_TOKENS_MIN + CURVE_TYPE.indexOf(type);
     }
 
+    public BigInteger calcWithdrawOneCoin(BigInteger amountIn, int tokenId, long timestamp) {
+        // feeRate = (fee * N) / ((N- 1) * 4);
+        BigInteger N = BigInteger.valueOf(getN());
+        BigInteger feeRate = fee.multiply(N)
+                                .divide(N.subtract(BigInteger.ONE).multiply(BigInteger.valueOf(4)));
+        BigInteger A = getA(timestamp);
+        List<BigInteger> xp;
+        BigInteger D0;
+        BigInteger D1;
+        rlock.lock();
+        try {
+            xp = getXP(balances);
+            D0 = getD(xp, A);
+            // D1 = (totalSupply - amountIn) / totalSupply * D0
+            BigInteger totalSupply = getLpToken().totalSupply();
+            D1 = totalSupply.subtract(amountIn).multiply(D0).divide(totalSupply);
+        } finally {
+            rlock.unlock();
+        }
+        // pick any i != tokenId with specified D1, 'i' has no meaning
+        int i = tokenId == 0 ? 1 : 0;
+        BigInteger y = getY(i, tokenId, xp.get(i), xp, A, D1);
+        // calculate fee
+        for (int j = 0; j < xp.size(); j++) {
+            // dx = xp_j - xp_j * D1 / D0
+            // dx = xp_j * D1 / D0 - y
+            BigInteger dx = j != tokenId
+                            ? xp.get(j).multiply(D0.subtract(D1)).divide(D0)
+                            : xp.get(j).multiply(D1.divide(D0)).subtract(y);
+            // xp_j = xp_j - dx * feeRate / FEE_DENOMINATOR
+            xp.set(j, xp.get(j).subtract(dx.multiply(feeRate).divide(FEE_DENOMINATOR)));
+        }
+        y = getY(i, tokenId, xp.get(i), xp, A, D1);
+        // amountOut = (y_prev - y - 1) * PRECISION / RATES[tokenId]
+        return TokenMath.safeSubtract(xp.get(tokenId), y)
+                        .subtract(BigInteger.ONE)
+                        .multiply(PRECISION)
+                        .divide(RATES.get(tokenId));
+    }
+
+    public BigInteger getFee() {
+        rlock.lock();
+        try {
+            return fee;
+        } finally {
+            rlock.unlock();
+        }
+    }
+
     public BigInteger getVirtualPrice(long timestamp) {
-        return getD(getXP(), getA(timestamp)).multiply(PRECISION)
-                                             .divide(getLpToken().totalSupply());
+        rlock.lock();
+        try {
+            return getD(getXP(balances), getA(timestamp)).multiply(PRECISION)
+                                                         .divide(getLpToken().totalSupply());
+        } finally {
+            rlock.unlock();
+        }
     }
 
     private boolean diffA() {
@@ -333,6 +421,35 @@ public class CurvePool extends Pool {
         }
     }
 
+    private BigInteger getDeltaY(int fromTokenId,
+                                 int toTokenId,
+                                 BigInteger amountIn,
+                                 long timestamp) {
+        rlock.lock();
+        try {
+            List<BigInteger> xp = getXP(balances);
+            BigInteger y = getY(fromTokenId,
+                                toTokenId,
+                                amountIn.multiply(RATES.get(fromTokenId)).divide(PRECISION),
+                                xp,
+                                getA(timestamp),
+                                null);
+            BigInteger dy = TokenMath.safeSubtract(xp.get(toTokenId), y)
+                                     .subtract(BigInteger.ONE)
+                                     .multiply(PRECISION)
+                                     .divide(RATES.get(toTokenId));
+            // dy = dy - dy * fee / FEE_DENOMINATOR
+            // dy = dy * (FEE_DENOMINATOR - fee) / FEE_DENOMINATOR
+            dy = dy.multiply(FEE_DENOMINATOR.subtract(fee)).divide(FEE_DENOMINATOR);
+            if (balances.get(toTokenId).compareTo(dy) < 0) {
+                throw new RuntimeException("NOT ENOUGH BALANCE");
+            }
+            return dy;
+        } finally {
+            rlock.unlock();
+        }
+    }
+
     private BigInteger getD(List<BigInteger> xp, BigInteger A) {
         BigInteger S = new BigInteger("0");
         for (BigInteger xi : xp) {
@@ -365,6 +482,14 @@ public class CurvePool extends Pool {
         return D;
     }
 
+    private List<BigInteger> getXP(List<BigInteger> currentBalances) {
+        List<BigInteger> xp = new ArrayList<>(currentBalances.size());
+        for (int i = 0; i < currentBalances.size(); i++) {
+            xp.add(currentBalances.get(i).multiply(RATES.get(i)).divide(PRECISION));
+        }
+        return xp;
+    }
+
     private ITRC20 getLpTokenFromChain() {
         List<Type> response = abi.invoke(CurveAbi.Functions.TOKEN, Collections.emptyList());
         String tokenAddress
@@ -385,22 +510,16 @@ public class CurvePool extends Pool {
                : (ITRC20) contractManager.registerContract(new TRC20(tokenAddress));
     }
 
-    private List<BigInteger> getXP() {
-        rlock.lock();
-        try {
-            List<BigInteger> xp = new ArrayList<>(balances.size());
-            for (int i = 0; i < balances.size(); i++) {
-                xp.add(balances.get(i).multiply(RATES.get(i)).divide(PRECISION));
-            }
-            return xp;
-        } finally {
-            rlock.unlock();
-        }
-    }
-
-    private BigInteger getY(int i, int j, BigInteger x, List<BigInteger> xp, BigInteger A) {
+    private BigInteger getY(int i,
+                            int j,
+                            BigInteger x,
+                            List<BigInteger> xp,
+                            BigInteger A,
+                            BigInteger D) {
         BigInteger N = BigInteger.valueOf(xp.size());
-        BigInteger D = getD(xp, A);
+        if (null == D) {
+            D = getD(xp, A);
+        }
         BigInteger Ann = A.multiply(N);
         BigInteger S = BigInteger.ZERO;
         BigInteger C = D;
@@ -720,11 +839,11 @@ public class CurvePool extends Pool {
                                   .divide(adminFee)
                                   .divide(PRECISION);
         // dy = xp[buyId] - y - 1
-        List<BigInteger> xp = getXP();
+        List<BigInteger> xp = getXP(balances);
         BigInteger y = xp.get(buyId).subtract(dy).subtract(BigInteger.ONE);
         // use y to cal x
         BigInteger A = getA(eventTime);
-        BigInteger x = getY(buyId, soldId, y, xp, A);
+        BigInteger x = getY(buyId, soldId, y, xp, A, null);
         // x = xp[soldId] + dx * RATES[soldId] / PRECISION
         BigInteger dx = x.subtract(xp.get(soldId)).multiply(PRECISION).divide(RATES.get(soldId));
         assert dx.compareTo(BigInteger.ZERO) >= 0;

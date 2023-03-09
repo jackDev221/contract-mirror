@@ -8,6 +8,7 @@ import org.tron.defi.contract_mirror.core.SynchronizableContract;
 import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.core.token.IToken;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -64,12 +65,43 @@ public abstract class Pool extends SynchronizableContract {
         timestamp2 = 2 * timestamp1 - timestamp0;
     }
 
+    public abstract BigInteger getAmountOutUnsafe(IToken fromToken,
+                                                  IToken toToken,
+                                                  BigInteger amountIn);
+
     protected abstract void doInitialize();
 
     protected abstract void getContractData();
 
     public int cost() {
         return 1;
+    }
+
+    public BigInteger getAmountOut(String from, String to, BigInteger amountIn) {
+        IToken fromToken = getTokenByAddress(from);
+        IToken toToken = getTokenByAddress(to);
+        if (null == fromToken || null == toToken) {
+            throw new IllegalArgumentException();
+        }
+        return getAmountOutUnsafe(fromToken, toToken, amountIn);
+    }
+
+    public IToken getTokenByAddress(String address) {
+        for (Contract token : tokens) {
+            if (token.getAddress().equals(address)) {
+                return (IToken) token;
+            }
+        }
+        return null;
+    }
+
+    public int getTokenId(String address) {
+        for (int i = 0; i < tokens.size(); i++) {
+            if (tokens.get(i).getAddress().equals(address)) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException();
     }
 
     public void init() {

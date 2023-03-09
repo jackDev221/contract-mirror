@@ -24,6 +24,9 @@ import java.util.List;
 
 @Slf4j
 public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
+    private static final BigInteger FEE_NUMERATOR = BigInteger.valueOf(997);
+    private static final BigInteger FEE_DENOMINATOR = BigInteger.valueOf(1000);
+
     public SunswapV2Pool(String address) {
         super(address);
         type = PoolType.SUNSWAP_V2;
@@ -64,6 +67,50 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
     @Override
     public void transfer(String issuer, String to, BigInteger amount) {
         ((IToken) getLpToken()).transfer(issuer, to, amount);
+    }
+
+    @Override
+    public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        BigInteger balanceIn;
+        BigInteger balanceOut;
+        rlock.lock();
+        try {
+            balanceIn = fromToken.balanceOf(getAddress());
+            balanceOut = toToken.balanceOf(getAddress());
+        } finally {
+            rlock.unlock();
+        }
+        BigInteger amountInWithFee = amountIn.multiply(FEE_NUMERATOR);
+        BigInteger amountOut = amountInWithFee.multiply(balanceOut)
+                                              .divide(balanceIn.multiply(FEE_DENOMINATOR)
+                                                               .add(amountInWithFee));
+        if (balanceOut.compareTo(amountOut) < 0) {
+            throw new RuntimeException("NOT ENOUGH BALANCE");
+        }
+        return amountOut;
+    }
+
+    @Override
+    protected void doInitialize() {
+        sync();
+    }
+
+    @Override
+    protected void getContractData() {
+        List<BigInteger> reserves = getReservesFromChain();
+        timestamp0 = reserves.get(2).longValue() * 1000;   // updateTime
+        wlock.lock();
+        try {
+            IToken token0 = (IToken) getTokens().get(0);
+            IToken token1 = (IToken) getTokens().get(1);
+            token0.setBalance(getAddress(), reserves.get(0));
+            token1.setBalance(getAddress(), reserves.get(1));
+            log.info("{} balance {}", token0.getSymbol(), token0.balanceOf(getAddress()));
+            log.info("{} balance {}", token1.getSymbol(), token1.balanceOf(getAddress()));
+            log.info("updateTime {}", timestamp0);
+        } finally {
+            wlock.unlock();
+        }
     }
 
     @Override
@@ -109,29 +156,6 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
     }
 
     @Override
-    protected void doInitialize() {
-        sync();
-    }
-
-    @Override
-    protected void getContractData() {
-        List<BigInteger> reserves = getReservesFromChain();
-        timestamp0 = reserves.get(2).longValue() * 1000;   // updateTime
-        wlock.lock();
-        try {
-            IToken token0 = (IToken) getTokens().get(0);
-            IToken token1 = (IToken) getTokens().get(1);
-            token0.setBalance(getAddress(), reserves.get(0));
-            token1.setBalance(getAddress(), reserves.get(1));
-            log.info("{} balance {}", token0.getSymbol(), token0.balanceOf(getAddress()));
-            log.info("{} balance {}", token1.getSymbol(), token1.balanceOf(getAddress()));
-            log.info("updateTime {}", timestamp0);
-        } finally {
-            wlock.unlock();
-        }
-    }
-
-    @Override
     protected ContractAbi loadAbi() {
         return tronContractTrigger.contractAt(SunswapV2Abi.class, getAddress());
     }
@@ -160,20 +184,6 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
         ((Contract) getLpToken()).setTronContractTrigger(tronContractTrigger);
     }
 
-    public ITRC20 getToken0() {
-        if (tokens.size() > 0) {
-            return (ITRC20) tokens.get(0);
-        }
-        return getTokenFromChain(0);
-    }
-
-    public ITRC20 getToken1() {
-        if (tokens.size() > 1) {
-            return (ITRC20) tokens.get(1);
-        }
-        return getTokenFromChain(1);
-    }
-
     public List<BigInteger> getReserves() {
         IToken token0 = (IToken) getToken0();
         IToken token1 = (IToken) getToken1();
@@ -193,6 +203,20 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
         return Arrays.asList(((Uint112) response.get(0)).getValue(),
                              ((Uint112) response.get(1)).getValue(),
                              ((Uint32) response.get(2)).getValue());
+    }
+
+    public ITRC20 getToken0() {
+        if (tokens.size() > 0) {
+            return (ITRC20) tokens.get(0);
+        }
+        return getTokenFromChain(0);
+    }
+
+    public ITRC20 getToken1() {
+        if (tokens.size() > 1) {
+            return (ITRC20) tokens.get(1);
+        }
+        return getTokenFromChain(1);
     }
 
     private boolean diffBalances() {

@@ -37,7 +37,7 @@ public class PsmPoly extends Contract {
 
     @Data
     public static class PsmInfo {
-        private BigInteger amountUsddToGem;
+        private BigInteger quotaUsddToGem;
         private BigInteger amountGemToUsdd;
         private BigInteger quotaTotalToUsdd;
         private BigInteger quotaGemToUsdd;
@@ -50,7 +50,7 @@ public class PsmPoly extends Contract {
         private BigInteger feeToGem;
 
         public PsmInfo(List<Uint256> rawInfo) {
-            setAmountUsddToGem(rawInfo.get(0).getValue());
+            setQuotaUsddToGem(rawInfo.get(0).getValue());
             setAmountGemToUsdd(rawInfo.get(1).getValue());
             setQuotaTotalToUsdd(rawInfo.get(2).getValue());
             setQuotaGemToUsdd(rawInfo.get(3).getValue());

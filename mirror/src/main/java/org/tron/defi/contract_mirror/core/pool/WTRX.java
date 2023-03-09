@@ -82,19 +82,12 @@ public class WTRX extends Pool implements IToken, ITRC20 {
     }
 
     @Override
-    protected boolean doDiff(String eventName) {
-        switch (eventName) {
-            default:
-                return false;
+    public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        BigInteger amountTo = amountIn;
+        if (toToken.balanceOf(getAddress()).compareTo(amountTo) < 0) {
+            throw new RuntimeException("NOT ENOUGH BALANCE");
         }
-    }
-
-    @Override
-    protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
-        switch (eventName) {
-            default:
-                log.warn("Ignore {} event");
-        }
+        return amountTo;
     }
 
     @Override
@@ -125,6 +118,22 @@ public class WTRX extends Pool implements IToken, ITRC20 {
     @Override
     protected void updateName() {
         name = type.name();
+    }
+
+    @Override
+    protected boolean doDiff(String eventName) {
+        switch (eventName) {
+            default:
+                return false;
+        }
+    }
+
+    @Override
+    protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
+        switch (eventName) {
+            default:
+                log.warn("Ignore {} event");
+        }
     }
 
     @Override

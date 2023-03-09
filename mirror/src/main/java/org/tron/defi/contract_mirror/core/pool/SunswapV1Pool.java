@@ -18,6 +18,9 @@ import java.math.BigInteger;
 
 @Slf4j
 public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
+    private static final BigInteger FEE_NUMERATOR = BigInteger.valueOf(997);
+    private static final BigInteger FEE_DENOMINATOR = BigInteger.valueOf(1000);
+
     public SunswapV1Pool(String address) {
         super(address);
         type = PoolType.SUNSWAP_V1;
@@ -81,16 +84,6 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     }
 
     @Override
-    protected boolean doDiff(String eventName) {
-        switch (eventName) {
-            case "Snapshot":
-                return diffBalances();
-            default:
-                return false;
-        }
-    }
-
-    @Override
     protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
         switch (eventName) {
             case "Snapshot":
@@ -100,6 +93,13 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
                 log.warn("Ignore event {}", eventName);
                 break;
         }
+    }
+
+    @Override
+    public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        return getInputPrice(amountIn,
+                             fromToken.balanceOf(getAddress()),
+                             toToken.balanceOf(getAddress()));
     }
 
     @Override
@@ -120,6 +120,29 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
         } finally {
             wlock.unlock();
         }
+    }
+
+    @Override
+    protected boolean doDiff(String eventName) {
+        switch (eventName) {
+            case "Snapshot":
+                return diffBalances();
+            default:
+                return false;
+        }
+    }
+
+    private BigInteger getInputPrice(BigInteger amountIn,
+                                     BigInteger balanceIn,
+                                     BigInteger balanceOut) {
+        BigInteger amountInWithFee = amountIn.multiply(FEE_NUMERATOR);
+        BigInteger amountOut = amountInWithFee.multiply(balanceOut)
+                                              .divide(balanceIn.multiply(FEE_DENOMINATOR)
+                                                               .add(amountInWithFee));
+        if (balanceOut.compareTo(amountOut) < 0) {
+            throw new RuntimeException("NOT ENOUGH BALANCE");
+        }
+        return balanceOut;
     }
 
     @Override

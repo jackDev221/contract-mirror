@@ -91,9 +91,28 @@ public class ContractManager {
                 if (null == node1) {
                     node1 = graph.addNode(new Node(token1));
                 }
-                node0.addOutEdge(new Edge(node0, node1, pool));
-                node1.addOutEdge(new Edge(node1, node0, pool));
+                Edge edge0 = new Edge(node0, node1, pool);
+                Edge edge1 = new Edge(node1, node0, pool);
+                node0.addInEdge(edge1);
+                node0.addOutEdge(edge0);
+                node1.addInEdge(edge0);
+                node1.addOutEdge(edge1);
             }
+        }
+        if (PoolType.CURVE_COMBINATION4 == pool.getType()) {
+            Node node0 = graph.getNode(pool.getTokens().get(0).getAddress());
+            ITRC20 underlyingLpToken = ((CurveCombinationPool) pool).getUnderlyingPool()
+                                                                    .getLpToken();
+            Node node1 = graph.getNode(((Contract) underlyingLpToken).getAddress());
+            if (null == node1) {
+                node1 = graph.addNode(new Node((Contract) underlyingLpToken));
+            }
+            Edge edge0 = new Edge(node0, node1, pool);
+            Edge edge1 = new Edge(node1, node0, pool);
+            node0.addInEdge(edge1);
+            node0.addOutEdge(edge0);
+            node1.addInEdge(edge0);
+            node1.addOutEdge(edge1);
         }
         log.info("INIT CURVE {}", pool.info());
     }
@@ -111,8 +130,12 @@ public class ContractManager {
         if (null == node1) {
             node1 = graph.addNode(new Node(gem));
         }
-        node0.addOutEdge(new Edge(node0, node1, pool));
-        node1.addOutEdge(new Edge(node1, node0, pool));
+        Edge edge0 = new Edge(node0, node1, pool);
+        Edge edge1 = new Edge(node1, node0, pool);
+        node0.addInEdge(edge1);
+        node0.addOutEdge(edge0);
+        node1.addInEdge(edge0);
+        node1.addOutEdge(edge1);
         log.info("INIT PSM {}", pool.info());
     }
 

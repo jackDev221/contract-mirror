@@ -22,6 +22,7 @@ import java.util.List;
 
 @Slf4j
 public class PsmPool extends Pool {
+    private static final BigInteger FEE_DENOMINATOR = new BigInteger("1000000000000000000");
     private final String polyAddress;
     private PsmPoly poly;
     private PsmPoly.PsmInfo info;
@@ -78,6 +79,11 @@ public class PsmPool extends Pool {
     }
 
     @Override
+    public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        return fromToken == getUsdd() ? buyGemOut(amountIn) : sellGemOut(amountIn);
+    }
+
+    @Override
     protected boolean doDiff(String eventName) {
         switch (eventName) {
             case "File":
@@ -123,6 +129,24 @@ public class PsmPool extends Pool {
     public ITRC20 getUsdd() {
         final int usddId = 0;
         return (ITRC20) tokens.get(usddId);
+    }
+
+    private BigInteger buyGemOut(BigInteger amountIn) {
+        rlock.lock();
+        try {
+            BigInteger fee = amountIn.multiply(info.getFeeToGem()).divide(FEE_DENOMINATOR);
+            BigInteger amountOut = amountIn.subtract(fee).divide(gemToUsddDecimalFactor);
+            if (info.getBalanceGem().compareTo(amountOut) < 0) {
+                throw new RuntimeException("NOT ENOUGH BALANCE");
+            }
+            if (info.getEnableUsddToGemQuota() &&
+                info.getQuotaUsddToGem().compareTo(amountOut) < 0) {
+                throw new RuntimeException("NOT ENOUGH QUOTA");
+            }
+            return amountOut;
+        } finally {
+            rlock.unlock();
+        }
     }
 
     private boolean diffAll() {
@@ -182,11 +206,12 @@ public class PsmPool extends Pool {
 
             ((IToken) getGem()).setBalance(getAddress(), info.getBalanceGem());
             ((IToken) getUsdd()).setBalance(getAddress(), info.getBalanceUsdd());
-
-            balanceBefore = info.getAmountUsddToGem();
-            balanceAfter = TokenMath.safeAdd(balanceBefore, usddAmount);
-            info.setAmountUsddToGem(balanceAfter);
-            log.info("AmountUsddToGem {} -> {}", balanceBefore, balanceAfter);
+            if (info.getEnableUsddToGemQuota()) {
+                balanceBefore = info.getQuotaUsddToGem();
+                balanceAfter = TokenMath.safeSubtract(balanceBefore, usddAmount);
+                info.setQuotaUsddToGem(balanceAfter);
+                log.info("QuotaUsddToGem {} -> {}", balanceBefore, balanceAfter);
+            }
         } finally {
             wlock.unlock();
         }
@@ -257,5 +282,26 @@ public class PsmPool extends Pool {
         poly = null != contract
                ? (PsmPoly) contract
                : (PsmPoly) contractManager.registerContract(new PsmPoly(polyAddress));
+    }
+
+    private BigInteger sellGemOut(BigInteger amountIn) {
+        rlock.lock();
+        try {
+            amountIn = amountIn.multiply(gemToUsddDecimalFactor);
+            BigInteger fee = amountIn.multiply(info.getFeeToUsdd()).divide(FEE_DENOMINATOR);
+            BigInteger amountOut = amountIn.subtract(fee);
+            if (info.getBalanceUsdd().compareTo(amountOut) < 0) {
+                throw new RuntimeException("NOT ENOUGH BALANCE");
+            }
+            if (TokenMath.safeAdd(info.getAmountGemToUsdd(), amountOut)
+                         .compareTo(info.getQuotaGemToUsdd()) > 0 ||
+                TokenMath.safeAdd(info.getAmountTotalToUsdd(), amountOut)
+                         .compareTo(info.getQuotaTotalToUsdd()) > 0) {
+                throw new RuntimeException("NOT ENOUGH QUOTA");
+            }
+            return amountOut;
+        } finally {
+            rlock.unlock();
+        }
     }
 }
