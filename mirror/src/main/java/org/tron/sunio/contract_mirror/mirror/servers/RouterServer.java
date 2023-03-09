@@ -602,13 +602,18 @@ public class RouterServer {
     }
 
     private boolean isTokenUsable(boolean isUseBaseTokens, String tokenAddr, String tokenSymbol, String fromAddress, String destAddress) {
-        if (!isUseBaseTokens || destAddress.equalsIgnoreCase(tokenAddr)) {
+        if (destAddress.equalsIgnoreCase(tokenAddr)) {
+            // get it
             return true;
         }
         if (fromAddress.equalsIgnoreCase(tokenAddr)) {
+            // from address
             return false;
         }
-        return baseTokensMap.containsKey(tokenAddr) || baseTokenSymbolsMap.containsKey(tokenSymbol);
+        if (isUseBaseTokens) {
+            return baseTokensMap.containsKey(tokenAddr) || baseTokenSymbolsMap.containsKey(tokenSymbol);
+        }
+        return true;
     }
 
     @Data
