@@ -12,7 +12,7 @@ import org.tron.defi.contract_mirror.TestApplication;
 import org.tron.defi.contract_mirror.config.ContractConfigList;
 import org.tron.defi.contract_mirror.core.ContractManager;
 
-import static org.tron.defi.contract_mirror.common.ContractType.WTRX_TOKEN;
+import static org.tron.defi.contract_mirror.core.ContractType.WTRX_TOKEN;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)

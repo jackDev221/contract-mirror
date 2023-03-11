@@ -15,7 +15,7 @@ import org.tron.defi.contract_mirror.core.ContractManager;
 import org.tron.defi.contract_mirror.dao.BlockInfo;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
 
-import static org.tron.defi.contract_mirror.common.ContractType.CURVE_2POOL;
+import static org.tron.defi.contract_mirror.core.ContractType.CURVE_2POOL;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)

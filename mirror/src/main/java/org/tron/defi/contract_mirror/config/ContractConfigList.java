@@ -4,7 +4,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
-import org.tron.defi.contract_mirror.common.ContractType;
+import org.tron.defi.contract_mirror.core.ContractType;
 
 import java.util.ArrayList;
 import java.util.List;

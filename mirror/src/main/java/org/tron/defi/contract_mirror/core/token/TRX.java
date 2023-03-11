@@ -1,8 +1,8 @@
 package org.tron.defi.contract_mirror.core.token;
 
 import org.tron.defi.contract.abi.ContractAbi;
-import org.tron.defi.contract_mirror.common.ContractType;
 import org.tron.defi.contract_mirror.core.Contract;
+import org.tron.defi.contract_mirror.core.ContractType;
 import org.tron.defi.contract_mirror.utils.TokenMath;
 
 import java.math.BigInteger;

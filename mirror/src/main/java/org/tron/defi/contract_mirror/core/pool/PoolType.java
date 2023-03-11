@@ -1,6 +1,6 @@
 package org.tron.defi.contract_mirror.core.pool;
 
-import org.tron.defi.contract_mirror.common.ContractType;
+import org.tron.defi.contract_mirror.core.ContractType;
 
 public enum PoolType {
     UNKNOWN,

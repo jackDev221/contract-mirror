@@ -12,7 +12,7 @@ import org.tron.defi.contract_mirror.TestApplication;
 import org.tron.defi.contract_mirror.config.ContractConfigList;
 import org.tron.defi.contract_mirror.core.ContractManager;
 
-import static org.tron.defi.contract_mirror.common.ContractType.PSM_POOL;
+import static org.tron.defi.contract_mirror.core.ContractType.PSM_POOL;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)

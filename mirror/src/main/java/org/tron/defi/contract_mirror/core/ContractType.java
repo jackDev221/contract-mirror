@@ -1,4 +1,4 @@
-package org.tron.defi.contract_mirror.common;
+package org.tron.defi.contract_mirror.core;
 
 public enum ContractType {
     UNKNOWN,
