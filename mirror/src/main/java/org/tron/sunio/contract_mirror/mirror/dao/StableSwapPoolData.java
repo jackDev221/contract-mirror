@@ -41,6 +41,7 @@ public class StableSwapPoolData extends BaseContractData {
     private String[] coins;
     private String[] coinNames;
     private String[] coinSymbols;
+    private long[] coinDecimals;
     private BigInteger[] balances;
     private BigInteger fee;
     private BigInteger adminFee;
@@ -53,6 +54,7 @@ public class StableSwapPoolData extends BaseContractData {
     private String[] baseCoins;
     private String[] baseCoinNames;
     private String[] baseCoinSymbols;
+    private long[] baseCoinDecimals;
     private String baseLp;
     private BigInteger initialA;
     private BigInteger futureA;
@@ -70,11 +72,13 @@ public class StableSwapPoolData extends BaseContractData {
     public StableSwapPoolData(int coinsCount, int baseCoinsCount) {
         coins = new String[coinsCount];
         coinNames = new String[coinsCount];
+        coinDecimals = new long[coinsCount];
         coinSymbols = new String[coinsCount];
         balances = new BigInteger[coinsCount];
         baseCoins = new String[baseCoinsCount];
         baseCoinNames = new String[baseCoinsCount];
         baseCoinSymbols = new String[baseCoinsCount];
+        baseCoinDecimals = new long[baseCoinsCount];
     }
 
     public BigInteger[] getCopyBalances() {

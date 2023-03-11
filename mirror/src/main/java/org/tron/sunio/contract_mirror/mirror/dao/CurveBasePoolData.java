@@ -16,6 +16,7 @@ public class CurveBasePoolData extends BaseContractData {
     private String[] coins;
     private String[] coinNames;
     private String[] coinSymbols;
+    private long[] coinDecimals;
     private BigInteger[] balances;
     private String token;
     private BigInteger fee;
@@ -39,6 +40,7 @@ public class CurveBasePoolData extends BaseContractData {
         coinNames = new String[count];
         coinSymbols = new String[count];
         balances = new BigInteger[count];
+        coinDecimals = new long[count];
 
     }
 
@@ -47,6 +49,13 @@ public class CurveBasePoolData extends BaseContractData {
             System.out.println("Out of range!!");
         }
         coins[index] = address;
+    }
+
+    public void updateCoinDecimals(int index, long decimals) {
+        if (index >= coinDecimals.length) {
+            System.out.println("Out of range!!");
+        }
+        coinDecimals[index] = decimals;
     }
 
     public void updateCoinNames(int index, String name) {

@@ -103,7 +103,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         return getVarStableSwapBasePoolData().copySelf();
     }
 
-    private void updateCoinsInfo(int count, String method, String[] coins, String[] names, String[] symbols) {
+    private void updateCoinsInfo(int count, String method, String[] coins, String[] names, String[] symbols, long[] decimals) {
         for (int i = 0; i < count; i++) {
             String coinAddress = CallContractUtil.getTronAddressWithIndex(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS,
                     address, method, BigInteger.valueOf(i));
@@ -111,8 +111,10 @@ public class BaseStableSwapPool extends AbstractCurve {
             if (!coinAddress.equalsIgnoreCase(EMPTY_ADDRESS)) {
                 String name = CallContractUtil.getString(iChainHelper, EMPTY_ADDRESS, coinAddress, "name");
                 String symbol = CallContractUtil.getString(iChainHelper, EMPTY_ADDRESS, coinAddress, "symbol");
+                long decimal = CallContractUtil.getU256(iChainHelper, EMPTY_ADDRESS, coinAddress, "decimals").longValue();
                 names[i] = name;
                 symbols[i] = symbol;
+                decimals[i] = decimal;
             }
         }
     }
@@ -305,8 +307,8 @@ public class BaseStableSwapPool extends AbstractCurve {
     public boolean initDataFromChain1() {
         StableSwapPoolData data = this.getVarStableSwapBasePoolData();
         updateBalance(coinsCount, "balances", data.getBalances());
-        updateCoinsInfo(coinsCount, "coins", data.getCoins(), data.getCoinNames(), data.getCoinSymbols());
-        updateCoinsInfo(baseCoinsCount, "base_coins", data.getBaseCoins(), data.getBaseCoinNames(), data.getBaseCoinSymbols());
+        updateCoinsInfo(coinsCount, "coins", data.getCoins(), data.getCoinNames(), data.getCoinSymbols(), data.getCoinDecimals());
+        updateCoinsInfo(baseCoinsCount, "base_coins", data.getBaseCoins(), data.getBaseCoinNames(), data.getBaseCoinSymbols(), data.getBaseCoinDecimals());
         BigInteger fee = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "fee");
         BigInteger adminFee = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "admin_fee");
         String owner = CallContractUtil.getTronAddress(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "owner");
@@ -1186,7 +1188,8 @@ public class BaseStableSwapPool extends AbstractCurve {
         if (baseJ < 0) {
             dy = dy.divide(precisions[metaJ]);
         } else {
-            dy = calcWithdrawOneCoin(timestamp, dy.multiply(PRECISION).divide(vpRate), baseJ);
+            AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(data.getBasePool())).copySelf();
+            dy =curve.calcWithdrawOneCoin(timestamp, dy.multiply(PRECISION).divide(vpRate), baseJ);
         }
 
         return dy;

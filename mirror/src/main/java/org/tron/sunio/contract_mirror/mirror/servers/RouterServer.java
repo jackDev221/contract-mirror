@@ -70,19 +70,22 @@ public class RouterServer {
         RoutNode routNode = routNodeMap.get(routerInput.getFromToken());
         List<RoutItem> res = new ArrayList<>();
         if (!ObjectUtil.isNull(routNode)) {
-            List<List<StepInfo>> paths;
+            List<List<StepInfo>> paths = null;
             long t0 = System.currentTimeMillis();
-            String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
-            paths = cachedPaths.get(key);
+//            String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
+//            paths = cachedPaths.get(key);
             if (ObjectUtil.isNull(paths)) {
                 paths = new ArrayList<>();
                 getPathsNoRecurrence(routNode, routerInput.getFromToken(), routerInput.getToToken(), paths, routerConfig.getMaxHops(),
                         routerInput.isUseBaseTokens());
-                if (paths.size() != 0) {
-                    cachedPaths.put(key, paths);
-                }
+//                if (paths.size() != 0) {
+//                    cachedPaths.put(key, paths);
+//                }
             }
             long t1 = System.currentTimeMillis();
+            // test
+            long cast = t1 - t0;
+            long pathSize = paths.size();
             log.info("getRouter finish get paths, size:{}, cast:{}", paths.size(), t1 - t0);
             BigDecimal outAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getToDecimal()));
             BigDecimal inAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getFromDecimal()));
@@ -91,6 +94,9 @@ public class RouterServer {
                 if (ObjectUtil.isNull(routItem)) {
                     continue;
                 }
+                // test
+                routItem.setCast(cast);
+                routItem.setPaths(pathSize);
                 res.add(routItem);
             }
             long t2 = System.currentTimeMillis();
@@ -135,9 +141,9 @@ public class RouterServer {
     }
 
     private String getTokenPriceInput(String tokenAddress, String tokenSymbol) {
-        String res = tokenSymbol;
+        String res = tokenAddress;
         if (routerConfig.getEnv().equals(RouterConfig.ENV_NILE)) {
-            res = tokenAddress;
+            res = tokenSymbol;
         }
         if (res.equalsIgnoreCase("null")) {
             res = TRX_SYMBOL;
@@ -153,7 +159,7 @@ public class RouterServer {
         List<String> pool = routItem.getPool();
         roadForName.add(routerInput.getFromTokenSymbol());
         roadForAddr.add(routerInput.getFromToken());
-        SwapResult swapResult = new SwapResult(routerInput.getIn(), 0);
+        SwapResult swapResult = new SwapResult(routerInput.getIn(), 0, BigDecimal.valueOf(1.0), BigDecimal.valueOf(1.0));
         String fromToken = routerInput.getFromToken();
         String toToken = "";
         for (int i = 0; i < path.size(); i++) {
@@ -163,7 +169,7 @@ public class RouterServer {
             pool.add(info.getPoolType());
             toToken = info.getTokenAddress();
             BigInteger inputAmount = swapResult.amount;
-            swapResult = swapToken(fromToken, toToken, inputAmount, swapResult.fee, contractMaps.get(info.getContract()));
+            swapToken(fromToken, toToken, swapResult, contractMaps.get(info.getContract()));
             if (swapResult.amount.compareTo(BigInteger.ZERO) == 0) {
                 log.error("Calc :from {}, to: {},  contract:{}, input : {}, path:{} return amount is zero", fromToken, toToken, info.getContract(), inputAmount, path);
                 return null;
@@ -172,6 +178,10 @@ public class RouterServer {
         }
         BigDecimal dAmount = new BigDecimal(swapResult.amount);
         BigDecimal dIn = new BigDecimal(routerInput.getIn());
+        BigDecimal priceDiff = dIn.divide(dAmount, 18, RoundingMode.UP).multiply(swapResult.impactItem0).subtract(swapResult.impactItem1);
+        BigDecimal newPriceWithoutFee = dIn.divide(dAmount, 18, RoundingMode.UP);
+        BigDecimal impact = priceDiff.divide(newPriceWithoutFee, 6, RoundingMode.UP).abs();
+        routItem.setImpact(impact.toString());
         routItem.setAmountV(swapResult.amount);
         String amount = dAmount.divide(outAmountUnit, routerInput.getToDecimal(), RoundingMode.DOWN).toString();
         routItem.setAmount(amount);
@@ -183,36 +193,34 @@ public class RouterServer {
         return routItem;
     }
 
-    private SwapResult swapToken(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
-        SwapResult swapResult = new SwapResult();
+    private void swapToken(String fromAddress, String toAddress, SwapResult swapResult, BaseContract baseContract) {
         if (ObjectUtil.isNull(baseContract)) {
-            return null;
+            return;
         }
         switch (baseContract.getType()) {
             case SWAP_V1:
-                swapResult = swapV1(fromAddress, toAddress, amount, preFee, baseContract);
+                swapV1(fromAddress, toAddress, swapResult, baseContract);
                 break;
             case SWAP_V2_PAIR:
-                swapResult = swpV2Pair(fromAddress, toAddress, amount, preFee, baseContract);
+                swpV2Pair(fromAddress, toAddress, swapResult, baseContract);
                 break;
             case CONTRACT_CURVE_2POOL:
             case CONTRACT_CURVE_3POOL:
-                swapResult = curveSwap(fromAddress, toAddress, amount, preFee, baseContract);
+                curveSwap(fromAddress, toAddress, swapResult, baseContract);
                 break;
             case CONTRACT_PSM:
-                swapResult = psmSwap(fromAddress, toAddress, amount, preFee, baseContract);
+                psmSwap(fromAddress, toAddress, swapResult, baseContract);
                 break;
             case STABLE_SWAP_POOL:
-                swapResult = stableSwapPoolSwap(fromAddress, toAddress, amount, preFee, baseContract);
+                stableSwapPoolSwap(fromAddress, toAddress, swapResult, baseContract);
                 break;
             default:
                 break;
         }
-        return swapResult;
+
     }
 
-    private SwapResult stableSwapPoolSwap(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
-        SwapResult res = new SwapResult();
+    private SwapResult stableSwapPoolSwap(String fromAddress, String toAddress, SwapResult swapResult, BaseContract baseContract) {
         try {
             BaseStableSwapPool baseStableSwapPool = (BaseStableSwapPool) baseContract;
             StableSwapPoolData data = baseStableSwapPool.getCurveBasePoolData();
@@ -220,56 +228,75 @@ public class RouterServer {
             int i = data.getTokenIndex(fromAddress);
             int j = data.getTokenIndex(toAddress);
             if (i == -2 || j == -2) {
-                res.amount = BigInteger.ZERO;
+                swapResult.amount = BigInteger.ZERO;
             } else {
                 int maxCoin = baseStableSwapPool.getCoinsCount() - 1;
                 int metaJ = j - maxCoin < 0 ? j : maxCoin;
                 long timestamp = System.currentTimeMillis() / 1000;
+                swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(0.9996));
                 if (i + j == -1) {
                     i = i == -1 ? 1 : 0;
                     j = j == -1 ? 1 : 0;
-                    res.fee = preFee + (1 - preFee) * curve.calcFee(timestamp, j);
-                    res.amount = curve.exchange(i, j, amount, BigInteger.ZERO, timestamp);
+                    swapResult.fee = swapResult.fee + (1 - swapResult.fee) * curve.calcFee(timestamp, j);
+                    int dxDecimals = (int) data.getCoinDecimals()[i];
+                    BigInteger dx = BigInteger.TEN.pow(dxDecimals);
+                    BigInteger dy = curve.getDy(i, j, dx, System.currentTimeMillis() / 1000);
+                    swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 18, RoundingMode.UP));
+                    swapResult.amount = curve.exchange(i, j, swapResult.amount, BigInteger.ZERO, timestamp);
                 } else {
                     if (i - maxCoin < 0 || j - maxCoin < 0) {
-                        res.fee = preFee + (1 - preFee) * curve.calcFee(timestamp, metaJ);
+                        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * curve.calcFee(timestamp, metaJ);
                     } else {
-                        res.fee = preFee + (1 - preFee) * curve.calcBasePoolFee(timestamp, metaJ);
+                        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * curve.calcBasePoolFee(timestamp, metaJ);
                     }
-                    res.amount = curve.exchangeUnderlying(i, j, amount, BigInteger.ZERO, timestamp);
+
+                    swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(0.9996));
+                    int dxDecimals;
+                    if (i < maxCoin) {
+                        dxDecimals = (int) data.getCoinDecimals()[i];
+                    } else {
+                        dxDecimals = (int) data.getBaseCoinDecimals()[i - maxCoin];
+                    }
+                    BigInteger dx = BigInteger.TEN.pow(dxDecimals);
+                    BigInteger dy = curve.getDyUnderlying(i, j, dx, System.currentTimeMillis() / 1000);
+                    swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 18, RoundingMode.UP));
+                    swapResult.amount = curve.exchangeUnderlying(i, j, swapResult.amount, BigInteger.ZERO, timestamp);
                 }
             }
         } catch (Exception e) {
             log.error("StableSwapPool fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
-                    fromAddress, toAddress, baseContract.getAddress(), amount, e);
-            res.amount = BigInteger.ZERO;
+                    fromAddress, toAddress, baseContract.getAddress(), swapResult.amount, e);
+            swapResult.amount = BigInteger.ZERO;
         }
-        return res;
+        return swapResult;
     }
 
-    private SwapResult psmSwap(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
-        SwapResult res = new SwapResult();
+    private void psmSwap(String fromAddress, String toAddress, SwapResult swapResult, BaseContract baseContract) {
         try {
             PSM psm = (PSM) baseContract;
             PSMData data = psm.getPsmData();
+            BigDecimal usddDeci = new BigDecimal(BigInteger.TEN.pow(18));
+            BigDecimal usdxDeci = new BigDecimal(BigInteger.TEN.pow(data.getTokenDecimal()));
             if (fromAddress.equalsIgnoreCase(data.getUsdd())) {
-                res.amount = psm.calcUSDDToUSDX(amount, data.getTokenDecimal(), data.getTout())[0];
-                res.fee = preFee + (1 - preFee) * psm.calcUSDDToUSDXFee(data.getTout());
+                swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(1 - psm.calcUSDDToUSDXFee(data.getTout())));
+                swapResult.impactItem1 = swapResult.impactItem1.multiply(usddDeci.divide(usdxDeci, 18, RoundingMode.UP));
+                swapResult.amount = psm.calcUSDDToUSDX(swapResult.amount, data.getTokenDecimal(), data.getTout())[0];
+                swapResult.fee = swapResult.fee + (1 - swapResult.fee) * psm.calcUSDDToUSDXFee(data.getTout());
             } else {
-                res.amount = psm.calcUSDXToUSDD(amount, data.getTokenDecimal(), data.getTin())[1];
-                res.fee = preFee + (1 - preFee) * psm.calcUSDXToUSDDFee(data.getTin());
+                swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(1 - psm.calcUSDXToUSDDFee(data.getTin())));
+                swapResult.impactItem1 = swapResult.impactItem1.multiply(usdxDeci.divide(usddDeci, 18, RoundingMode.UP));
+                swapResult.amount = psm.calcUSDXToUSDD(swapResult.amount, data.getTokenDecimal(), data.getTin())[1];
+                swapResult.fee = swapResult.fee + (1 - swapResult.fee) * psm.calcUSDXToUSDDFee(data.getTin());
             }
 
         } catch (Exception e) {
             log.error("PSM fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
-                    fromAddress, toAddress, baseContract.getAddress(), amount, e);
-            res.amount = BigInteger.ZERO;
+                    fromAddress, toAddress, baseContract.getAddress(), swapResult.amount, e);
+            swapResult.amount = BigInteger.ZERO;
         }
-        return res;
     }
 
-    private SwapResult curveSwap(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
-        SwapResult res = new SwapResult();
+    private void curveSwap(String fromAddress, String toAddress, SwapResult swapResult, BaseContract baseContract) {
         try {
             CurveBasePool curve = (CurveBasePool) ((AbstractCurve) baseContract).copySelf();
 
@@ -277,50 +304,66 @@ public class RouterServer {
             int[] indexes = data.getTokensIndex(fromAddress, toAddress);
             if (indexes[0] < 0 || indexes[1] < 0) {
                 log.error("Curve fail, from:{}, to:{}, contract:{}, amount:{}, wrong input tokens:{} {}",
-                        fromAddress, toAddress, baseContract.getAddress(), amount, fromAddress, toAddress);
-                res.amount = BigInteger.ZERO;
+                        fromAddress, toAddress, baseContract.getAddress(), swapResult.amount, fromAddress, toAddress);
+                swapResult.amount = BigInteger.ZERO;
             } else {
-                res.fee = preFee + (1 - preFee) * curve.calcFee(0, indexes[1]);
-                res.amount = curve.exchange(indexes[0], indexes[1], amount, BigInteger.ZERO, System.currentTimeMillis() / 1000, data);
+                swapResult.fee = swapResult.fee + (1 - swapResult.fee) * curve.calcFee(0, indexes[1]);
+                swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(0.9996));
+                int dxDecimals = (int) data.getCoinDecimals()[indexes[0]];
+                BigInteger dx = BigInteger.TEN.pow(dxDecimals);
+                BigInteger dy = curve.getDy(indexes[0], indexes[1], dx, System.currentTimeMillis() / 1000);
+                swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 18, RoundingMode.UP));
+                swapResult.amount = curve.exchange(indexes[0], indexes[1], swapResult.amount, BigInteger.ZERO, System.currentTimeMillis() / 1000, data);
+
             }
         } catch (Exception e) {
             log.error("Curve fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
-                    fromAddress, toAddress, baseContract.getAddress(), amount, e);
-            res.amount = BigInteger.ZERO;
+                    fromAddress, toAddress, baseContract.getAddress(), swapResult.amount, e);
+            swapResult.amount = BigInteger.ZERO;
         }
-        return res;
     }
 
-    private SwapResult swpV2Pair(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
-        SwapResult res = new SwapResult();
-        res.fee = preFee + (1 - preFee) * 0.003;
+    private void swpV2Pair(String fromAddress, String toAddress, SwapResult swapResult, BaseContract baseContract) {
+        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * 0.003;
+        swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(0.997));
         try {
             SwapV2Pair swapV2 = (SwapV2Pair) baseContract;
-            res.amount = swapV2.getAmountOut(fromAddress, toAddress, amount, swapV2.getSwapV2PairData());
+            SwapV2PairData data = swapV2.getSwapV2PairData();
+            if (data.getToken0().equals(fromAddress)) {
+                swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(data.getReserve0()))
+                        .divide(new BigDecimal(data.getReserve1()), 18, RoundingMode.UP);
+            } else {
+                swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(data.getReserve1()))
+                        .divide(new BigDecimal(data.getReserve0()), 18, RoundingMode.UP);
+            }
+            swapResult.amount = swapV2.getAmountOut(fromAddress, toAddress, swapResult.amount, data);
         } catch (Exception e) {
             log.error("SwapV2 fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
-                    fromAddress, toAddress, baseContract.getAddress(), amount, e);
-            res.amount = BigInteger.ZERO;
+                    fromAddress, toAddress, baseContract.getAddress(), swapResult.amount, e);
+            swapResult.amount = BigInteger.ZERO;
         }
-        return res;
     }
 
-    private SwapResult swapV1(String fromAddress, String toAddress, BigInteger amount, double preFee, BaseContract baseContract) {
-        SwapResult res = new SwapResult();
-        res.fee = preFee + (1 - preFee) * 0.003;
+    private void swapV1(String fromAddress, String toAddress, SwapResult swapResult, BaseContract baseContract) {
+        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * 0.003;
+        swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(0.997));
         try {
             SwapV1 swapV1 = (SwapV1) baseContract;
+            SwapV1Data data = swapV1.getSwapV1Data();
             if (fromAddress.equals(EMPTY_ADDRESS)) {
-                res.amount = swapV1.trxToTokenInput(amount, BigInteger.ZERO, swapV1.getSwapV1Data());
+                swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(data.getTrxBalance()))
+                        .divide(new BigDecimal(data.getTokenBalance()), 18, RoundingMode.UP);
+                swapResult.amount = swapV1.trxToTokenInput(swapResult.amount, BigInteger.ZERO, data);
             } else {
-                res.amount = swapV1.tokenToTrxInput(amount, BigInteger.ZERO, swapV1.getSwapV1Data());
+                swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(data.getTokenBalance()))
+                        .divide(new BigDecimal(data.getTrxBalance()), 18, RoundingMode.UP);
+                swapResult.amount = swapV1.tokenToTrxInput(swapResult.amount, BigInteger.ZERO, data);
             }
         } catch (Exception e) {
             log.error("SwapV1 fail, from:{}, to:{}, contract:{}, amount:{}, err:{}",
-                    fromAddress, toAddress, baseContract.getAddress(), amount, e);
-            res.amount = BigInteger.ZERO;
+                    fromAddress, toAddress, baseContract.getAddress(), swapResult.amount, e);
+            swapResult.amount = BigInteger.ZERO;
         }
-        return res;
     }
 
     private boolean isPathContainToken(List<StepInfo> path, String contract, String token) {
@@ -531,8 +574,8 @@ public class RouterServer {
 
     private void initV1(SwapV1 swapV1) {
         SwapV1Data data = swapV1.getSwapV1Data();
-        if (data.getTokenBalance().compareTo(BigInteger.TEN.pow((int) data.getTokenDecimals() + 1)) < 0
-                || data.getTrxBalance().compareTo(BigInteger.TEN.pow(7)) < 0) {
+        if (data.getTokenBalance().compareTo(BigInteger.ZERO) <= 0
+                || data.getTrxBalance().compareTo(BigInteger.ZERO) <= 0) {
             return;
         }
         String token0 = EMPTY_ADDRESS;
@@ -547,8 +590,8 @@ public class RouterServer {
 
     private void initV2(SwapV2Pair swapV2Pair) {
         SwapV2PairData data = swapV2Pair.getSwapV2PairData();
-        if (data.getReserve0().compareTo(BigInteger.TEN.pow((int) data.getToken0Decimals() + 1)) < 0 ||
-                data.getReserve1().compareTo(BigInteger.TEN.pow((int) data.getToken1Decimals() + 1)) < 0) {
+        if (data.getReserve0().compareTo(BigInteger.ZERO) <= 0 ||
+                data.getReserve1().compareTo(BigInteger.ZERO) <= 0) {
             return;
         }
         String token0 = data.getToken0();
@@ -616,6 +659,8 @@ public class RouterServer {
     public static class SwapResult {
         private BigInteger amount;
         private double fee;
+        private BigDecimal impactItem0;
+        private BigDecimal impactItem1;
     }
 
 }

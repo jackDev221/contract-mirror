@@ -8,6 +8,8 @@ import org.tron.sunio.contract_mirror.event_decode.logdata.ContractLog;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.enums.EventLogType;
 
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.NETWORK_NILE;
+
 @Slf4j
 @Data
 public class ContractEventWrap implements IContractEventWrap {
@@ -97,13 +99,18 @@ public class ContractEventWrap implements IContractEventWrap {
         }
     }
 
-    public static ContractEventWrap getInstance(String topic, String value) {
-        if (topic.equals(ContractMirrorConst.KAFKA_TOPIC_CONTRACT_LOG)) {
+    public static ContractEventWrap getInstance(String topic, String value, String netWork) {
+        String topic0 = ContractMirrorConst.KAFKA_TOPIC_CONTRACT_LOG;
+        String topic1 = ContractMirrorConst.KAFKA_TOPIC_CONTRACT_EVENT_LOG;
+        if (netWork.equals(NETWORK_NILE)) {
+            topic0 = ContractMirrorConst.KAFKA_TOPIC_NILE_CONTRACT_LOG;
+            topic1 = ContractMirrorConst.KAFKA_TOPIC_NILE_CONTRACT_EVENT_LOG;
+        }
+        if (topic.equals(topic0)) {
             ContractLog contractLog = LogDecode.decodeContractLog(value);
             return new ContractEventWrap(contractLog);
         }
-
-        if (topic.equals(ContractMirrorConst.KAFKA_TOPIC_CONTRACT_EVENT_LOG)) {
+        if (topic.equals(topic1)) {
             ContractEventLog contractEventLog = LogDecode.decodeContractEventLog(value);
             return new ContractEventWrap(contractEventLog);
         }

@@ -117,8 +117,10 @@ public class CurveBasePool extends AbstractCurve {
             if (!coinAddress.equalsIgnoreCase(EMPTY_ADDRESS)) {
                 String name = CallContractUtil.getString(iChainHelper, EMPTY_ADDRESS, coinAddress, "name");
                 String symbol = CallContractUtil.getString(iChainHelper, EMPTY_ADDRESS, coinAddress, "symbol");
+                long decimals = CallContractUtil.getU256(iChainHelper, EMPTY_ADDRESS, coinAddress, "decimals").longValue();
                 curveBasePoolData.updateCoinNames(i, name);
                 curveBasePoolData.updateCoinSymbols(i, symbol);
+                curveBasePoolData.updateCoinDecimals(i, decimals);
             }
             BigInteger balance = CallContractUtil.getU256WithIndex(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address,
                     "balances", BigInteger.valueOf(i));

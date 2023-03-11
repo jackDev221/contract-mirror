@@ -32,11 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.NETWORK_NILE;
+
 @Service
 @Slf4j
 @Data
 public class ContractMirror implements InitializingBean, IContractsHelper {
-    private final int EVENT_HANDLE_PERIOD = 200;
+    private final int EVENT_HANDLE_PERIOD = 20;
     private final int KAFKA_READY_CHECK_INTERVAL = 500;
     private final int KAFKA_PULL_TIMEOUT = 2000;
 
@@ -109,8 +111,13 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
                         break;
                     }
                 } else {
+                    counts++;
                     log.info("Kafka not ready sleep 500mils");
                     TimeTool.sleep(KAFKA_READY_CHECK_INTERVAL);
+                    if (counts > 5 && config.getNetwork().equals(NETWORK_NILE)) {
+                        log.info("nile net work less txs");
+                        break;
+                    }
                 }
             }
         }
@@ -217,7 +224,7 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
             boolean needSleep = false;
             ConsumerRecords<String, String> records = kafkaConsumerPoll(KAFKA_PULL_TIMEOUT);
             for (ConsumerRecord<String, String> record : records) {
-                ContractEventWrap contractEventWrap = ContractEventWrap.getInstance(record.topic(), record.value());
+                ContractEventWrap contractEventWrap = ContractEventWrap.getInstance(record.topic(), record.value(), config.getNetwork());
                 if (ObjectUtil.isNull(contractEventWrap)) {
                     continue;
                 }

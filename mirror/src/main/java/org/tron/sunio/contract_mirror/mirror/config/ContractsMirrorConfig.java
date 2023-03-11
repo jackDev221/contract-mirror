@@ -16,5 +16,6 @@ import java.util.List;
 public class ContractsMirrorConfig {
     private long blockInterval;
     private String appName;
+    private String network;
     private List<ContractInfo> factoryInfos = new ArrayList<>();
 }

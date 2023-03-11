@@ -6,8 +6,12 @@ public interface ContractMirrorConst {
     boolean IS_DEBUG = false;
     String EMPTY_ADDRESS = "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb";
     String EMPTY_TOPIC_VALUE = "0x0000000000000000000000000000000000000000";
+    String NETWORK_NILE = "nile";
+    String NETWORK_MAIN = "main";
     String KAFKA_TOPIC_CONTRACT_LOG = "contractlog";
     String KAFKA_TOPIC_CONTRACT_EVENT_LOG = "contractevent";
+    String KAFKA_TOPIC_NILE_CONTRACT_LOG = "nile_contractlog";
+    String KAFKA_TOPIC_NILE_CONTRACT_EVENT_LOG = "nile_contractevent";
     String CONTRACT_CONST_METHOD = "/contract/{address}/{method}";
     String CONTRACT_VERSION = "/version/{address}";
     String CONTRACT_ROUTING = "/routingInV2";
