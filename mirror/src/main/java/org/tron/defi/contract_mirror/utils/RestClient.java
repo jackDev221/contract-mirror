@@ -7,7 +7,6 @@ public class RestClient {
     private final String server;
     private final RestTemplate rest;
     private final HttpHeaders headers;
-    private HttpStatus status;
 
     public RestClient(String server, HttpHeaders headers) {
         this.server = server;
@@ -27,7 +26,9 @@ public class RestClient {
                                                               HttpMethod.DELETE,
                                                               requestEntity,
                                                               String.class);
-        this.setStatus(responseEntity.getStatusCode());
+        if (responseEntity.getStatusCode() != HttpStatus.OK) {
+            throw new RuntimeException(responseEntity.getStatusCode().toString());
+        }
     }
 
     public String get(String uri) {
@@ -36,16 +37,10 @@ public class RestClient {
                                                               HttpMethod.GET,
                                                               requestEntity,
                                                               String.class);
-        this.setStatus(responseEntity.getStatusCode());
+        if (responseEntity.getStatusCode() != HttpStatus.OK) {
+            throw new RuntimeException(responseEntity.getStatusCode().toString());
+        }
         return responseEntity.getBody();
-    }
-
-    public HttpStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(HttpStatus status) {
-        this.status = status;
     }
 
     public String post(String uri, String json) {
@@ -54,7 +49,9 @@ public class RestClient {
                                                               HttpMethod.POST,
                                                               requestEntity,
                                                               String.class);
-        this.setStatus(responseEntity.getStatusCode());
+        if (responseEntity.getStatusCode() != HttpStatus.OK) {
+            throw new RuntimeException(responseEntity.getStatusCode().toString());
+        }
         return responseEntity.getBody();
     }
 
@@ -64,6 +61,8 @@ public class RestClient {
                                                               HttpMethod.PUT,
                                                               requestEntity,
                                                               String.class);
-        this.setStatus(responseEntity.getStatusCode());
+        if (responseEntity.getStatusCode() != HttpStatus.OK) {
+            throw new RuntimeException(responseEntity.getStatusCode().toString());
+        }
     }
 }

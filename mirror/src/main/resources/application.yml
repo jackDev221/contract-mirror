@@ -5,6 +5,13 @@
 server:
   syncPeriod: 86400000
 
+# price-center
+price-center:
+  server: c.tronlink.org
+  uri: /v1/cryptocurrency/getprice
+  params:
+    - convert: USD
+
 #tron
 tron:
   feeLimit: 500000000

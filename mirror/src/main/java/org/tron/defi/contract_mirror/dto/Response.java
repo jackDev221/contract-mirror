@@ -1,4 +1,4 @@
-package org.tron.defi.contract_mirror.controller;
+package org.tron.defi.contract_mirror.dto;
 
 import lombok.Data;
 
