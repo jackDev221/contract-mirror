@@ -64,42 +64,28 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     }
 
     @Override
-    public BigInteger getTotalSupplyFromChain() {
-        return getLpToken().getTotalSupplyFromChain();
-    }
-
-    @Override
-    public void setTotalSupply(BigInteger totalSupply) {
-        getLpToken().setTotalSupply(totalSupply);
-    }
-
-    @Override
-    public BigInteger totalSupply() {
-        return getLpToken().totalSupply();
-    }
-
-    @Override
-    public void transferFrom(String issuer, String from, BigInteger amount) {
-        getLpToken().transferFrom(issuer, from, amount);
-    }
-
-    @Override
-    protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
-        switch (eventName) {
-            case "Snapshot":
-                handleSnapshotEvent(eventValues);
-                break;
-            default:
-                log.warn("Ignore event {}", eventName);
-                break;
-        }
-    }
-
-    @Override
     public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
         return getInputPrice(amountIn,
                              fromToken.balanceOf(getAddress()),
                              toToken.balanceOf(getAddress()));
+    }
+
+    @Override
+    public BigInteger getApproximateFee(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        return amountIn.multiply(FEE_DENOMINATOR.subtract(FEE_NUMERATOR)).divide(FEE_DENOMINATOR);
+    }
+
+    @Override
+    public BigInteger getPrice(IToken fromToken, IToken toToken) {
+        fromToken = getTokenByAddress(((Contract) fromToken).getAddress());
+        toToken = getTokenByAddress(((Contract) toToken).getAddress());
+        if (null == fromToken || null == toToken) {
+            throw new IllegalArgumentException();
+        }
+        return BigInteger.valueOf(10)
+                         .pow(PRICE_DECIMALS)
+                         .multiply(fromToken.balanceOf(getAddress()))
+                         .divide(toToken.balanceOf(getAddress()));
     }
 
     @Override
@@ -123,6 +109,26 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     }
 
     @Override
+    public BigInteger getTotalSupplyFromChain() {
+        return getLpToken().getTotalSupplyFromChain();
+    }
+
+    @Override
+    public void setTotalSupply(BigInteger totalSupply) {
+        getLpToken().setTotalSupply(totalSupply);
+    }
+
+    @Override
+    public BigInteger totalSupply() {
+        return getLpToken().totalSupply();
+    }
+
+    @Override
+    public void transferFrom(String issuer, String from, BigInteger amount) {
+        getLpToken().transferFrom(issuer, from, amount);
+    }
+
+    @Override
     protected boolean doDiff(String eventName) {
         switch (eventName) {
             case "Snapshot":
@@ -132,17 +138,16 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
         }
     }
 
-    private BigInteger getInputPrice(BigInteger amountIn,
-                                     BigInteger balanceIn,
-                                     BigInteger balanceOut) {
-        BigInteger amountInWithFee = amountIn.multiply(FEE_NUMERATOR);
-        BigInteger amountOut = amountInWithFee.multiply(balanceOut)
-                                              .divide(balanceIn.multiply(FEE_DENOMINATOR)
-                                                               .add(amountInWithFee));
-        if (balanceOut.compareTo(amountOut) < 0) {
-            throw new RuntimeException("NOT ENOUGH BALANCE");
+    @Override
+    protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
+        switch (eventName) {
+            case "Snapshot":
+                handleSnapshotEvent(eventValues);
+                break;
+            default:
+                log.warn("Ignore event {}", eventName);
+                break;
         }
-        return balanceOut;
     }
 
     @Override
@@ -198,6 +203,19 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
             return true;
         }
         return false;
+    }
+
+    private BigInteger getInputPrice(BigInteger amountIn,
+                                     BigInteger balanceIn,
+                                     BigInteger balanceOut) {
+        BigInteger amountInWithFee = amountIn.multiply(FEE_NUMERATOR);
+        BigInteger amountOut = amountInWithFee.multiply(balanceOut)
+                                              .divide(balanceIn.multiply(FEE_DENOMINATOR)
+                                                               .add(amountInWithFee));
+        if (balanceOut.compareTo(amountOut) < 0) {
+            throw new RuntimeException("NOT ENOUGH BALANCE");
+        }
+        return balanceOut;
     }
 
     private void handleSnapshotEvent(EventValues eventValues) {

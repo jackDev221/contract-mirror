@@ -6,6 +6,8 @@ import org.tron.defi.contract_mirror.core.pool.Pool;
 import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.dao.RouterPath;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +24,11 @@ public class RouterResultV2 {
 
     public static RouterResultV2 fromRouterPath(RouterPath path) {
         RouterResultV2 resultV2 = new RouterResultV2();
-        resultV2.setAmount(path.getAmountOut().toString());
+        IToken token = (IToken) path.getTo().getToken();
+        resultV2.setAmount(amountToString(path.getAmountOut(), token.getDecimals()));
+        token = (IToken) path.getFrom().getToken();
+        resultV2.setFee(amountToString(path.getFee(), token.getDecimals()));
+        resultV2.setImpact(amountToString(path.getImpact(), Pool.PRICE_DECIMALS));
 
         int n = path.getSteps().size();
         List<String> roadForAddr = new ArrayList<>(n + 1);
@@ -39,6 +45,11 @@ public class RouterResultV2 {
             roadForName.add(((IToken) toToken).getSymbol());
         }
         return resultV2;
+    }
+
+    private static String amountToString(BigInteger amount, int decimal) {
+        return new BigDecimal(amount.toString()).divide(BigDecimal.valueOf(10).pow(decimal))
+                                                .toString();
     }
 
     private static String getPoolVersion(Pool pool) {

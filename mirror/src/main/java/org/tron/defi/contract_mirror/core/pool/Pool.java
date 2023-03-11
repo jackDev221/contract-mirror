@@ -17,6 +17,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 public abstract class Pool extends SynchronizableContract {
+    public static final int PRICE_DECIMALS = 18;
     protected final ReadWriteLock rwlock = new ReentrantReadWriteLock();
     protected final Lock rlock = rwlock.readLock();
     protected final Lock wlock = rwlock.writeLock();
@@ -70,6 +71,12 @@ public abstract class Pool extends SynchronizableContract {
     public abstract BigInteger getAmountOutUnsafe(IToken fromToken,
                                                   IToken toToken,
                                                   BigInteger amountIn);
+
+    public abstract BigInteger getApproximateFee(IToken fromToken,
+                                                 IToken toToken,
+                                                 BigInteger amountIn);
+
+    public abstract BigInteger getPrice(IToken fromToken, IToken toToken);
 
     protected abstract void doInitialize();
 

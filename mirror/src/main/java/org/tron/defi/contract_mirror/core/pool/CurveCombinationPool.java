@@ -33,11 +33,11 @@ public class CurveCombinationPool extends Pool {
     private static final int TOKEN_COIN_ID = 0;
     private static final int LP_TOKEN_COIN_ID = 1;
     private static final int FEE_INDEX = 3;
-    private static final BigInteger FEE_DENOMINATOR = new BigInteger("10000000000");
-    private static final BigInteger PRECISION = new BigInteger("1000000000000000000");
-    private static final BigInteger A_PRECISION = new BigInteger("100");
-    private static final List<BigInteger> RATES = Arrays.asList(new BigInteger(
-        "1000000000000000000000000000000"), new BigInteger("1000000000000000000"));
+    private static final BigInteger FEE_DENOMINATOR = BigInteger.valueOf(10).pow(10);
+    private static final BigInteger PRECISION = BigInteger.valueOf(10).pow(18);
+    private static final BigInteger A_PRECISION = BigInteger.valueOf(100);
+    private static final List<BigInteger> RATES = Arrays.asList(BigInteger.valueOf(10).pow(30),
+                                                                BigInteger.valueOf(10).pow(18));
     private static final long CACHE_EXPIRE_TIME = 10 * 60; // 10 min
     private List<BigInteger> balances;
     private BigInteger fee;
@@ -142,6 +142,42 @@ public class CurveCombinationPool extends Pool {
     }
 
     @Override
+    public BigInteger getApproximateFee(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        final BigInteger approximateFee = BigInteger.valueOf(4);
+        final BigInteger approximateFeeDenominator = BigInteger.valueOf(10000);
+        return amountIn.multiply(approximateFee).divide(approximateFeeDenominator);
+    }
+
+    @Override
+    public BigInteger getPrice(IToken fromToken, IToken toToken) {
+        String lpTokenAddress = ((Contract) getUnderlyingPool().getLpToken()).getAddress();
+        boolean hasLpToken = false;
+        int fromTokenId;
+        int toTokenId;
+        String from = ((Contract) fromToken).getAddress();
+        if (from.equals(lpTokenAddress)) {
+            hasLpToken = true;
+            fromTokenId = LP_TOKEN_COIN_ID;
+        } else {
+            fromTokenId = getTokenId(from);
+        }
+        String to = ((Contract) toToken).getAddress();
+        if (to.equals(lpTokenAddress)) {
+            hasLpToken = true;
+            toTokenId = LP_TOKEN_COIN_ID;
+        } else {
+            toTokenId = getTokenId(to);
+        }
+        long timestamp = System.currentTimeMillis() / 1000;
+
+        BigInteger one = BigInteger.ONE.multiply(BigInteger.valueOf(10)
+                                                           .pow(fromToken.getDecimals()));
+        return hasLpToken
+               ? getDeltaY(fromTokenId, toTokenId, one, timestamp)
+               : getDeltaYUnderlying(fromTokenId, toTokenId, one, timestamp);
+    }
+
+    @Override
     protected void doInitialize() {
         initUnderlyingPool();
         tokens.add((Contract) getTokenFromChain(TOKEN_COIN_ID));
@@ -220,7 +256,7 @@ public class CurveCombinationPool extends Pool {
             hasLpToken = true;
             toTokenId = LP_TOKEN_COIN_ID;
         } else {
-            toTokenId = getTokenId(from);
+            toTokenId = getTokenId(to);
         }
         long timestamp = System.currentTimeMillis() / 1000;
         return hasLpToken

@@ -91,6 +91,24 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
     }
 
     @Override
+    public BigInteger getApproximateFee(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        return amountIn.multiply(FEE_DENOMINATOR.subtract(FEE_NUMERATOR)).divide(FEE_DENOMINATOR);
+    }
+
+    @Override
+    public BigInteger getPrice(IToken fromToken, IToken toToken) {
+        fromToken = getTokenByAddress(((Contract) fromToken).getAddress());
+        toToken = getTokenByAddress(((Contract) toToken).getAddress());
+        if (null == fromToken || null == toToken) {
+            throw new IllegalArgumentException();
+        }
+        return BigInteger.valueOf(10)
+                         .pow(PRICE_DECIMALS)
+                         .multiply(fromToken.balanceOf(getAddress()))
+                         .divide(toToken.balanceOf(getAddress()));
+    }
+
+    @Override
     protected void doInitialize() {
         sync();
     }

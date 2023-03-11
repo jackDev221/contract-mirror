@@ -62,32 +62,22 @@ public class WTRX extends Pool implements IToken, ITRC20 {
     }
 
     @Override
-    public BigInteger getTotalSupplyFromChain() {
-        return getLpToken().getTotalSupplyFromChain();
-    }
-
-    @Override
-    public void setTotalSupply(BigInteger totalSupply) {
-        getLpToken().setTotalSupply(totalSupply);
-    }
-
-    @Override
-    public BigInteger totalSupply() {
-        return getLpToken().totalSupply();
-    }
-
-    @Override
-    public void transferFrom(String issuer, String from, BigInteger amount) {
-        getLpToken().transferFrom(issuer, from, amount);
-    }
-
-    @Override
     public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
         BigInteger amountTo = amountIn;
         if (toToken.balanceOf(getAddress()).compareTo(amountTo) < 0) {
             throw new RuntimeException("NOT ENOUGH BALANCE");
         }
         return amountTo;
+    }
+
+    @Override
+    public BigInteger getApproximateFee(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        return BigInteger.ZERO;
+    }
+
+    @Override
+    public BigInteger getPrice(IToken fromToken, IToken toToken) {
+        return BigInteger.valueOf(10).pow(PRICE_DECIMALS);
     }
 
     @Override
@@ -118,6 +108,26 @@ public class WTRX extends Pool implements IToken, ITRC20 {
     @Override
     protected void updateName() {
         name = type.name();
+    }
+
+    @Override
+    public BigInteger getTotalSupplyFromChain() {
+        return getLpToken().getTotalSupplyFromChain();
+    }
+
+    @Override
+    public void setTotalSupply(BigInteger totalSupply) {
+        getLpToken().setTotalSupply(totalSupply);
+    }
+
+    @Override
+    public BigInteger totalSupply() {
+        return getLpToken().totalSupply();
+    }
+
+    @Override
+    public void transferFrom(String issuer, String from, BigInteger amount) {
+        getLpToken().transferFrom(issuer, from, amount);
     }
 
     @Override

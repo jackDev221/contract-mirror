@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 public class CurvePool extends Pool {
     private static final ArrayList<PoolType> CURVE_TYPE
         = new ArrayList<>(Arrays.asList(PoolType.CURVE2, PoolType.CURVE3));
-    private static final BigInteger FEE_DENOMINATOR = new BigInteger("10000000000");
-    private static final BigInteger PRECISION = new BigInteger("1000000000000000000");
+    private static final BigInteger FEE_DENOMINATOR = BigInteger.valueOf(10).pow(10);
+    private static final BigInteger PRECISION = BigInteger.valueOf(10).pow(18);
     private final List<BigInteger> RATES;
     private final int FEE_INDEX;
     private final List<BigInteger> balances;
@@ -49,15 +49,15 @@ public class CurvePool extends Pool {
         this.type = type;
         switch (type) {
             case CURVE2:
-                RATES = Arrays.asList(new BigInteger("1000000000000000000000000000000"),
-                                      new BigInteger("1000000000000000000"));
+                RATES = Arrays.asList(BigInteger.valueOf(10).pow(30),
+                                      BigInteger.valueOf(10).pow(18));
                 FEE_INDEX = 2;
                 balances = Arrays.asList(BigInteger.ZERO, BigInteger.ZERO);
                 break;
             case CURVE3:
-                RATES = Arrays.asList(new BigInteger("1000000000000000000"),
-                                      new BigInteger("1000000000000000000"),
-                                      new BigInteger("1000000000000000000000000000000"));
+                RATES = Arrays.asList(BigInteger.valueOf(10).pow(18),
+                                      BigInteger.valueOf(10).pow(18),
+                                      BigInteger.valueOf(10).pow(30));
                 FEE_INDEX = 3;
                 balances = Arrays.asList(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO);
                 break;
@@ -142,32 +142,20 @@ public class CurvePool extends Pool {
     }
 
     @Override
-    public BigInteger getAmountOut(String from, String to, BigInteger amountIn) {
-        int fromTokenId = getTokenId(from);
-        int toTokenId = getTokenId(to);
-        return getDeltaY(fromTokenId, toTokenId, amountIn, System.currentTimeMillis() / 1000);
+    public BigInteger getApproximateFee(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        final BigInteger approximateFee = BigInteger.valueOf(4);
+        final BigInteger approximateFeeDenominator = BigInteger.valueOf(10000);
+        return amountIn.multiply(approximateFee).divide(approximateFeeDenominator);
     }
 
-    public BigInteger calcTokenAmount(List<BigInteger> amounts, boolean deposit, long timestamp) {
-        if (amounts.size() != getN()) {
-            throw new IllegalArgumentException();
-        }
-        rlock.lock();
-        try {
-            // NOTICE: will add read lock in read lock, be aware of write locks
-            BigInteger A = getA(timestamp);
-            BigInteger D0 = getD(getXP(balances), A);
-            List<BigInteger> newBalance = new ArrayList<>();
-            for (int i = 0; i < getN(); i++) {
-                newBalance.add(deposit
-                               ? TokenMath.safeAdd(balances.get(i), amounts.get(i))
-                               : TokenMath.safeSubtract(balances.get(i), amounts.get(i)));
-            }
-            BigInteger D1 = getD(getXP(newBalance), A);
-            return D1.subtract(D0).abs().multiply(getLpToken().totalSupply()).divide(D0);
-        } finally {
-            rlock.unlock();
-        }
+    @Override
+    public BigInteger getPrice(IToken fromToken, IToken toToken) {
+        int fromTokenId = getTokenId(((Contract) fromToken).getAddress());
+        int toTokenId = getTokenId(((Contract) toToken).getAddress());
+        BigInteger one = BigInteger.ONE.multiply(BigInteger.valueOf(10)
+                                                           .pow(fromToken.getDecimals()));
+        BigInteger out = getDeltaY(fromTokenId, toTokenId, one, System.currentTimeMillis() / 1000);
+        return BigInteger.valueOf(10).pow(PRICE_DECIMALS).multiply(one).divide(out);
     }
 
     @Override
@@ -223,13 +211,37 @@ public class CurvePool extends Pool {
     }
 
     @Override
+    public BigInteger getAmountOut(String from, String to, BigInteger amountIn) {
+        int fromTokenId = getTokenId(from);
+        int toTokenId = getTokenId(to);
+        return getDeltaY(fromTokenId, toTokenId, amountIn, System.currentTimeMillis() / 1000);
+    }
+
+    @Override
     protected ContractAbi loadAbi() {
         return tronContractTrigger.contractAt(CurveAbi.class, getAddress());
     }
 
-    public int getN() {
-        final int CURVE_TOKENS_MIN = 2;
-        return tokens.size() > 0 ? tokens.size() : CURVE_TOKENS_MIN + CURVE_TYPE.indexOf(type);
+    public BigInteger calcTokenAmount(List<BigInteger> amounts, boolean deposit, long timestamp) {
+        if (amounts.size() != getN()) {
+            throw new IllegalArgumentException();
+        }
+        rlock.lock();
+        try {
+            // NOTICE: will add read lock in read lock, be aware of write locks
+            BigInteger A = getA(timestamp);
+            BigInteger D0 = getD(getXP(balances), A);
+            List<BigInteger> newBalance = new ArrayList<>();
+            for (int i = 0; i < getN(); i++) {
+                newBalance.add(deposit
+                               ? TokenMath.safeAdd(balances.get(i), amounts.get(i))
+                               : TokenMath.safeSubtract(balances.get(i), amounts.get(i)));
+            }
+            BigInteger D1 = getD(getXP(newBalance), A);
+            return D1.subtract(D0).abs().multiply(getLpToken().totalSupply()).divide(D0);
+        } finally {
+            rlock.unlock();
+        }
     }
 
     public BigInteger calcWithdrawOneCoin(BigInteger amountIn, int tokenId, long timestamp) {
@@ -279,6 +291,11 @@ public class CurvePool extends Pool {
         } finally {
             rlock.unlock();
         }
+    }
+
+    public int getN() {
+        final int CURVE_TOKENS_MIN = 2;
+        return tokens.size() > 0 ? tokens.size() : CURVE_TOKENS_MIN + CURVE_TYPE.indexOf(type);
     }
 
     public BigInteger getVirtualPrice(long timestamp) {
@@ -420,35 +437,6 @@ public class CurvePool extends Pool {
         }
     }
 
-    private BigInteger getDeltaY(int fromTokenId,
-                                 int toTokenId,
-                                 BigInteger amountIn,
-                                 long timestamp) {
-        rlock.lock();
-        try {
-            List<BigInteger> xp = getXP(balances);
-            BigInteger y = getY(fromTokenId,
-                                toTokenId,
-                                amountIn.multiply(RATES.get(fromTokenId)).divide(PRECISION),
-                                xp,
-                                getA(timestamp),
-                                null);
-            BigInteger dy = TokenMath.safeSubtract(xp.get(toTokenId), y)
-                                     .subtract(BigInteger.ONE)
-                                     .multiply(PRECISION)
-                                     .divide(RATES.get(toTokenId));
-            // dy = dy - dy * fee / FEE_DENOMINATOR
-            // dy = dy * (FEE_DENOMINATOR - fee) / FEE_DENOMINATOR
-            dy = dy.multiply(FEE_DENOMINATOR.subtract(fee)).divide(FEE_DENOMINATOR);
-            if (balances.get(toTokenId).compareTo(dy) < 0) {
-                throw new RuntimeException("NOT ENOUGH BALANCE");
-            }
-            return dy;
-        } finally {
-            rlock.unlock();
-        }
-    }
-
     private BigInteger getD(List<BigInteger> xp, BigInteger A) {
         BigInteger S = new BigInteger("0");
         for (BigInteger xi : xp) {
@@ -481,12 +469,33 @@ public class CurvePool extends Pool {
         return D;
     }
 
-    private List<BigInteger> getXP(List<BigInteger> currentBalances) {
-        List<BigInteger> xp = new ArrayList<>(currentBalances.size());
-        for (int i = 0; i < currentBalances.size(); i++) {
-            xp.add(currentBalances.get(i).multiply(RATES.get(i)).divide(PRECISION));
+    private BigInteger getDeltaY(int fromTokenId,
+                                 int toTokenId,
+                                 BigInteger amountIn,
+                                 long timestamp) {
+        rlock.lock();
+        try {
+            List<BigInteger> xp = getXP(balances);
+            BigInteger y = getY(fromTokenId,
+                                toTokenId,
+                                amountIn.multiply(RATES.get(fromTokenId)).divide(PRECISION),
+                                xp,
+                                getA(timestamp),
+                                null);
+            BigInteger dy = TokenMath.safeSubtract(xp.get(toTokenId), y)
+                                     .subtract(BigInteger.ONE)
+                                     .multiply(PRECISION)
+                                     .divide(RATES.get(toTokenId));
+            // dy = dy - dy * fee / FEE_DENOMINATOR
+            // dy = dy * (FEE_DENOMINATOR - fee) / FEE_DENOMINATOR
+            dy = dy.multiply(FEE_DENOMINATOR.subtract(fee)).divide(FEE_DENOMINATOR);
+            if (balances.get(toTokenId).compareTo(dy) < 0) {
+                throw new RuntimeException("NOT ENOUGH BALANCE");
+            }
+            return dy;
+        } finally {
+            rlock.unlock();
         }
-        return xp;
     }
 
     private ITRC20 getLpTokenFromChain() {
@@ -507,6 +516,14 @@ public class CurvePool extends Pool {
         return contract != null
                ? (ITRC20) contract
                : (ITRC20) contractManager.registerContract(new TRC20(tokenAddress));
+    }
+
+    private List<BigInteger> getXP(List<BigInteger> currentBalances) {
+        List<BigInteger> xp = new ArrayList<>(currentBalances.size());
+        for (int i = 0; i < currentBalances.size(); i++) {
+            xp.add(currentBalances.get(i).multiply(RATES.get(i)).divide(PRECISION));
+        }
+        return xp;
     }
 
     private BigInteger getY(int i,

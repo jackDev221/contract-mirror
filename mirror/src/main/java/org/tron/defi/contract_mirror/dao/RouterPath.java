@@ -16,6 +16,8 @@ public class RouterPath {
     private final BigInteger amountIn;
     private final Node to;
     private BigInteger amountOut;
+    private BigInteger fee;
+    private BigInteger impact;
     private List<Step> steps = new ArrayList<>();
     private Set<Node> nodes = new HashSet<>();
     private int cost = 0;

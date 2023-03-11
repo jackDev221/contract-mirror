@@ -47,9 +47,26 @@ public class PsmPool extends Pool {
     }
 
     @Override
-    public int cost() {
-        return 0 == info.getFeeToGem().compareTo(BigInteger.ZERO) &&
-               0 == info.getFeeToUsdd().compareTo(BigInteger.ZERO) ? 0 : 1;
+    public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        return fromToken == getUsdd() ? buyGemOut(amountIn) : sellGemOut(amountIn);
+    }
+
+    @Override
+    public BigInteger getApproximateFee(IToken fromToken, IToken toToken, BigInteger amountIn) {
+        rlock.lock();
+        try {
+            return fromToken == getUsdd()
+                   ? amountIn.multiply(info.getFeeToGem())
+                             .divide(FEE_DENOMINATOR)
+                   : amountIn.multiply(info.getFeeToUsdd()).divide(FEE_DENOMINATOR);
+        } finally {
+            rlock.unlock();
+        }
+    }
+
+    @Override
+    public BigInteger getPrice(IToken fromToken, IToken toToken) {
+        return BigInteger.valueOf(10).pow(PRICE_DECIMALS);
     }
 
     @Override
@@ -78,8 +95,9 @@ public class PsmPool extends Pool {
     }
 
     @Override
-    public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
-        return fromToken == getUsdd() ? buyGemOut(amountIn) : sellGemOut(amountIn);
+    public int cost() {
+        return 0 == info.getFeeToGem().compareTo(BigInteger.ZERO) &&
+               0 == info.getFeeToUsdd().compareTo(BigInteger.ZERO) ? 0 : 1;
     }
 
     @Override
