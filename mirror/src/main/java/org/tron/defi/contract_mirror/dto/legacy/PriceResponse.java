@@ -7,7 +7,7 @@ import java.util.Map;
 
 @Data
 public class PriceResponse {
-    private Map<String, Quote> data;
+    private Map<String, Info> data;
     private Status status;
 
     @Data
@@ -19,6 +19,11 @@ public class PriceResponse {
     }
 
     @Data
+    public static class Info {
+        private Quote quote;
+    }
+
+    @Data
     public static class Quote {
         @JSONField(name = "USD")
         private USD usd;
@@ -27,7 +32,7 @@ public class PriceResponse {
     @Data
     public static class USD {
         @JSONField(name = "last_updated")
-        public long lastUpdated;
-        public String price;
+        private long lastUpdated;
+        private String price;
     }
 }

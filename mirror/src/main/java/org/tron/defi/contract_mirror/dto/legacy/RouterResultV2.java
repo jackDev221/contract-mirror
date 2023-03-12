@@ -8,6 +8,7 @@ import org.tron.defi.contract_mirror.dao.RouterPath;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,8 +49,8 @@ public class RouterResultV2 {
     }
 
     private static String amountToString(BigInteger amount, int decimal) {
-        return new BigDecimal(amount.toString()).divide(BigDecimal.valueOf(10).pow(decimal))
-                                                .toString();
+        return new BigDecimal(amount.toString()).divide(BigDecimal.valueOf(10).pow(decimal),
+                                                        RoundingMode.FLOOR).toString();
     }
 
     private static String getPoolVersion(Pool pool) {

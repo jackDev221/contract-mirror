@@ -14,6 +14,7 @@ import org.tron.defi.contract_mirror.service.RouterService;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,13 +47,13 @@ public class RouterController {
                 BigDecimal inUsdPrice = priceService.getPrice(inToken);
                 outUsdPrice = priceService.getPrice(outToken);
                 inUsd = new BigDecimal(amount).divide(BigDecimal.valueOf(10)
-                                                                .pow(outToken.getDecimals()))
+                                                                .pow(outToken.getDecimals()),
+                                                      RoundingMode.FLOOR)
                                               .multiply(inUsdPrice);
             }
             for (int i = 0; i < paths.size(); i++) {
                 RouterPath path = paths.get(i);
                 RouterResultV2 resultV2 = RouterResultV2.fromRouterPath(path);
-                assert null != inUsd && null != outUsdPrice;
                 resultV2.setInUsd(inUsd.toString());
                 resultV2.setOutUsd(new BigDecimal(resultV2.getAmount()).multiply(outUsdPrice)
                                                                        .toString());

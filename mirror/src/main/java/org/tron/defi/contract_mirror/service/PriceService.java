@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.tron.defi.contract_mirror.config.PriceCenterConfig;
 import org.tron.defi.contract_mirror.core.token.IToken;
@@ -20,26 +19,36 @@ import java.util.Map;
 public class PriceService {
     @Autowired
     PriceCenterConfig priceCenterConfig;
-    @Autowired
-    RestClient priceCenter;
+    RestClient priceCenter = new RestClient(null);
 
     public BigDecimal getPrice(IToken token) {
         Map<String, String> params = new HashMap<>(priceCenterConfig.getParams());
-        params.put("symbol", token.getSymbol());
-        UriBuilder uriBuilder = UriComponentsBuilder.fromUriString(priceCenterConfig.getUri());
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance()
+                                                              .scheme("https")
+                                                              .host(priceCenterConfig.getServer())
+                                                              .path(priceCenterConfig.getUri());
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            uriBuilder.queryParam(entry.getKey(), entry.getValue());
+        }
+        uriBuilder.queryParam("symbol", token.getSymbol());
         try {
-            PriceResponse response = JSONObject.parseObject(priceCenter.get(uriBuilder.build(params)
-                                                                                      .toString()),
-                                                            PriceResponse.class);
+            String json = priceCenter.get(uriBuilder.build().toString());
+            log.debug("http response {}", json);
+            PriceResponse response = JSONObject.parseObject(json, PriceResponse.class);
+            log.debug("PriceResponse {}", response);
             if (null == response.getStatus() || 0 != response.getStatus().getErrorCode()) {
-                log.error("response {}", response);
                 throw new RuntimeException("CANT GET TOKEN PRICE");
             }
             if (!response.getData().containsKey(token.getSymbol())) {
                 return BigDecimal.ZERO;
             }
-            return new BigDecimal(response.getData().get(token.getSymbol()).getUsd().getPrice());
+            return new BigDecimal(response.getData()
+                                          .get(token.getSymbol())
+                                          .getQuote()
+                                          .getUsd()
+                                          .getPrice());
         } catch (RuntimeException e) {
+            e.printStackTrace();
             log.error(e.getMessage());
             throw new RuntimeException("CANT GET TOKEN PRICE");
         }

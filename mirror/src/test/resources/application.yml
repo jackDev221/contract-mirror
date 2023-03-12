@@ -10,7 +10,7 @@ price-center:
   server: c.tronlink.org
   uri: /v1/cryptocurrency/getprice
   params:
-    - convert: USD
+    convert: USD
 
 #tron
 tron:
