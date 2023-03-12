@@ -37,19 +37,16 @@ public class RouterController {
         Response response = new Response<>();
         BigInteger amountIn = new BigInteger(amount);
         try {
+            BigDecimal inUsdPrice = priceService.getPrice(from);
+            BigDecimal outUsdPrice = priceService.getPrice(to);
             List<RouterPath> paths = routerService.getPath(from, to, amountIn);
             List<RouterResultV2> resultV2s = new ArrayList<>(paths.size());
             BigDecimal inUsd = null;
-            BigDecimal outUsdPrice = null;
             if (!paths.isEmpty()) {
                 IToken inToken = (IToken) paths.get(0).getFrom().getToken();
-                IToken outToken = (IToken) paths.get(0).getTo().getToken();
-                BigDecimal inUsdPrice = priceService.getPrice(inToken);
-                outUsdPrice = priceService.getPrice(outToken);
                 inUsd = new BigDecimal(amount).divide(BigDecimal.valueOf(10)
-                                                                .pow(outToken.getDecimals()),
-                                                      RoundingMode.FLOOR)
-                                              .multiply(inUsdPrice);
+                                                                .pow(inToken.getDecimals()),
+                                                      RoundingMode.FLOOR).multiply(inUsdPrice);
             }
             for (int i = 0; i < paths.size(); i++) {
                 RouterPath path = paths.get(i);

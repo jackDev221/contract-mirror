@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.tron.defi.contract_mirror.TestApplication;
 import org.tron.defi.contract_mirror.config.TokenConfigList;
+import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.ContractManager;
 import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRC20;
@@ -30,8 +31,20 @@ public class PriceServiceTest {
     private IToken token;
 
     @Test
-    public void getPriceTest() {
-        BigDecimal price = priceService.getPrice(token);
+    public void getPriceByAddressTest() {
+        BigDecimal price = priceService.getPrice(((Contract) token).getAddress());
+        log.info(price.toString());
+        BigDecimal diffPercentage = price.subtract(BigDecimal.ONE)
+                                         .abs()
+                                         .divide(price, RoundingMode.FLOOR)
+                                         .multiply(BigDecimal.valueOf(100));
+        log.info(diffPercentage.toString());
+        Assertions.assertTrue(diffPercentage.compareTo(BigDecimal.ONE) <= 1);
+    }
+
+    @Test
+    public void getPriceBySymbolTest() {
+        BigDecimal price = priceService.getPrice(token.getSymbol());
         log.info(price.toString());
         BigDecimal diffPercentage = price.subtract(BigDecimal.ONE)
                                          .abs()

@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.tron.defi.contract_mirror.config.PriceCenterConfig;
-import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.dto.legacy.PriceResponse;
 import org.tron.defi.contract_mirror.utils.RestClient;
 
@@ -21,7 +20,7 @@ public class PriceService {
     PriceCenterConfig priceCenterConfig;
     RestClient priceCenter = new RestClient(null);
 
-    public BigDecimal getPrice(IToken token) {
+    public BigDecimal getPrice(String symbolOrAddress) {
         Map<String, String> params = new HashMap<>(priceCenterConfig.getParams());
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance()
                                                               .scheme("https")
@@ -30,7 +29,7 @@ public class PriceService {
         for (Map.Entry<String, String> entry : params.entrySet()) {
             uriBuilder.queryParam(entry.getKey(), entry.getValue());
         }
-        uriBuilder.queryParam("symbol", token.getSymbol());
+        uriBuilder.queryParam("symbol", symbolOrAddress);
         try {
             String json = priceCenter.get(uriBuilder.build().toString());
             log.debug("http response {}", json);
@@ -39,11 +38,10 @@ public class PriceService {
             if (null == response.getStatus() || 0 != response.getStatus().getErrorCode()) {
                 throw new RuntimeException("CANT GET TOKEN PRICE");
             }
-            if (!response.getData().containsKey(token.getSymbol())) {
+            if (!response.getData().containsKey(symbolOrAddress)) {
                 return BigDecimal.ZERO;
             }
-            return new BigDecimal(response.getData()
-                                          .get(token.getSymbol())
+            return new BigDecimal(response.getData().get(symbolOrAddress)
                                           .getQuote()
                                           .getUsd()
                                           .getPrice());
