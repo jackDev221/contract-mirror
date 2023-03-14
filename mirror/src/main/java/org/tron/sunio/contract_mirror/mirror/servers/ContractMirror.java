@@ -299,6 +299,15 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
     }
 
     @Override
+    public boolean isContractReady(String address) {
+        if (!containsContract(address)) {
+            return false;
+        }
+        BaseContract baseContract = this.contractHashMap.get(address);
+        return baseContract.isReady();
+    }
+
+    @Override
     public long getBlockTime() {
         // seconds
         return blockInfo.getTimeStamp() / 1000;

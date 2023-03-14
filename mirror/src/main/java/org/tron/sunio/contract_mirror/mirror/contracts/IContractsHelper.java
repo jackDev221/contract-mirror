@@ -9,4 +9,6 @@ public interface IContractsHelper {
     void addContract(BaseContract baseContract);
 
     boolean containsContract(String address);
+
+    boolean isContractReady(String address);
 }

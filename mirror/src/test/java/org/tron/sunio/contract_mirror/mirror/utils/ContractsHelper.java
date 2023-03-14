@@ -33,4 +33,13 @@ public class ContractsHelper implements IContractsHelper {
     public boolean containsContract(String address) {
         return contractMaps.containsKey(address);
     }
+
+    @Override
+    public boolean isContractReady(String address) {
+        if (!containsContract(address)) {
+            return false;
+        }
+        BaseContract baseContract = contractMaps.get(address);
+        return baseContract.isReady();
+    }
 }

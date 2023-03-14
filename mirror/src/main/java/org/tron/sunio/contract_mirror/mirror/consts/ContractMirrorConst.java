@@ -84,4 +84,7 @@ public interface ContractMirrorConst {
     String METHOD_TIN = "tin";
     String METHOD_TOUT = "tout";
     String METHOD_QUOTA = "quota";
+
+    String CALL_FOR_ROUTER = "call_for_router";
+    String INIT_TX_ID = "0000000000000000000000000000000000000000000000000000000000000000";
 }

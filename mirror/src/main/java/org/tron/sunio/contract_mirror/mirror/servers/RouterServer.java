@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.tron.sunio.contract_mirror.mirror.config.RouterConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.AbstractCurve;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.BaseStableSwapPool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.CurveBasePool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
@@ -20,7 +19,6 @@ import org.tron.sunio.contract_mirror.mirror.dao.PSMData;
 import org.tron.sunio.contract_mirror.mirror.dao.StableSwapPoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
-import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.price.TokenPrice;
 import org.tron.sunio.contract_mirror.mirror.router.CacheNode;
 import org.tron.sunio.contract_mirror.mirror.router.PathCacheContract;
@@ -43,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.CALL_FOR_ROUTER;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.IS_DEBUG;
 
@@ -242,17 +241,17 @@ public class RouterServer {
                 if (i + j == -1) {
                     i = i == -1 ? 1 : 0;
                     j = j == -1 ? 1 : 0;
-                    swapResult.fee = swapResult.fee + (1 - swapResult.fee) * baseStableSwapPool.calcFee(timestamp, j, pathCacheContract);
+                    swapResult.fee = swapResult.fee + (1 - swapResult.fee) * baseStableSwapPool.calcFee(CALL_FOR_ROUTER, timestamp, j, pathCacheContract);
                     int dxDecimals = (int) data.getCoinDecimals()[i];
                     BigInteger dx = BigInteger.TEN.pow(dxDecimals);
-                    BigInteger dy = baseStableSwapPool.getDy(i, j, dx, System.currentTimeMillis() / 1000, pathCacheContract);
+                    BigInteger dy = baseStableSwapPool.getDy(CALL_FOR_ROUTER, i, j, dx, System.currentTimeMillis() / 1000, pathCacheContract);
                     swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 18, RoundingMode.UP));
-                    swapResult.amount = baseStableSwapPool.exchange(i, j, swapResult.amount, BigInteger.ZERO, timestamp, pathCacheContract);
+                    swapResult.amount = baseStableSwapPool.exchange(CALL_FOR_ROUTER, i, j, swapResult.amount, BigInteger.ZERO, timestamp, pathCacheContract);
                 } else {
                     if (i - maxCoin < 0 || j - maxCoin < 0) {
-                        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * baseStableSwapPool.calcFee(timestamp, metaJ, pathCacheContract);
+                        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * baseStableSwapPool.calcFee(CALL_FOR_ROUTER, timestamp, metaJ, pathCacheContract);
                     } else {
-                        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * baseStableSwapPool.calcBasePoolFee(timestamp, metaJ, pathCacheContract);
+                        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * baseStableSwapPool.calcBasePoolFee(CALL_FOR_ROUTER, timestamp, metaJ, pathCacheContract);
                     }
 
                     swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(0.9996));
@@ -263,9 +262,9 @@ public class RouterServer {
                         dxDecimals = (int) data.getBaseCoinDecimals()[i - maxCoin];
                     }
                     BigInteger dx = BigInteger.TEN.pow(dxDecimals);
-                    BigInteger dy = baseStableSwapPool.getDyUnderlying(i, j, dx, System.currentTimeMillis() / 1000, pathCacheContract);
+                    BigInteger dy = baseStableSwapPool.getDyUnderlying(CALL_FOR_ROUTER, i, j, dx, System.currentTimeMillis() / 1000, pathCacheContract);
                     swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 18, RoundingMode.UP));
-                    swapResult.amount = baseStableSwapPool.exchangeUnderlying(i, j, swapResult.amount, BigInteger.ZERO, timestamp, pathCacheContract);
+                    swapResult.amount = baseStableSwapPool.exchangeUnderlying(CALL_FOR_ROUTER, i, j, swapResult.amount, BigInteger.ZERO, timestamp, pathCacheContract);
                 }
             }
         } catch (Exception e) {
@@ -312,11 +311,11 @@ public class RouterServer {
                         fromAddress, toAddress, baseContract.getAddress(), swapResult.amount, fromAddress, toAddress);
                 swapResult.amount = BigInteger.ZERO;
             } else {
-                swapResult.fee = swapResult.fee + (1 - swapResult.fee) * curve.calcFee(0, indexes[1], pathCacheContract);
+                swapResult.fee = swapResult.fee + (1 - swapResult.fee) * curve.calcFee(CALL_FOR_ROUTER, 0, indexes[1], pathCacheContract);
                 swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(0.9996));
                 int dxDecimals = (int) data.getCoinDecimals()[indexes[0]];
                 BigInteger dx = BigInteger.TEN.pow(dxDecimals);
-                BigInteger dy = curve.getDy(indexes[0], indexes[1], dx, System.currentTimeMillis() / 1000, pathCacheContract);
+                BigInteger dy = curve.getDy(CALL_FOR_ROUTER, indexes[0], indexes[1], dx, System.currentTimeMillis() / 1000, pathCacheContract);
                 swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 18, RoundingMode.UP));
                 swapResult.amount = curve.exchange(indexes[0], indexes[1], swapResult.amount, BigInteger.ZERO, System.currentTimeMillis() / 1000, data);
 

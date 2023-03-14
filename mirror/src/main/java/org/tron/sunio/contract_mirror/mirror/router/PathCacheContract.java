@@ -49,6 +49,16 @@ public class PathCacheContract implements IContractsHelper {
         return pathCached.containsKey(address);
     }
 
+    @Override
+    public boolean isContractReady(String address) {
+        if (containsContract(address)) {
+            BaseContract baseContract = contractMaps.get(address);
+            return baseContract.isReady();
+        }
+        BaseContract baseContract = getContract(address);
+        return baseContract.isReady();
+    }
+
     public void init(Map<String, BaseContract> contractMaps) {
         this.contractMaps = contractMaps;
         pathCached.clear();
