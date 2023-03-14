@@ -22,6 +22,8 @@ import org.tron.sunio.contract_mirror.mirror.contracts.ContractFactoryManager;
 import org.tron.sunio.contract_mirror.mirror.config.ContractsMirrorConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.ContractEventWrap;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.AbstractCurve;
+import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 import org.tron.sunio.contract_mirror.mirror.tools.TimeTool;
 
@@ -280,7 +282,15 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
 
     @Override
     public BaseContract getContract(String address) {
-        return this.contractHashMap.get(address);
+        BaseContract baseContract = this.contractHashMap.get(address);
+        if (baseContract.getType() == ContractType.CONTRACT_CURVE_2POOL
+                || baseContract.getType() == ContractType.CONTRACT_CURVE_3POOL
+                || baseContract.getType() == ContractType.CONTRACT_CURVE_4POOL
+                || baseContract.getType() == ContractType.STABLE_SWAP_POOL
+        ) {
+            baseContract = ((AbstractCurve) baseContract).copySelf();
+        }
+        return baseContract;
     }
 
     @Override

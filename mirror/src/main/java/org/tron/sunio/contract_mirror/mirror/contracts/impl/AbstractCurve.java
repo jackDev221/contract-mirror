@@ -18,39 +18,39 @@ public abstract class AbstractCurve extends BaseContract {
 
     public abstract String coins(int i);
 
-    public abstract BigInteger getVirtualPrice(long timestamp) throws Exception;
+    public abstract BigInteger getVirtualPrice(long timestamp, IContractsHelper iContractsHelper) throws Exception;
 
-    public abstract BigInteger calcTokenAmount(long timestamp, BigInteger[] amounts, boolean deposit) throws Exception;
+    public abstract BigInteger calcTokenAmount(long timestamp, BigInteger[] amounts, boolean deposit, IContractsHelper iContractsHelper) throws Exception;
 
-    public abstract BigInteger calcWithdrawOneCoin(long timestamp, BigInteger _token_amount, int i) throws Exception;
+    public abstract BigInteger calcWithdrawOneCoin(long timestamp, BigInteger _token_amount, int i, IContractsHelper iContractsHelper) throws Exception;
 
     public abstract BigInteger fee();
 
     public abstract BigInteger adminFee();
 
-    public abstract BigInteger[] rates(long timestamp);
+    public abstract BigInteger[] rates(long timestamp, IContractsHelper iContractsHelper);
 
-    public abstract BigInteger getDyUnderlying(int i, int j, BigInteger dx, long timestamp) throws Exception;
+    public abstract BigInteger getDyUnderlying(int i, int j, BigInteger dx, long timestamp, IContractsHelper iContractsHelper) throws Exception;
 
-    public abstract BigInteger getDy(int i, int j, BigInteger dx, long timestamp) throws Exception;
+    public abstract BigInteger getDy(int i, int j, BigInteger dx, long timestamp, IContractsHelper iContractsHelper) throws Exception;
 
-    public abstract BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount, long timestamp) throws Exception;
+    public abstract BigInteger addLiquidity(BigInteger[] amounts, BigInteger minMintAmount, long timestamp, IContractsHelper iContractsHelper) throws Exception;
 
-    public abstract BigInteger[] removeLiquidity(BigInteger _amount, BigInteger[] _minAmounts, long timestamp) throws Exception;
+    public abstract BigInteger[] removeLiquidity(BigInteger _amount, BigInteger[] _minAmounts, long timestamp, IContractsHelper iContractsHelper) throws Exception;
 
-    public abstract BigInteger removeLiquidityImBalance(BigInteger[] _amounts, BigInteger _minBurnAmount, long timestamp) throws Exception;
+    public abstract BigInteger removeLiquidityImBalance(BigInteger[] _amounts, BigInteger _minBurnAmount, long timestamp, IContractsHelper iContractsHelper) throws Exception;
 
-    public abstract BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount, long timestamp) throws Exception;
+    public abstract BigInteger removeLiquidityOneCoin(BigInteger _token_amount, int i, BigInteger min_amount, long timestamp, IContractsHelper iContractsHelper) throws Exception;
 
-    public abstract BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp) throws Exception;
+    public abstract BigInteger exchange(int i, int j, BigInteger dx, BigInteger min_dy, long timestamp, IContractsHelper iContractsHelper) throws Exception;
 
-    public abstract BigInteger exchangeUnderlying(int i, int j, BigInteger _dx, BigInteger mindy, long timestamp) throws Exception;
+    public abstract BigInteger exchangeUnderlying(int i, int j, BigInteger _dx, BigInteger mindy, long timestamp, IContractsHelper iContractsHelper) throws Exception;
 
     public abstract AbstractCurve copySelf();
 
-    public abstract double calcFee(long timestamp, int j);
+    public abstract double calcFee(long timestamp, int j, IContractsHelper iContractsHelper);
 
-    public abstract double calcBasePoolFee(long timestamp, int j);
+    public abstract double calcBasePoolFee(long timestamp, int j, IContractsHelper iContractsHelper);
 
     @Override
     public boolean initDataFromChain1() {
