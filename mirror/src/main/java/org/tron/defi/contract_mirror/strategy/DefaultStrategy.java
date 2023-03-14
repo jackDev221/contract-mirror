@@ -62,6 +62,7 @@ public class DefaultStrategy implements IStrategy {
                 }
             }
         }
+        log.debug("Get {} paths, maxStep {}", candidates.size(), maxStep);
         return getTopN(candidates, routerConfig.getTopN(), maxStep);
     }
 

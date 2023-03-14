@@ -51,6 +51,7 @@ public class RouterController {
             long time0 = System.currentTimeMillis();
             BigDecimal inUsdPrice = priceService.getPrice(from);
             BigDecimal outUsdPrice = priceService.getPrice(to);
+            log.debug("inUsdPrice={} outUsdPrice={}", inUsdPrice, outUsdPrice);
             long time1 = System.currentTimeMillis();
             List<RouterPath> paths = routerService.getPath(from, to, amountIn);
             long time2 = System.currentTimeMillis();
@@ -68,6 +69,7 @@ public class RouterController {
                 resultV2.setInUsd(inUsd.toString());
                 resultV2.setOutUsd(new BigDecimal(resultV2.getAmount()).multiply(outUsdPrice)
                                                                        .toString());
+                resultV2s.add(resultV2);
             }
             response.setCode(Response.Code.SUCCESS);
             response.setData(resultV2s);
