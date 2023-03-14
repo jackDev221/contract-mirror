@@ -15,11 +15,11 @@ public class RouterPath {
     private final Node from;
     private final BigInteger amountIn;
     private final Node to;
+    private final List<Step> steps;
+    private final Set<Node> nodes;
     private BigInteger amountOut;
     private BigInteger fee;
     private BigInteger impact;
-    private List<Step> steps = new ArrayList<>();
-    private Set<Node> nodes = new HashSet<>();
     private int cost = 0;
 
     public RouterPath(RouterPath path) {
@@ -27,6 +27,7 @@ public class RouterPath {
         amountIn = path.getAmountIn();
         to = path.getTo();
         steps = new ArrayList<>(path.getSteps());
+        nodes = new HashSet<>(path.getNodes());
         cost = path.getCost();
     }
 
@@ -34,6 +35,8 @@ public class RouterPath {
         this.from = from;
         this.amountIn = amountIn;
         this.to = to;
+        steps = new ArrayList<>();
+        nodes = new HashSet<>();
     }
 
     public void addStep(Edge edge) {
