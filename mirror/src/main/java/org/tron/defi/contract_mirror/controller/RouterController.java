@@ -1,5 +1,6 @@
 package org.tron.defi.contract_mirror.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/swap/")
 public class RouterController {
@@ -34,12 +36,24 @@ public class RouterController {
                              @RequestParam(name = "inAmount", required = true) String amount,
                              @RequestParam(name = "fromDecimal", required = true) int fromDecimal,
                              @RequestParam(name = "toDecimal", required = true) int toDecimal) {
+        log.debug("Request fromToken={} toToken={} fromTokenAddr={} toTokenAddr={} inAmount={} " +
+                  "fromDecimal={} toDecimal={}",
+                  fromToken,
+                  toToken,
+                  from,
+                  to,
+                  amount,
+                  fromDecimal,
+                  toDecimal);
         Response response = new Response<>();
         BigInteger amountIn = new BigInteger(amount);
         try {
+            long time0 = System.currentTimeMillis();
             BigDecimal inUsdPrice = priceService.getPrice(from);
             BigDecimal outUsdPrice = priceService.getPrice(to);
+            long time1 = System.currentTimeMillis();
             List<RouterPath> paths = routerService.getPath(from, to, amountIn);
+            long time2 = System.currentTimeMillis();
             List<RouterResultV2> resultV2s = new ArrayList<>(paths.size());
             BigDecimal inUsd = null;
             if (!paths.isEmpty()) {
@@ -57,6 +71,12 @@ public class RouterController {
             }
             response.setCode(Response.Code.SUCCESS);
             response.setData(resultV2s);
+            long time3 = System.currentTimeMillis();
+            log.debug("Response {}, timePrice {}ms, timePath {}ms, timeResponse {}ms",
+                      response,
+                      time1 - time0,
+                      time2 - time1,
+                      time3 - time2);
         } catch (RuntimeException e) {
             response.setCode(Response.Code.ERROR);
             response.setMessage(e.getMessage());

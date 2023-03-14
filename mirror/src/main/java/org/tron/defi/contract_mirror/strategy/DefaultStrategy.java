@@ -118,7 +118,9 @@ public class DefaultStrategy implements IStrategy {
                                                   edge.getTo().getToken().getAddress(),
                                                   step.getAmountIn());
                 } catch (RuntimeException e) {
-                    amountOut = BigInteger.ZERO;
+                    log.debug("{} CUT {}", e.getMessage(), getLogPath(candidate));
+                    cutPathAt(candidate, i);
+                    continue;
                 }
                 if (i == steps.size() - 1) {
                     candidate.setAmountOut(amountOut);
