@@ -26,7 +26,7 @@ archivesBaseName = 'contract-mirror'
 version = "1.0.0"
 
 dependencies {
-    implementation fileTree("../lib") { include '*.jar' }
+    implementation fileTree(dir: "../lib", includes: ["*.jar"])
     implementation project(':contract-abi')
 
     implementation "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"

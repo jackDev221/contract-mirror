@@ -1,5 +1,6 @@
-#contract.mirror.appName=contract mirror
-#contract.mirror.blockInterval=5000
+# logging
+logging:
+  config: logback-test.xml
 
 #server
 server:

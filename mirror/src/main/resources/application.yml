@@ -1,5 +1,6 @@
-#contract.mirror.appName=contract mirror
-#contract.mirror.blockInterval=5000
+# logging
+logging:
+  config: logback-test.xml
 
 #server
 server:
@@ -64,6 +65,10 @@ contract-list:
       polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
     - name: tusdpsm
       address: TY2op6AKcEkFhv8hxNJj3FBUfjManxYLSe
+      type: PSM_POOL
+      polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
+    - name: usdjpsm
+      address: TVS3rVDUSd3ySeXV5moRH2J2t5B9reJfLR
       type: PSM_POOL
       polyAddress: TNsFTDBb4Y11UgP9LTrLRtPXPwdG1jdtcU
 

@@ -16,7 +16,7 @@ archivesBaseName = 'contract-abi'
 version = "1.0.0"
 
 dependencies {
-    implementation fileTree("../lib") { include '*.jar' }
+    implementation fileTree(dir: "../lib", includes: ["*.jar"])
     implementation "org.web3j:abi:${web3jVersion}"
 }
 
