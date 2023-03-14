@@ -45,6 +45,9 @@ public class RouterResultV2 {
             roadForAddr.add(toToken.getAddress());
             roadForName.add(((IToken) toToken).getSymbol());
         }
+        resultV2.setRoadForAddr(roadForAddr);
+        resultV2.setRoadForName(roadForName);
+        resultV2.setPool(pool);
         return resultV2;
     }
 
