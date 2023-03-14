@@ -1,5 +1,6 @@
 package org.tron.sunio.contract_mirror.mirror.router;
 
+import cn.hutool.core.util.ObjectUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
@@ -27,6 +28,9 @@ public class PathCacheContract implements IContractsHelper {
             return pathCached.get(address);
         } else {
             BaseContract baseContract = contractMaps.get(address);
+            if (ObjectUtil.isNull(baseContract)){
+                return null;
+            }
             if (baseContract.getType() == ContractType.CONTRACT_CURVE_2POOL
                     || baseContract.getType() == ContractType.CONTRACT_CURVE_3POOL
                     || baseContract.getType() == ContractType.CONTRACT_CURVE_4POOL
@@ -56,6 +60,9 @@ public class PathCacheContract implements IContractsHelper {
             return baseContract.isReady();
         }
         BaseContract baseContract = getContract(address);
+        if (ObjectUtil.isNull(baseContract)){
+            return false;
+        }
         return baseContract.isReady();
     }
 
