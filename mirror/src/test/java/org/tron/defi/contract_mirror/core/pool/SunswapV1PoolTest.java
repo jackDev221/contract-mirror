@@ -12,11 +12,14 @@ import org.tron.defi.contract.log.ContractLog;
 import org.tron.defi.contract_mirror.TestApplication;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.ContractManager;
+import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRC20;
 import org.tron.defi.contract_mirror.core.token.TRX;
 import org.tron.defi.contract_mirror.dao.BlockInfo;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
+import org.tron.defi.contract_mirror.utils.TokenMath;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -27,6 +30,53 @@ public class SunswapV1PoolTest {
     @Autowired
     private ContractManager contractManager;
     private SunswapV1Pool pool;
+
+    @Test
+    public void getAmountOutTest() {
+        Assertions.assertDoesNotThrow(() -> pool.init());
+        IToken token0 = (IToken) pool.getTokens().get(0);
+        IToken token1 = (IToken) pool.getTokens().get(1);
+        BigInteger kLast0 = pool.getKLast();
+        BigInteger amountIn = BigInteger.valueOf(10).pow(token0.getDecimals());
+        BigInteger amountOut = pool.getAmountOut(((Contract) token0).getAddress(),
+                                                 ((Contract) token1).getAddress(),
+                                                 amountIn);
+        log.info("{} {} -> {} {}", amountIn, token0.getSymbol(), amountOut, token1.getSymbol());
+        BigInteger kLast1 = TokenMath.safeAdd(token0.balanceOf(pool.getAddress()), amountIn)
+                                     .multiply(TokenMath.safeSubtract(token1.balanceOf(pool.getAddress()),
+                                                                      amountOut));
+        BigInteger precision = BigInteger.valueOf(10)
+                                         .pow(Math.min(token0.getDecimals(), token1.getDecimals()));
+        BigInteger diffRate = kLast1.subtract(kLast0).abs().multiply(precision).divide(kLast0);
+        Assertions.assertEquals(0, diffRate.intValue());
+    }
+
+    @Test
+    public void getApproximateFeeTest() {
+        IToken token0 = (IToken) pool.getTokens().get(0);
+        IToken token1 = (IToken) pool.getTokens().get(1);
+        BigInteger amountIn = BigInteger.valueOf(10).pow(token0.getDecimals());
+        BigInteger expect = amountIn.multiply(BigInteger.valueOf(3))
+                                    .divide(BigInteger.valueOf(1000));
+        Assertions.assertEquals(expect, pool.getApproximateFee(token0, token1, amountIn));
+        amountIn = BigInteger.valueOf(10).pow(token1.getDecimals());
+        expect = amountIn.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(1000));
+        Assertions.assertEquals(expect, pool.getApproximateFee(token1, token0, amountIn));
+    }
+
+    @Test
+    public void getPriceTest() {
+        Assertions.assertDoesNotThrow(() -> pool.init());
+        IToken token0 = (IToken) pool.getTokens().get(0);
+        IToken token1 = (IToken) pool.getTokens().get(1);
+
+        BigInteger expectPrice = Pool.PRICE_FACTOR.multiply(token0.balanceOf(pool.getAddress()))
+                                                  .divide(token1.balanceOf(pool.getAddress()));
+        Assertions.assertEquals(expectPrice, pool.getPrice(token0, token1));
+        expectPrice = Pool.PRICE_FACTOR.multiply(token1.balanceOf(pool.getAddress()))
+                                       .divide(token0.balanceOf(pool.getAddress()));
+        Assertions.assertEquals(expectPrice, pool.getPrice(token1, token0));
+    }
 
     @Test
     public void initTest() {

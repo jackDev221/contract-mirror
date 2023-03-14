@@ -152,10 +152,9 @@ public class CurvePool extends Pool {
     public BigInteger getPrice(IToken fromToken, IToken toToken) {
         int fromTokenId = getTokenId(((Contract) fromToken).getAddress());
         int toTokenId = getTokenId(((Contract) toToken).getAddress());
-        BigInteger one = BigInteger.ONE.multiply(BigInteger.valueOf(10)
-                                                           .pow(fromToken.getDecimals()));
+        final BigInteger one = BigInteger.valueOf(10).pow(fromToken.getDecimals());
         BigInteger out = getDeltaY(fromTokenId, toTokenId, one, System.currentTimeMillis() / 1000);
-        return BigInteger.valueOf(10).pow(PRICE_DECIMALS).multiply(one).divide(out);
+        return PRICE_FACTOR.multiply(one).divide(out);
     }
 
     @Override
@@ -282,6 +281,40 @@ public class CurvePool extends Pool {
                         .subtract(BigInteger.ONE)
                         .multiply(PRECISION)
                         .divide(RATES.get(tokenId));
+    }
+
+    public BigInteger getA(long timestamp) {
+        rlock.lock();
+        try {
+            if (timestamp < timeFutureA) {
+                if (futureA.subtract(initialA).compareTo(BigInteger.ZERO) > 0) {
+                    return initialA.add(futureA.subtract(initialA)
+                                               .multiply(BigInteger.valueOf(timestamp -
+                                                                            timeInitialA))
+                                               .divide(BigInteger.valueOf(timeFutureA -
+                                                                          timeInitialA)));
+                } else {
+                    return initialA.subtract(initialA.subtract(futureA)
+                                                     .multiply(BigInteger.valueOf(timestamp -
+                                                                                  timeInitialA))
+                                                     .divide(BigInteger.valueOf(timeFutureA -
+                                                                                timeInitialA)));
+                }
+            } else {
+                return futureA;
+            }
+        } finally {
+            rlock.unlock();
+        }
+    }
+
+    public List<BigInteger> getBalances() {
+        rlock.lock();
+        try {
+            return new ArrayList<>(balances);
+        } finally {
+            rlock.unlock();
+        }
     }
 
     public BigInteger getFee() {
@@ -412,33 +445,8 @@ public class CurvePool extends Pool {
         }
     }
 
-    private BigInteger getA(long timestamp) {
-        rlock.lock();
-        try {
-            if (timestamp < timeFutureA) {
-                if (futureA.subtract(initialA).compareTo(BigInteger.ZERO) > 0) {
-                    return initialA.add(futureA.subtract(initialA)
-                                               .multiply(BigInteger.valueOf(timestamp -
-                                                                            timeInitialA))
-                                               .divide(BigInteger.valueOf(timeFutureA -
-                                                                          timeInitialA)));
-                } else {
-                    return initialA.subtract(initialA.subtract(futureA)
-                                                     .multiply(BigInteger.valueOf(timestamp -
-                                                                                  timeInitialA))
-                                                     .divide(BigInteger.valueOf(timeFutureA -
-                                                                                timeInitialA)));
-                }
-            } else {
-                return futureA;
-            }
-        } finally {
-            rlock.unlock();
-        }
-    }
-
     private BigInteger getD(List<BigInteger> xp, BigInteger A) {
-        BigInteger S = new BigInteger("0");
+        BigInteger S = BigInteger.ZERO;
         for (BigInteger xi : xp) {
             S = S.add(xi);
         }
@@ -478,7 +486,9 @@ public class CurvePool extends Pool {
             List<BigInteger> xp = getXP(balances);
             BigInteger y = getY(fromTokenId,
                                 toTokenId,
-                                amountIn.multiply(RATES.get(fromTokenId)).divide(PRECISION),
+                                amountIn.multiply(RATES.get(fromTokenId))
+                                        .divide(PRECISION)
+                                        .add(xp.get(fromTokenId)),
                                 xp,
                                 getA(timestamp),
                                 null);
@@ -490,7 +500,7 @@ public class CurvePool extends Pool {
             // dy = dy * (FEE_DENOMINATOR - fee) / FEE_DENOMINATOR
             dy = dy.multiply(FEE_DENOMINATOR.subtract(fee)).divide(FEE_DENOMINATOR);
             if (balances.get(toTokenId).compareTo(dy) < 0) {
-                throw new RuntimeException("NOT ENOUGH BALANCE");
+                throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }
             return dy;
         } finally {

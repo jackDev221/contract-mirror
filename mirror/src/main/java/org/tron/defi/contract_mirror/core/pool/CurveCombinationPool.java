@@ -170,11 +170,12 @@ public class CurveCombinationPool extends Pool {
         }
         long timestamp = System.currentTimeMillis() / 1000;
 
-        BigInteger one = BigInteger.ONE.multiply(BigInteger.valueOf(10)
-                                                           .pow(fromToken.getDecimals()));
-        return hasLpToken
-               ? getDeltaY(fromTokenId, toTokenId, one, timestamp)
-               : getDeltaYUnderlying(fromTokenId, toTokenId, one, timestamp);
+        final BigInteger one = BigInteger.ONE.multiply(BigInteger.valueOf(10)
+                                                                 .pow(fromToken.getDecimals()));
+        BigInteger amountOut = hasLpToken
+                               ? getDeltaY(fromTokenId, toTokenId, one, timestamp)
+                               : getDeltaYUnderlying(fromTokenId, toTokenId, one, timestamp);
+        return PRICE_FACTOR.multiply(one).divide(amountOut);
     }
 
     @Override
@@ -267,6 +268,40 @@ public class CurveCombinationPool extends Pool {
     @Override
     protected ContractAbi loadAbi() {
         return tronContractTrigger.contractAt(Curve4Abi.class, getAddress());
+    }
+
+    public BigInteger getA(long timestamp) {
+        rlock.lock();
+        try {
+            if (timestamp < timeFutureA) {
+                if (futureA.subtract(initialA).compareTo(BigInteger.ZERO) > 0) {
+                    return initialA.add(futureA.subtract(initialA)
+                                               .multiply(BigInteger.valueOf(timestamp -
+                                                                            timeInitialA))
+                                               .divide(BigInteger.valueOf(timeFutureA -
+                                                                          timeInitialA)));
+                } else {
+                    return initialA.subtract(initialA.subtract(futureA)
+                                                     .multiply(BigInteger.valueOf(timestamp -
+                                                                                  timeInitialA))
+                                                     .divide(BigInteger.valueOf(timeFutureA -
+                                                                                timeInitialA)));
+                }
+            } else {
+                return futureA;
+            }
+        } finally {
+            rlock.unlock();
+        }
+    }
+
+    public List<BigInteger> getBalances() {
+        rlock.lock();
+        try {
+            return new ArrayList<>(balances);
+        } finally {
+            rlock.unlock();
+        }
     }
 
     private boolean diffA() {
@@ -375,33 +410,8 @@ public class CurveCombinationPool extends Pool {
         }
     }
 
-    private BigInteger getA(long timestamp) {
-        rlock.lock();
-        try {
-            if (timestamp < timeFutureA) {
-                if (futureA.subtract(initialA).compareTo(BigInteger.ZERO) > 0) {
-                    return initialA.add(futureA.subtract(initialA)
-                                               .multiply(BigInteger.valueOf(timestamp -
-                                                                            timeInitialA))
-                                               .divide(BigInteger.valueOf(timeFutureA -
-                                                                          timeInitialA)));
-                } else {
-                    return initialA.subtract(initialA.subtract(futureA)
-                                                     .multiply(BigInteger.valueOf(timestamp -
-                                                                                  timeInitialA))
-                                                     .divide(BigInteger.valueOf(timeFutureA -
-                                                                                timeInitialA)));
-                }
-            } else {
-                return futureA;
-            }
-        } finally {
-            rlock.unlock();
-        }
-    }
-
     private BigInteger getD(List<BigInteger> xp, BigInteger A) {
-        BigInteger S = new BigInteger("0");
+        BigInteger S = BigInteger.ZERO;
         for (BigInteger xi : xp) {
             S = S.add(xi);
         }
@@ -438,10 +448,12 @@ public class CurveCombinationPool extends Pool {
                                  int toTokenId,
                                  BigInteger amountIn,
                                  long timestamp) {
-        List<BigInteger> xp = getXP(getVirtualPrice(timestamp, false));
+        List<BigInteger> xp = getXP(getBalances(), getVirtualPrice(timestamp, false));
         BigInteger y = getY(fromTokenId,
                             toTokenId,
-                            amountIn.multiply(RATES.get(fromTokenId)).divide(PRECISION),
+                            amountIn.multiply(RATES.get(fromTokenId))
+                                    .divide(PRECISION)
+                                    .add(xp.get(fromTokenId)),
                             xp,
                             getA(timestamp));
         // dy = (y_pre - y - 1) * PRECISION / RATES[toTokenId]
@@ -455,7 +467,7 @@ public class CurveCombinationPool extends Pool {
         try {
             dy = dy.multiply(FEE_DENOMINATOR.subtract(fee)).divide(FEE_DENOMINATOR);
             if (balances.get(toTokenId).compareTo(dy) < 0) {
-                throw new RuntimeException("NOT ENOUGH BALANCE");
+                throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }
             return dy;
         } finally {
@@ -478,7 +490,7 @@ public class CurveCombinationPool extends Pool {
         int j = toTokenId == TOKEN_COIN_ID ? TOKEN_COIN_ID : LP_TOKEN_COIN_ID;
         assert i != j;
         BigInteger price = getVirtualPrice(timestamp, false);
-        List<BigInteger> xp = getXP(price);
+        List<BigInteger> xp = getXP(getBalances(), price);
         BigInteger x;
         if (i == LP_TOKEN_COIN_ID) {
             // base token to lp token first
@@ -494,7 +506,7 @@ public class CurveCombinationPool extends Pool {
                                   .divide(BigInteger.TWO.multiply(FEE_DENOMINATOR));
             x = xp.get(i).add(dxp.subtract(feeLp));
         } else {
-            x = amountIn.multiply(RATES.get(i)).divide(PRECISION);
+            x = amountIn.multiply(RATES.get(i)).divide(PRECISION).add(xp.get(i));
         }
         BigInteger y = getY(i, j, x, xp, getA(timestamp));
         // dy = y_pre - y - 1
@@ -514,8 +526,8 @@ public class CurveCombinationPool extends Pool {
         }
         rlock.lock();
         try {
-            if (balances.get(toTokenId).compareTo(amountOut) < 0) {
-                throw new RuntimeException("NOT ENOUGH BALANCE");
+            if (balances.get(j).compareTo(amountOut) < 0) {
+                throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }
             return amountOut;
         } finally {
@@ -567,19 +579,14 @@ public class CurveCombinationPool extends Pool {
         return price;
     }
 
-    private List<BigInteger> getXP(BigInteger price) {
-        rlock.lock();
-        try {
-            List<BigInteger> xp = new ArrayList<>(balances.size());
-            for (int i = 0; i < balances.size(); i++) {
-                xp.add(balances.get(i)
-                               .multiply(i != N_COINS - 1 ? RATES.get(i) : price)
-                               .divide(PRECISION));
-            }
-            return xp;
-        } finally {
-            rlock.unlock();
+    private List<BigInteger> getXP(List<BigInteger> balances, BigInteger price) {
+        List<BigInteger> xp = new ArrayList<>(balances.size());
+        for (int i = 0; i < balances.size(); i++) {
+            xp.add(balances.get(i)
+                           .multiply(i != N_COINS - 1 ? RATES.get(i) : price)
+                           .divide(PRECISION));
         }
+        return xp;
     }
 
     private BigInteger getY(int i, int j, BigInteger x, List<BigInteger> xp, BigInteger A) {
@@ -953,7 +960,7 @@ public class CurveCombinationPool extends Pool {
                                   .divide(PRECISION);
         // dy = xp[j] - y - 1
         BigInteger price = getVirtualPrice(eventTime / 1000, true);
-        List<BigInteger> xp = getXP(price);
+        List<BigInteger> xp = getXP(getBalances(), price);
         BigInteger y = xp.get(j).subtract(dy).subtract(BigInteger.ONE);
         // use y cal x
         BigInteger A = getA(eventTime / 1000);

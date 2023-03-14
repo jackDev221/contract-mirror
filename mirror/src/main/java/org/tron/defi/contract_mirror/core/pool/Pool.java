@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 public abstract class Pool extends SynchronizableContract {
     public static final int PRICE_DECIMALS = 18;
+    public static final BigInteger PRICE_FACTOR = BigInteger.valueOf(10).pow(PRICE_DECIMALS);
     protected final ReadWriteLock rwlock = new ReentrantReadWriteLock();
     protected final Lock rlock = rwlock.readLock();
     protected final Lock wlock = rwlock.writeLock();

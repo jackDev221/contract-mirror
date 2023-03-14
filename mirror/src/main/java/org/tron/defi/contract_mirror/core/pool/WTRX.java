@@ -65,7 +65,7 @@ public class WTRX extends Pool implements IToken, ITRC20 {
     public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
         BigInteger amountTo = amountIn;
         if (toToken.balanceOf(getAddress()).compareTo(amountTo) < 0) {
-            throw new RuntimeException("NOT ENOUGH BALANCE");
+            throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
         }
         return amountTo;
     }
@@ -77,7 +77,7 @@ public class WTRX extends Pool implements IToken, ITRC20 {
 
     @Override
     public BigInteger getPrice(IToken fromToken, IToken toToken) {
-        return BigInteger.valueOf(10).pow(PRICE_DECIMALS);
+        return PRICE_FACTOR;
     }
 
     @Override

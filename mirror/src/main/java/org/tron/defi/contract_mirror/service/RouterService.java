@@ -26,7 +26,7 @@ public class RouterService {
     private RouterConfig routerConfig;
 
     private static RouterPath calculateFee(RouterPath path) {
-        BigInteger fee = BigInteger.ZERO;
+        path.setFee(BigInteger.ZERO);
         BigInteger amountIn = path.getAmountIn();
         for (RouterPath.Step step : path.getSteps()) {
             Edge edge = step.getEdge();
@@ -34,7 +34,7 @@ public class RouterService {
                                      .getApproximateFee((IToken) edge.getFrom().getToken(),
                                                         (IToken) edge.getTo().getToken(),
                                                         amountIn);
-            fee = TokenMath.safeAdd(fee, poolFee);
+            path.setFee(TokenMath.safeAdd(path.getFee(), poolFee));
             amountIn = TokenMath.safeSubtract(amountIn, poolFee);
         }
         return path;
@@ -49,25 +49,23 @@ public class RouterService {
           $numerator = |actualPrice - price|$
           $denominator = |amountIn / amountOut|$
          */
-        final BigInteger priceDecimals = BigInteger.valueOf(10).pow(Pool.PRICE_DECIMALS);
-        BigInteger price = BigInteger.ONE.multiply(priceDecimals);
+        BigInteger price = Pool.PRICE_FACTOR;
         for (RouterPath.Step step : path.getSteps()) {
             Edge edge = step.getEdge();
             price = price.multiply(edge.getPool()
                                        .getPrice((IToken) edge.getFrom().getToken(),
                                                  (IToken) edge.getTo().getToken()))
-                         .divide(priceDecimals);
+                         .divide(Pool.PRICE_FACTOR);
         }
         BigInteger numerator = path.getAmountIn()
                                    .subtract(path.getFee())
-                                   .multiply(priceDecimals)
+                                   .multiply(Pool.PRICE_FACTOR)
                                    .divide(path.getAmountOut())
                                    .subtract(price)
                                    .abs();
-        BigInteger denominator = path.getAmountIn()
-                                     .multiply(priceDecimals)
+        BigInteger denominator = path.getAmountIn().multiply(Pool.PRICE_FACTOR)
                                      .divide(path.getAmountOut());
-        path.setImpact(numerator.negate().multiply(priceDecimals).divide(denominator));
+        path.setImpact(numerator.negate().multiply(Pool.PRICE_FACTOR).divide(denominator));
         return path;
     }
 

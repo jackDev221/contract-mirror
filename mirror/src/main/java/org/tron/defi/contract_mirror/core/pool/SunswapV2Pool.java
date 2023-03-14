@@ -84,9 +84,7 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
         BigInteger amountOut = amountInWithFee.multiply(balanceOut)
                                               .divide(balanceIn.multiply(FEE_DENOMINATOR)
                                                                .add(amountInWithFee));
-        if (balanceOut.compareTo(amountOut) < 0) {
-            throw new RuntimeException("NOT ENOUGH BALANCE");
-        }
+        // amountOut never reach balanceOut
         return amountOut;
     }
 
@@ -97,15 +95,10 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     public BigInteger getPrice(IToken fromToken, IToken toToken) {
-        fromToken = getTokenByAddress(((Contract) fromToken).getAddress());
-        toToken = getTokenByAddress(((Contract) toToken).getAddress());
-        if (null == fromToken || null == toToken) {
-            throw new IllegalArgumentException();
-        }
-        return BigInteger.valueOf(10)
-                         .pow(PRICE_DECIMALS)
-                         .multiply(fromToken.balanceOf(getAddress()))
-                         .divide(toToken.balanceOf(getAddress()));
+        int fromId = getTokenId(((Contract) fromToken).getAddress());
+        int toId = getTokenId(((Contract) toToken).getAddress());
+        List<BigInteger> reserves = getReserves();
+        return PRICE_FACTOR.multiply(reserves.get(fromId)).divide(reserves.get(toId));
     }
 
     @Override
@@ -126,6 +119,7 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
             log.info("{} balance {}", token0.getSymbol(), token0.balanceOf(getAddress()));
             log.info("{} balance {}", token1.getSymbol(), token1.balanceOf(getAddress()));
             log.info("updateTime {}", timestamp0);
+            lastEventTimestamp = timestamp0;
         } finally {
             wlock.unlock();
         }
@@ -200,6 +194,11 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
     public void setTronContractTrigger(TronContractTrigger tronContractTrigger) {
         super.setTronContractTrigger(tronContractTrigger);
         ((Contract) getLpToken()).setTronContractTrigger(tronContractTrigger);
+    }
+
+    public BigInteger getKLast() {
+        List<BigInteger> reserves = getReserves();
+        return reserves.get(0).multiply(reserves.get(1));
     }
 
     public List<BigInteger> getReserves() {

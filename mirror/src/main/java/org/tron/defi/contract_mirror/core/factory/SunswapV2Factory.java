@@ -155,6 +155,17 @@ public class SunswapV2Factory extends SynchronizableContract {
         return concurrentHashMap.getOrDefault(token1, null);
     }
 
+    public Pool getPairFromChain(String token0, String token1) {
+        List<Type> response = abi.invoke(SunswapV2FactoryAbi.Functions.GET_PAIR,
+                                         Arrays.asList(AddressConverter.TronBase58ToEthAddress(
+                                                           token0),
+                                                       AddressConverter.TronBase58ToEthAddress(
+                                                           token1)));
+        String pairAddress
+            = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
+        return getPairByAddress(pairAddress);
+    }
+
     public Pool getPairById(int id) {
         SunswapV2Pool pair = null;
         rlock.lock();

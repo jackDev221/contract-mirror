@@ -82,10 +82,8 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
         if (null == fromToken || null == toToken) {
             throw new IllegalArgumentException();
         }
-        return BigInteger.valueOf(10)
-                         .pow(PRICE_DECIMALS)
-                         .multiply(fromToken.balanceOf(getAddress()))
-                         .divide(toToken.balanceOf(getAddress()));
+        return PRICE_FACTOR.multiply(fromToken.balanceOf(getAddress()))
+                           .divide(toToken.balanceOf(getAddress()));
     }
 
     @Override
@@ -179,6 +177,17 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
         ((Contract) getLpToken()).setTronContractTrigger(tronContractTrigger);
     }
 
+    public BigInteger getKLast() {
+        IToken token0 = (IToken) getTokens().get(0);
+        IToken token1 = (IToken) getTokens().get(1);
+        rlock.lock();
+        try {
+            return token0.balanceOf(getAddress()).multiply(token1.balanceOf(getAddress()));
+        } finally {
+            rlock.unlock();
+        }
+    }
+
     private boolean diffBalances() {
         log.info("diffBalances {}", getAddress());
         IToken trx = (IToken) getTokens().get(0);
@@ -212,10 +221,8 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
         BigInteger amountOut = amountInWithFee.multiply(balanceOut)
                                               .divide(balanceIn.multiply(FEE_DENOMINATOR)
                                                                .add(amountInWithFee));
-        if (balanceOut.compareTo(amountOut) < 0) {
-            throw new RuntimeException("NOT ENOUGH BALANCE");
-        }
-        return balanceOut;
+        // amountOut never reach balanceOut
+        return amountOut;
     }
 
     private void handleSnapshotEvent(EventValues eventValues) {

@@ -22,18 +22,18 @@ public class RouterPath {
     private Set<Node> nodes = new HashSet<>();
     private int cost = 0;
 
-    public RouterPath(Node from, BigInteger amountIn, Node to) {
-        this.from = from;
-        this.amountIn = amountIn;
-        this.to = to;
-    }
-
     public RouterPath(RouterPath path) {
         from = path.getFrom();
         amountIn = path.getAmountIn();
         to = path.getTo();
-        steps = new ArrayList<>(steps);
+        steps = new ArrayList<>(path.getSteps());
         cost = path.getCost();
+    }
+
+    public RouterPath(Node from, BigInteger amountIn, Node to) {
+        this.from = from;
+        this.amountIn = amountIn;
+        this.to = to;
     }
 
     public void addStep(Edge edge) {
@@ -52,7 +52,10 @@ public class RouterPath {
     }
 
     public boolean isBackward(Edge edge) {
-        return nodes.contains(edge.getTo());
+        // It's not reasonable step to same pool of current step or an old node
+        Step currentStep = getCurrentStep();
+        return nodes.contains(edge.getTo()) ||
+               (null != currentStep && currentStep.getEdge().getPool().equals(edge.getPool()));
     }
 
     @Data

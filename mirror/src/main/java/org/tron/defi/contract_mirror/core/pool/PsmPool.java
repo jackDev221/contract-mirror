@@ -66,7 +66,7 @@ public class PsmPool extends Pool {
 
     @Override
     public BigInteger getPrice(IToken fromToken, IToken toToken) {
-        return BigInteger.valueOf(10).pow(PRICE_DECIMALS);
+        return PRICE_FACTOR;
     }
 
     @Override
@@ -154,11 +154,11 @@ public class PsmPool extends Pool {
             BigInteger fee = amountIn.multiply(info.getFeeToGem()).divide(FEE_DENOMINATOR);
             BigInteger amountOut = amountIn.subtract(fee).divide(gemToUsddDecimalFactor);
             if (info.getBalanceGem().compareTo(amountOut) < 0) {
-                throw new RuntimeException("NOT ENOUGH BALANCE");
+                throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }
             if (info.getEnableUsddToGemQuota() &&
                 info.getQuotaUsddToGem().compareTo(amountOut) < 0) {
-                throw new RuntimeException("NOT ENOUGH QUOTA");
+                throw new RuntimeException(getName() + " NOT ENOUGH QUOTA");
             }
             return amountOut;
         } finally {
@@ -308,13 +308,13 @@ public class PsmPool extends Pool {
             BigInteger fee = amountIn.multiply(info.getFeeToUsdd()).divide(FEE_DENOMINATOR);
             BigInteger amountOut = amountIn.subtract(fee);
             if (info.getBalanceUsdd().compareTo(amountOut) < 0) {
-                throw new RuntimeException("NOT ENOUGH BALANCE");
+                throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }
             if (TokenMath.safeAdd(info.getAmountGemToUsdd(), amountOut)
                          .compareTo(info.getQuotaGemToUsdd()) > 0 ||
                 TokenMath.safeAdd(info.getAmountTotalToUsdd(), amountOut)
                          .compareTo(info.getQuotaTotalToUsdd()) > 0) {
-                throw new RuntimeException("NOT ENOUGH QUOTA");
+                throw new RuntimeException(getName() + " NOT ENOUGH QUOTA");
             }
             return amountOut;
         } finally {
