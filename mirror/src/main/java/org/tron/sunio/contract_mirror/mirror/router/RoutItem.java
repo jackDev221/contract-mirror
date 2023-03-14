@@ -22,8 +22,8 @@ public class RoutItem {
     private BigInteger amountV;
     private String amount;
     private String fee;
-    private long cast;
-    private long paths;
+//    private long cast;
+//    private long paths;
 
     public static RoutItem getNullInstance() {
         // 对齐旧版的返回

@@ -95,8 +95,8 @@ public class RouterServer {
                     continue;
                 }
                 // test
-                routItem.setCast(cast);
-                routItem.setPaths(pathSize);
+//                routItem.setCast(cast);
+//                routItem.setPaths(pathSize);
                 res.add(routItem);
             }
             long t2 = System.currentTimeMillis();
