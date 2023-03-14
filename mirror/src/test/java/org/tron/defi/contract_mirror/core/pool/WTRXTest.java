@@ -41,10 +41,10 @@ public class WTRXTest {
                                                  amountIn);
         Assertions.assertEquals(expectOut, amountOut);
 
-        BigInteger maxOut = token1.balanceOf(wtrx.getAddress());
+        BigInteger maxOut = token0.balanceOf(wtrx.getAddress());
         Assertions.assertThrows(RuntimeException.class,
-                                () -> wtrx.getAmountOut(((Contract) token0).getAddress(),
-                                                        ((Contract) token1).getAddress(),
+                                () -> wtrx.getAmountOut(((Contract) token1).getAddress(),
+                                                        ((Contract) token0).getAddress(),
                                                         TokenMath.safeAdd(maxOut, BigInteger.ONE)),
                                 "NOT ENOUGH BALANCE");
     }

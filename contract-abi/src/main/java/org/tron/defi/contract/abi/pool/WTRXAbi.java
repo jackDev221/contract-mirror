@@ -13,26 +13,52 @@ public class WTRXAbi extends Contract {
 
     @Override
     public EventPrototype getEvent(String signature) {
-        // TODO: add events if needed
-        return null;
+        try {
+            return Events.getBySignature(signature).getPrototype();
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     @Override
     public FunctionPrototype getFunction(String signature) {
         try {
-            return WTRXAbi.Functions.getBySignature(signature).getPrototype();
+            return Functions.getBySignature(signature).getPrototype();
         } catch (NullPointerException e) {
             return null;
+        }
+    }
+
+    public enum Events implements IEvent {
+        DEPOSIT("Deposit", "address indexed,uint256"),
+        WITHDRAW("Withdrawal", "address indexed,uint256");
+        private static final Map<String, Events> signatureMap = new HashMap<>();
+
+        static {
+            for (Events value : values()) {
+                signatureMap.put(value.getPrototype().getSignature(), value);
+            }
+        }
+
+        @Getter
+        private final EventPrototype prototype;
+
+        Events(String name, String parameters) {
+            prototype = new EventPrototype(name, parameters);
+        }
+
+        public static Events getBySignature(String signature) {
+            return signatureMap.getOrDefault(signature, null);
         }
     }
 
     public enum Functions implements IFunction {
         DEPOSIT("deposit", "address,uint256", ""),
         WITHDRAW("withdraw", "address,uint256", "");
-        private static final Map<String, WTRXAbi.Functions> signatureMap = new HashMap<>();
+        private static final Map<String, Functions> signatureMap = new HashMap<>();
 
         static {
-            for (WTRXAbi.Functions value : values()) {
+            for (Functions value : values()) {
                 signatureMap.put(value.getPrototype().getRawSignature(), value);
             }
         }
@@ -44,7 +70,7 @@ public class WTRXAbi extends Contract {
             prototype = new FunctionPrototype(name, inputParams, outputParams);
         }
 
-        public static WTRXAbi.Functions getBySignature(String signature) {
+        public static Functions getBySignature(String signature) {
             return signatureMap.getOrDefault(signature, null);
         }
     }

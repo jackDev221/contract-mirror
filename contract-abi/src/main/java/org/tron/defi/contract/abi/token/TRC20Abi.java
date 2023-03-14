@@ -30,10 +30,12 @@ public class TRC20Abi extends Contract {
     }
 
     public enum Functions implements IFunction {
+        NAME("name", "", "string"),
         SYMBOL("symbol", "", "string"),
         DECIMALS("decimals", "", "uint256"),
         BALANCE_OF("balanceOf", "address", "uint256"),
-        TOTAL_SUPPLY("totalSupply", "", "uint256");
+        TOTAL_SUPPLY("totalSupply", "", "uint256"),
+        ALLOWANCE("allowance", "address,address", "uint256");
         private static final Map<String, Functions> signatureMap = new HashMap<>();
 
         static {

@@ -18,7 +18,6 @@ import org.tron.defi.contract_mirror.core.pool.Pool;
 import org.tron.defi.contract_mirror.dao.RouterPath;
 
 import java.math.BigInteger;
-import java.util.Collections;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)
@@ -54,10 +53,9 @@ public class RouterResultV2Test {
         path.setAmountOut(BigInteger.valueOf(1024069553242042612L));
         path.setFee(BigInteger.valueOf(11946));
         path.setImpact(BigInteger.valueOf(-1508454719732594L));
-        RouterPath.Step step = new RouterPath.Step();
-        step.setEdge(new Edge(nodeFrom, nodeTo, pool));
+        path.addStep(new Edge(nodeFrom, nodeTo, pool));
+        RouterPath.Step step = path.getCurrentStep();
         step.setAmountIn(path.getAmountIn());
         step.setAmountOut(path.getAmountOut());
-        path.setSteps(Collections.singletonList(step));
     }
 }
