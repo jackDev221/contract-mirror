@@ -101,6 +101,10 @@ public class PendingEventConsumer implements IEventConsumer {
 
         private void consume() {
             for (String address : pendingQueue.keySet()) {
+                // double check
+                if (!pendingQueue.containsKey(address)) {
+                    continue;
+                }
                 SynchronizableContract synchronizableContract
                     = (SynchronizableContract) contractManager.getContract(address);
                 if (!synchronizableContract.isEventAccept()) {

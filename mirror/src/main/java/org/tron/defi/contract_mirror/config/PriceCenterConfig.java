@@ -17,4 +17,12 @@ public class PriceCenterConfig {
     private String server;
     private String uri;
     private Map<String, String> params = new HashMap<>();
+    private CacheConfig cacheConfig;
+
+    @Data
+    public static class CacheConfig {
+        private int concurrencyLevel = 8;
+        private int maxCacheSize = 100000;
+        private long expireTime = 60;
+    }
 }

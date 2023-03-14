@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.tron.defi.contract_mirror.TestApplication;
+import org.tron.defi.contract_mirror.config.PriceCenterConfig;
 import org.tron.defi.contract_mirror.config.TokenConfigList;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.ContractManager;
@@ -27,12 +28,31 @@ public class PriceServiceTest {
     @Autowired
     private ContractManager contractManager;
     @Autowired
+    private PriceCenterConfig priceCenterConfig;
+    @Autowired
     private PriceService priceService;
     private IToken token;
 
     @Test
+    public void cacheExpireTest() {
+        String symbol = token.getSymbol();
+        Assertions.assertNull(priceService.getPriceFromCache(symbol));
+        BigDecimal price = priceService.getPrice(symbol);
+        Assertions.assertEquals(price, priceService.getPriceFromCache(symbol));
+        try {
+            Thread.sleep(priceCenterConfig.getCacheConfig().getExpireTime() * 1000 + 100);
+            Assertions.assertNull(priceService.getPriceFromCache(symbol));
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
     public void getPriceByAddressTest() {
-        BigDecimal price = priceService.getPrice(((Contract) token).getAddress());
+        String address = ((Contract) token).getAddress();
+        Assertions.assertNull(priceService.getPriceFromCache(address));
+        BigDecimal price = priceService.getPrice(address);
+        Assertions.assertEquals(price, priceService.getPriceFromCache(address));
         log.info(price.toString());
         BigDecimal diffPercentage = price.subtract(BigDecimal.ONE)
                                          .abs()
@@ -44,7 +64,10 @@ public class PriceServiceTest {
 
     @Test
     public void getPriceBySymbolTest() {
-        BigDecimal price = priceService.getPrice(token.getSymbol());
+        String symbol = token.getSymbol();
+        Assertions.assertNull(priceService.getPriceFromCache(symbol));
+        BigDecimal price = priceService.getPrice(symbol);
+        Assertions.assertEquals(price, priceService.getPriceFromCache(symbol));
         log.info(price.toString());
         BigDecimal diffPercentage = price.subtract(BigDecimal.ONE)
                                          .abs()

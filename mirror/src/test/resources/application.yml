@@ -12,6 +12,10 @@ price-center:
   uri: /v1/cryptocurrency/getprice
   params:
     convert: USD
+  cacheConfig:
+    concurrencyLevel: 1
+    maxCacheSize: 10
+    expireTime: 10
 
 #tron
 tron:
