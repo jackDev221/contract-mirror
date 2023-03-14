@@ -53,7 +53,8 @@ public class RouterResultV2 {
 
     private static String amountToString(BigInteger amount, int decimal) {
         return new BigDecimal(amount.toString()).divide(BigDecimal.valueOf(10).pow(decimal),
-                                                        RoundingMode.FLOOR).toString();
+                                                        18,
+                                                        RoundingMode.HALF_UP).toString();
     }
 
     private static String getPoolVersion(Pool pool) {

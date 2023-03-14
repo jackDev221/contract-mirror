@@ -61,7 +61,8 @@ public class RouterController {
                 IToken inToken = (IToken) paths.get(0).getFrom().getToken();
                 inUsd = new BigDecimal(amount).divide(BigDecimal.valueOf(10)
                                                                 .pow(inToken.getDecimals()),
-                                                      RoundingMode.FLOOR).multiply(inUsdPrice);
+                                                      18,
+                                                      RoundingMode.HALF_UP).multiply(inUsdPrice);
             }
             for (int i = 0; i < paths.size(); i++) {
                 RouterPath path = paths.get(i);
