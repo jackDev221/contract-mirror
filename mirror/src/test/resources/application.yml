@@ -92,12 +92,12 @@ router:
   maxCost: 3
   topN: 3
   tokenWhiteList:
-    - 9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
+    - T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
     - TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR
     - TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S
     - TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
     - TMwFHYXLJaRUPeW6421aqXL4ZEzPRFGkGT
-    - TUpMhErZL2fhh4sVNULAbNKLokS4GjC1F4,
+    - TUpMhErZL2fhh4sVNULAbNKLokS4GjC1F4
     - TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn
     - TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8
     - TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S
