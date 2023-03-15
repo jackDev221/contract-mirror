@@ -1,5 +1,6 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
+import lombok.Setter;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
@@ -12,31 +13,14 @@ import java.util.Map;
 public abstract class AbstractCurve extends BaseContract {
     protected String poolName;
 
-    protected BigInteger preVirtualPrice;
-
+    @Setter
     protected String currentTx;
-
-    protected void updatePreVirtualPriceInfo(String uniqueId, long timestamp, IContractsHelper iContractsHelper) throws Exception {
-        if (Strings.isEmpty(uniqueId)) {
-            return;
-        }
-        String txId = uniqueId.split("_")[0];
-        BigInteger prePrice = this.getVirtualPrice(uniqueId, timestamp, iContractsHelper);
-        this.preVirtualPrice = prePrice;
-        this.currentTx = txId;
-    }
+    @Setter
+    protected String currentIndex;
 
     public AbstractCurve(String address, ContractType type, IChainHelper iChainHelper,
                          IContractsHelper iContractsHelper, Map<String, String> sigMap) {
         super(address, type, iChainHelper, iContractsHelper, sigMap);
-    }
-
-    protected boolean isInSameTx(String uniqueId) {
-        if (Strings.isEmpty(uniqueId) || Strings.isEmpty(currentTx)) {
-            return false;
-        }
-        String[] ids = uniqueId.split("_");
-        return ids[0].equals(currentTx);
     }
 
     public abstract String coins(int i);

@@ -227,7 +227,7 @@ public class RouterServer {
     private SwapResult stableSwapPoolSwap(String fromAddress, String toAddress, SwapResult swapResult, BaseContract baseContract, PathCacheContract pathCacheContract) {
         try {
             BaseStableSwapPool baseStableSwapPool = (BaseStableSwapPool) baseContract;
-            StableSwapPoolData data = baseStableSwapPool.getCurveBasePoolData();
+            StableSwapPoolData data = baseStableSwapPool.getVarStableSwapBasePoolData();
 //            AbstractCurve curve = baseStableSwapPool.copySelf();
             int i = data.getTokenIndex(fromAddress);
             int j = data.getTokenIndex(toAddress);
@@ -317,7 +317,7 @@ public class RouterServer {
                 BigInteger dx = BigInteger.TEN.pow(dxDecimals);
                 BigInteger dy = curve.getDy(CALL_FOR_ROUTER, indexes[0], indexes[1], dx, System.currentTimeMillis() / 1000, pathCacheContract);
                 swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 18, RoundingMode.UP));
-                swapResult.amount = curve.exchange(indexes[0], indexes[1], swapResult.amount, BigInteger.ZERO, System.currentTimeMillis() / 1000, data);
+                swapResult.amount = curve.exchange(CALL_FOR_ROUTER, indexes[0], indexes[1], swapResult.amount, BigInteger.ZERO, System.currentTimeMillis() / 1000, data);
 
             }
         } catch (Exception e) {
