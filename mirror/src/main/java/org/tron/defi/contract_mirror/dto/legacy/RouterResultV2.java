@@ -53,7 +53,7 @@ public class RouterResultV2 {
 
     private static String amountToString(BigInteger amount, int decimal) {
         return new BigDecimal(amount.toString()).divide(BigDecimal.valueOf(10).pow(decimal),
-                                                        18,
+                                                        decimal,
                                                         RoundingMode.HALF_UP).toString();
     }
 

@@ -36,7 +36,7 @@ public class RouterController {
                              @RequestParam(name = "inAmount", required = true) String amount,
                              @RequestParam(name = "fromDecimal", required = true) int fromDecimal,
                              @RequestParam(name = "toDecimal", required = true) int toDecimal) {
-        log.debug("Request fromToken={} toToken={} fromTokenAddr={} toTokenAddr={} inAmount={} " +
+        log.trace("Request fromToken={} toToken={} fromTokenAddr={} toTokenAddr={} inAmount={} " +
                   "fromDecimal={} toDecimal={}",
                   fromToken,
                   toToken,
@@ -61,7 +61,7 @@ public class RouterController {
                 IToken inToken = (IToken) paths.get(0).getFrom().getToken();
                 inUsd = new BigDecimal(amount).divide(BigDecimal.valueOf(10)
                                                                 .pow(inToken.getDecimals()),
-                                                      18,
+                                                      inToken.getDecimals(),
                                                       RoundingMode.HALF_UP).multiply(inUsdPrice);
             }
             for (int i = 0; i < paths.size(); i++) {
@@ -75,7 +75,7 @@ public class RouterController {
             response.setCode(Response.Code.SUCCESS);
             response.setData(resultV2s);
             long time3 = System.currentTimeMillis();
-            log.debug("Response {}, timePrice {}ms, timePath {}ms, timeResponse {}ms",
+            log.trace("{}, timePrice {}ms, timePath {}ms, timeResponse {}ms",
                       response,
                       time1 - time0,
                       time2 - time1,

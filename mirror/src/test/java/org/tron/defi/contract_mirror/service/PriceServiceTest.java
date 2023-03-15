@@ -13,6 +13,7 @@ import org.tron.defi.contract_mirror.config.PriceCenterConfig;
 import org.tron.defi.contract_mirror.config.TokenConfigList;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.ContractManager;
+import org.tron.defi.contract_mirror.core.pool.Pool;
 import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRC20;
 
@@ -56,7 +57,7 @@ public class PriceServiceTest {
         log.info(price.toString());
         BigDecimal diffPercentage = price.subtract(BigDecimal.ONE)
                                          .abs()
-                                         .divide(price, RoundingMode.FLOOR)
+                                         .divide(price, Pool.PRICE_DECIMALS, RoundingMode.FLOOR)
                                          .multiply(BigDecimal.valueOf(100));
         log.info(diffPercentage.toString());
         Assertions.assertTrue(diffPercentage.compareTo(BigDecimal.ONE) <= 1);
