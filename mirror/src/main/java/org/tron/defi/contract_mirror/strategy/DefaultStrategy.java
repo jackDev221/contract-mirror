@@ -43,11 +43,9 @@ public class DefaultStrategy implements IStrategy {
                             : currentStep.getEdge().getTo();
                 for (Edge edge : node.getOutEdges()) {
                     boolean found = edge.getTo().isEqual(currentPath.getTo());
-                    if (!found &&
-                        (!checkWhiteBlackList(edge) ||
-                         currentPath.isBackward(edge) ||
-                         edge.getPool().cost() + currentPath.getCost() >
-                         routerConfig.getMaxCost())) {
+                    if (edge.getPool().cost() + currentPath.getCost() > routerConfig.getMaxCost() ||
+                        currentPath.isBackward(edge) ||
+                        (!found && !checkWhiteBlackList(edge))) {
                         continue;
                     }
                     RouterPath path = new RouterPath(currentPath);
