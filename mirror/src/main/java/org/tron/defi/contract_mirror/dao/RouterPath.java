@@ -5,10 +5,7 @@ import org.tron.defi.contract_mirror.core.graph.Edge;
 import org.tron.defi.contract_mirror.core.graph.Node;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Data
 public class RouterPath {
@@ -36,7 +33,7 @@ public class RouterPath {
         this.amountIn = amountIn;
         this.to = to;
         steps = new ArrayList<>();
-        nodes = new HashSet<>();
+        nodes = new HashSet<>(Collections.singleton(from));
     }
 
     public void addStep(Edge edge) {
