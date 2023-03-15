@@ -13,9 +13,11 @@ import org.tron.defi.contract_mirror.config.ContractConfigList;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.ContractManager;
 import org.tron.defi.contract_mirror.core.token.IToken;
+import org.tron.defi.contract_mirror.utils.FieldUtil;
 import org.tron.defi.contract_mirror.utils.MethodUtil;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.tron.defi.contract_mirror.core.ContractType.CURVE_3POOL;
@@ -31,19 +33,6 @@ public class CurveCombinationPoolTest {
     private ContractManager contractManager;
     private ContractConfigList.ContractConfig config;
     private CurveCombinationPool pool;
-
-    private static BigInteger getD(CurveCombinationPool pool, List<BigInteger> xp, BigInteger A) {
-        try {
-            return (BigInteger) MethodUtil.getNonAccessibleMethod(CurveCombinationPool.class,
-                                                                  "getD",
-                                                                  List.class,
-                                                                  BigInteger.class)
-                                          .invoke(pool, xp, A);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     private static BigInteger getDeltaY(CurveCombinationPool pool,
                                         int i,
@@ -89,58 +78,34 @@ public class CurveCombinationPoolTest {
         }
     }
 
-    private static BigInteger getVirtualPrice(CurveCombinationPool pool) {
-        try {
-            return (BigInteger) MethodUtil.getNonAccessibleMethod(CurveCombinationPool.class,
-                                                                  "getVirtualPrice",
-                                                                  long.class,
-                                                                  boolean.class)
-                                          .invoke(pool, System.currentTimeMillis() / 1000, false);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private static List<BigInteger> getXP(CurveCombinationPool pool,
-                                          List<BigInteger> balances,
-                                          BigInteger price) {
-        try {
-            return (List<BigInteger>) MethodUtil.getNonAccessibleMethod(CurveCombinationPool.class,
-                                                                        "getXP",
-                                                                        List.class,
-                                                                        BigInteger.class)
-                                                .invoke(pool, balances, price);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
     @Test
-    public void getAmountOutTest() {
+    public void getAmountOutTest() throws IllegalAccessException {
         Assertions.assertDoesNotThrow(() -> pool.init());
+        // mock fee
+        FieldUtil.set(pool, "fee", new BigInteger("4000000"));
+        FieldUtil.set(pool, "adminFee", new BigInteger("5000000000"));
+        // mock A
+        FieldUtil.set(pool, "initialA", new BigInteger("10000"));
+        FieldUtil.set(pool, "futureA", new BigInteger("10000"));
+        FieldUtil.set(pool, "timeInitialA", 0L);
+        FieldUtil.set(pool, "timeFutureA", 0L);
+        // mock base virtual price
+        FieldUtil.set(pool, "virtualPrice", new BigInteger("1010341973595175236"));
+        FieldUtil.set(pool, "timeUpdateVirtualPrice", System.currentTimeMillis() / 1000);
+        // mock balances
+        List<BigInteger> balances = Arrays.asList(new BigInteger("762224222984"),
+                                                  new BigInteger("259724552463956158569454"));
+        FieldUtil.set(pool, "balances", balances);
+
         IToken token0 = (IToken) pool.getTokens().get(0);
         IToken token1 = (IToken) pool.getUnderlyingPool().getLpToken();
-        List<BigInteger> balances = pool.getBalances();
-        BigInteger virtualPrice = getVirtualPrice(pool);
-        BigInteger A = pool.getA(System.currentTimeMillis() / 1000);
-        BigInteger D0 = getD(pool, getXP(pool, balances, virtualPrice), A);
         BigInteger amountIn = BigInteger.valueOf(10).pow(token0.getDecimals());
+        BigInteger expectOut = new BigInteger("973235011826209399");
         BigInteger amountOut = pool.getAmountOut(((Contract) token0).getAddress(),
                                                  ((Contract) token1).getAddress(),
                                                  amountIn);
         log.info("{} {} -> {} {}", amountIn, token0.getSymbol(), amountOut, token1.getSymbol());
-
-        balances.set(0, balances.get(0).add(amountIn));
-        balances.set(1, balances.get(1).subtract(amountOut));
-        BigInteger D1 = getD(pool, getXP(pool, balances, virtualPrice), A);
-        log.info("D {} -> {}", D0, D1);
-
-        BigInteger precision = BigInteger.valueOf(10)
-                                         .pow(Math.min(token0.getDecimals(), token1.getDecimals()));
-        BigInteger diffRate = D1.subtract(D0).abs().multiply(precision).divide(D0);
-        Assertions.assertEquals(0, diffRate.intValue());
+        Assertions.assertEquals(expectOut, amountOut);
     }
 
     @Test
@@ -157,6 +122,51 @@ public class CurveCombinationPoolTest {
                                                  ((Contract) token1).getAddress(),
                                                  amountIn);
         log.info("{} {} -> {} {}", amountIn, token0.getSymbol(), amountOut, token1.getSymbol());
+        Assertions.assertEquals(expectOut, amountOut);
+    }
+
+    @Test
+    public void getAmountOutUnderlyingWithToken0Test() throws IllegalAccessException {
+        Assertions.assertDoesNotThrow(() -> pool.init());
+        // mock fee
+        FieldUtil.set(pool, "fee", new BigInteger("4000000"));
+        FieldUtil.set(pool, "adminFee", new BigInteger("5000000000"));
+        // mock A
+        FieldUtil.set(pool, "initialA", new BigInteger("10000"));
+        FieldUtil.set(pool, "futureA", new BigInteger("10000"));
+        FieldUtil.set(pool, "timeInitialA", 0L);
+        FieldUtil.set(pool, "timeFutureA", 0L);
+        // mock base virtual price
+        FieldUtil.set(pool, "virtualPrice", new BigInteger("1010362674886673624"));
+        FieldUtil.set(pool, "timeUpdateVirtualPrice", System.currentTimeMillis() / 1000);
+        // mock balances
+        List<BigInteger> balances = Arrays.asList(new BigInteger("762224222984"),
+                                                  new BigInteger("259724552463956158569454"));
+        FieldUtil.set(pool, "balances", balances);
+        // mock underlying pool
+        balances = Arrays.asList(new BigInteger("213980610348072217030877"),
+                                 new BigInteger("1766750074472595543943163"),
+                                 new BigInteger("1411460447587"));
+        FieldUtil.set(pool.getUnderlyingPool(), "balances", balances);
+        pool.getUnderlyingPool()
+            .getLpToken()
+            .setTotalSupply(new BigInteger("3338872032932939434862503"));
+
+        IToken token0 = (IToken) pool.getTokens().get(0);
+        IToken token1 = (IToken) pool.getTokens().get(1);
+
+        BigInteger amountIn = BigInteger.valueOf(10).pow(token0.getDecimals());
+        BigInteger expectOut = new BigInteger("890040532631141956");
+        BigInteger amountOut = pool.getAmountOut(((Contract) token0).getAddress(),
+                                                 ((Contract) token1).getAddress(),
+                                                 amountIn);
+        Assertions.assertEquals(expectOut, amountOut);
+
+        amountIn = BigInteger.valueOf(10).pow(token1.getDecimals());
+        expectOut = new BigInteger("1122106");
+        amountOut = pool.getAmountOut(((Contract) token1).getAddress(),
+                                      ((Contract) token0).getAddress(),
+                                      amountIn);
         Assertions.assertEquals(expectOut, amountOut);
     }
 

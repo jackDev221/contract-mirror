@@ -232,7 +232,9 @@ public class CurveCombinationPool extends Pool {
                 balances.set(i, ((Uint256) response.get(0)).getValue());
                 log.info("balance{} = {}", i, balances.get(i));
 
-                IToken token = (IToken) getTokens().get(i);
+                IToken token = i == LP_TOKEN_COIN_ID
+                               ? (IToken) getUnderlyingPool().getLpToken()
+                               : (IToken) getTokens().get(i);
                 token.setBalance(getAddress(), token.balanceOfFromChain(getAddress()));
                 log.info("{} balance {}", token.getSymbol(), token.balanceOf(getAddress()));
             }
@@ -448,24 +450,26 @@ public class CurveCombinationPool extends Pool {
                                  int toTokenId,
                                  BigInteger amountIn,
                                  long timestamp) {
-        List<BigInteger> xp = getXP(getBalances(), getVirtualPrice(timestamp, false));
-        BigInteger y = getY(fromTokenId,
-                            toTokenId,
-                            amountIn.multiply(RATES.get(fromTokenId))
-                                    .divide(PRECISION)
-                                    .add(xp.get(fromTokenId)),
-                            xp,
-                            getA(timestamp));
+        BigInteger price = getVirtualPrice(timestamp, false);
+        List<BigInteger> xp = getXP(getBalances(), price);
+        // x = x_pre + dx * RATES[fromTokenId] / PRECISION
+        BigInteger x = amountIn.multiply(LP_TOKEN_COIN_ID == fromTokenId
+                                         ? price
+                                         : RATES.get(fromTokenId))
+                               .divide(PRECISION)
+                               .add(xp.get(fromTokenId));
+        BigInteger y = getY(fromTokenId, toTokenId, x, xp, getA(timestamp));
         // dy = (y_pre - y - 1) * PRECISION / RATES[toTokenId]
         BigInteger dy = TokenMath.safeSubtract(xp.get(toTokenId), y)
                                  .subtract(BigInteger.ONE)
                                  .multiply(PRECISION)
-                                 .divide(RATES.get(toTokenId));
+                                 .divide(LP_TOKEN_COIN_ID == toTokenId
+                                         ? price
+                                         : RATES.get(toTokenId));
         // dy = dy - dy * fee / FEE_DENOMINATOR
-        // dy = dy * (FEE_DENOMINATOR - fee) / FEE_DENOMINATOR
         rlock.lock();
         try {
-            dy = dy.multiply(FEE_DENOMINATOR.subtract(fee)).divide(FEE_DENOMINATOR);
+            dy = dy.subtract(dy.multiply(fee).divide(FEE_DENOMINATOR));
             if (balances.get(toTokenId).compareTo(dy) < 0) {
                 throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }
@@ -499,8 +503,7 @@ public class CurveCombinationPool extends Pool {
                 baseInputs.add(k == fromTokenId ? amountIn : BigInteger.ZERO);
             }
             BigInteger dxp = underlyingPool.calcTokenAmount(baseInputs, true, timestamp)
-                                           .multiply(price)
-                                           .divide(PRECISION);
+                                           .multiply(price).divide(PRECISION);
             // approximate fee = dx * fee() / (2 * FEE_DENOMINATOR)
             BigInteger feeLp = dxp.multiply(underlyingPool.getFee())
                                   .divide(BigInteger.TWO.multiply(FEE_DENOMINATOR));
@@ -510,11 +513,9 @@ public class CurveCombinationPool extends Pool {
         }
         BigInteger y = getY(i, j, x, xp, getA(timestamp));
         // dy = y_pre - y - 1
-        // dy = dy * (1 - fee / FEE_DENOMINATOR)
-        BigInteger dy = TokenMath.safeSubtract(xp.get(j), y)
-                                 .subtract(BigInteger.ONE)
-                                 .multiply(FEE_DENOMINATOR.subtract(getFee()))
-                                 .divide(FEE_DENOMINATOR);
+        BigInteger dy = TokenMath.safeSubtract(xp.get(j), y).subtract(BigInteger.ONE);
+        // dy = dy - dy * fee / FEE_DENOMINATOR)
+        dy = dy.subtract(dy.multiply(fee).divide(FEE_DENOMINATOR));
 
         BigInteger amountOut;
         if (j == LP_TOKEN_COIN_ID) {
@@ -522,11 +523,11 @@ public class CurveCombinationPool extends Pool {
                                                            toTokenId - LP_TOKEN_COIN_ID,
                                                            timestamp);
         } else {
-            amountOut = dy.multiply(PRECISION).divide(RATES.get(i));
+            amountOut = dy.multiply(PRECISION).divide(RATES.get(j));
         }
         rlock.lock();
         try {
-            if (balances.get(j).compareTo(amountOut) < 0) {
+            if (toTokenId == 0 && balances.get(toTokenId).compareTo(amountOut) < 0) {
                 throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }
             return amountOut;
@@ -583,7 +584,7 @@ public class CurveCombinationPool extends Pool {
         List<BigInteger> xp = new ArrayList<>(balances.size());
         for (int i = 0; i < balances.size(); i++) {
             xp.add(balances.get(i)
-                           .multiply(i != N_COINS - 1 ? RATES.get(i) : price)
+                           .multiply(i == LP_TOKEN_COIN_ID ? price : RATES.get(i))
                            .divide(PRECISION));
         }
         return xp;

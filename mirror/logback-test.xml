@@ -47,6 +47,7 @@
 
   <root level="INFO">
     <appender-ref ref="ASYNC"/>
+    <appender-ref ref="STDOUT"/>
   </root>
 
   <logger name="ServerApi" level="ERROR"/>

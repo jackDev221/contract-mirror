@@ -72,6 +72,7 @@ public class DefaultStrategy implements IStrategy {
             }
             step.setAmountOut(BigInteger.ZERO);
         }
+        log.info("CUT BRANCH {} AT {}", getLogPath(pathToCut), pos);
     }
 
     private static String getLogPath(RouterPath path) {
@@ -89,8 +90,8 @@ public class DefaultStrategy implements IStrategy {
         if (candidates.isEmpty()) {
             return candidates;
         }
-        PriorityQueue<RouterPath> paths = new PriorityQueue<>(topN,
-                                                              Comparator.comparing(RouterPath::getAmountOut));
+        PriorityQueue<RouterPath> minHeap = new PriorityQueue<>(topN,
+                                                                Comparator.comparing(RouterPath::getAmountOut));
         Map<Node, Pair<Integer, RouterPath>> bestPaths = new HashMap<>();
         bestPaths.put(candidates.get(0).getFrom(), Pair.of(0, candidates.get(0)));
         for (int i = 0; i < maxStep; i++) {
@@ -117,16 +118,16 @@ public class DefaultStrategy implements IStrategy {
                                                   edge.getTo().getToken().getAddress(),
                                                   step.getAmountIn());
                 } catch (RuntimeException e) {
-                    log.debug("{} CUT {}", e.getMessage(), getLogPath(candidate));
+                    log.debug("ERROR: {}", e.getMessage());
                     cutPathAt(candidate, i);
                     continue;
                 }
                 if (i == steps.size() - 1) {
                     candidate.setAmountOut(amountOut);
-                    paths.offer(candidate);
-                    log.debug("CANDIDATE {} {}", amountOut, getLogPath(candidate));
-                    if (paths.size() > topN) {
-                        candidate = paths.poll();
+                    minHeap.offer(candidate);
+                    log.debug("NEW CANDIDATE {} {}", amountOut, getLogPath(candidate));
+                    if (minHeap.size() > topN) {
+                        candidate = minHeap.poll();
                         log.debug("OBSOLETE CANDIDATE {} {}",
                                   candidate.getAmountOut(),
                                   getLogPath(candidate));
@@ -146,16 +147,23 @@ public class DefaultStrategy implements IStrategy {
                     if (null != bestInfo && bestInfo.getFirst() >= i) {
                         // cut branch
                         cutPathAt(bestInfo.getSecond(), bestInfo.getFirst());
-                        log.debug("CUT {}", getLogPath(bestInfo.getSecond()));
                     }
                 } else {
                     // cut branch
-                    log.debug("CUT {}", getLogPath(candidate));
                     cutPathAt(candidate, i);
                 }
             }
         }
-        return new ArrayList<>(paths);
+        // to get result in order
+        int n = minHeap.size();
+        if (0 == n) {
+            return Collections.emptyList();
+        }
+        RouterPath[] path = new RouterPath[n];
+        while (n-- > 0) {
+            path[n] = minHeap.poll();
+        }
+        return List.of(path);
     }
 
     private boolean checkWhiteBlackList(Edge edge) {

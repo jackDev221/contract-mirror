@@ -1,5 +1,6 @@
 package org.tron.defi.contract_mirror.service;
 
+import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,6 +68,7 @@ public class RouterServiceTest {
                                       Collections.emptySet());
         time1 = System.currentTimeMillis();
         log.info("Time elapse {} ms, paths size {}", time1 - time0, paths.size());
+        log.info(JSONObject.toJSONString(paths));
     }
 
     @BeforeEach

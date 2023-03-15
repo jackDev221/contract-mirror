@@ -246,8 +246,9 @@ public class CurvePool extends Pool {
     public BigInteger calcWithdrawOneCoin(BigInteger amountIn, int tokenId, long timestamp) {
         // feeRate = (fee * N) / ((N- 1) * 4);
         BigInteger N = BigInteger.valueOf(getN());
-        BigInteger feeRate = fee.multiply(N)
-                                .divide(N.subtract(BigInteger.ONE).multiply(BigInteger.valueOf(4)));
+        final BigInteger feeRate = fee.multiply(N)
+                                      .divide(N.subtract(BigInteger.ONE)
+                                               .multiply(BigInteger.valueOf(4)));
         BigInteger A = getA(timestamp);
         List<BigInteger> xp;
         BigInteger D0;
@@ -258,7 +259,8 @@ public class CurvePool extends Pool {
             D0 = getD(xp, A);
             // D1 = (totalSupply - amountIn) / totalSupply * D0
             BigInteger totalSupply = getLpToken().totalSupply();
-            D1 = totalSupply.subtract(amountIn).multiply(D0).divide(totalSupply);
+            // D1 = D0 - D0 * amountIn / totalSupply
+            D1 = D0.subtract(D0.multiply(amountIn).divide(totalSupply));
         } finally {
             rlock.unlock();
         }
@@ -270,8 +272,8 @@ public class CurvePool extends Pool {
             // dx = xp_j - xp_j * D1 / D0
             // dx = xp_j * D1 / D0 - y
             BigInteger dx = j != tokenId
-                            ? xp.get(j).multiply(D0.subtract(D1)).divide(D0)
-                            : xp.get(j).multiply(D1.divide(D0)).subtract(y);
+                            ? xp.get(j).subtract(xp.get(j).multiply(D1).divide(D0))
+                            : xp.get(j).multiply(D1).divide(D0).subtract(y);
             // xp_j = xp_j - dx * feeRate / FEE_DENOMINATOR
             xp.set(j, xp.get(j).subtract(dx.multiply(feeRate).divide(FEE_DENOMINATOR)));
         }
@@ -497,8 +499,7 @@ public class CurvePool extends Pool {
                                      .multiply(PRECISION)
                                      .divide(RATES.get(toTokenId));
             // dy = dy - dy * fee / FEE_DENOMINATOR
-            // dy = dy * (FEE_DENOMINATOR - fee) / FEE_DENOMINATOR
-            dy = dy.multiply(FEE_DENOMINATOR.subtract(fee)).divide(FEE_DENOMINATOR);
+            dy = dy.subtract(dy.multiply(fee).divide(FEE_DENOMINATOR));
             if (balances.get(toTokenId).compareTo(dy) < 0) {
                 throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }

@@ -16,12 +16,14 @@ import org.tron.defi.contract_mirror.core.ContractManager;
 import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.dao.BlockInfo;
 import org.tron.defi.contract_mirror.dao.KafkaMessage;
+import org.tron.defi.contract_mirror.utils.FieldUtil;
 import org.tron.defi.contract_mirror.utils.MethodUtil;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 
-import static org.tron.defi.contract_mirror.core.ContractType.CURVE_2POOL;
+import static org.tron.defi.contract_mirror.core.ContractType.CURVE_3POOL;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)
@@ -79,28 +81,28 @@ public class CurvePoolTest {
     }
 
     @Test
-    public void getAmountTest() {
+    public void calcWithdrawOneCoinTest() throws IllegalAccessException {
         Assertions.assertDoesNotThrow(() -> pool.init());
-        IToken token0 = (IToken) pool.getTokens().get(0);
-        IToken token1 = (IToken) pool.getTokens().get(1);
-        List<BigInteger> balances = pool.getBalances();
-        BigInteger A = pool.getA(System.currentTimeMillis() / 1000);
-        BigInteger D0 = getD(pool, getXP(pool, balances), A);
-        BigInteger amountIn = BigInteger.valueOf(10).pow(token0.getDecimals());
-        BigInteger amountOut = pool.getAmountOut(((Contract) token0).getAddress(),
-                                                 ((Contract) token1).getAddress(),
-                                                 amountIn);
-        log.info("{} {} -> {} {}", amountIn, token0.getSymbol(), amountOut, token1.getSymbol());
-
-        balances.set(0, balances.get(0).add(amountIn));
-        balances.set(1, balances.get(1).subtract(amountOut));
-        BigInteger D1 = getD(pool, getXP(pool, balances), A);
-        log.info("D {} -> {}", D0, D1);
-
-        BigInteger precision = BigInteger.valueOf(10)
-                                         .pow(Math.min(token0.getDecimals(), token1.getDecimals()));
-        BigInteger diffRate = D1.subtract(D0).abs().multiply(precision).divide(D0);
-        Assertions.assertEquals(0, diffRate.intValue());
+        // mock fee
+        FieldUtil.set(pool, "fee", new BigInteger("4000000"));
+        FieldUtil.set(pool, "adminFee", new BigInteger("5000000000"));
+        // mock A
+        FieldUtil.set(pool, "initialA", new BigInteger("100"));
+        FieldUtil.set(pool, "futureA", new BigInteger("100"));
+        FieldUtil.set(pool, "timeInitialA", 0L);
+        FieldUtil.set(pool, "timeFutureA", 0L);
+        // mock balances
+        List<BigInteger> balances = Arrays.asList(new BigInteger("213980610348072217030877"),
+                                                  new BigInteger("1813871592775292307512216"),
+                                                  new BigInteger("1364554176737"));
+        FieldUtil.set(pool, "balances", balances);
+        pool.getLpToken().setTotalSupply(new BigInteger("3338872032932939434862503"));
+        BigInteger amountIn = new BigInteger("973235011826209399");
+        BigInteger expectOut = new BigInteger("889466862886478962");
+        BigInteger amountOut = pool.calcWithdrawOneCoin(amountIn,
+                                                        0,
+                                                        System.currentTimeMillis() / 1000);
+        Assertions.assertEquals(expectOut, amountOut);
     }
 
     @Test
@@ -127,6 +129,34 @@ public class CurvePoolTest {
 
         BigInteger expectPrice = Pool.PRICE_FACTOR.multiply(one).divide(getDeltaY(pool, 0, 1, one));
         Assertions.assertEquals(expectPrice, pool.getPrice(token0, token1));
+    }
+
+    @Test
+    public void getAmountTest() throws IllegalAccessException {
+        Assertions.assertDoesNotThrow(() -> pool.init());
+        // mock fee
+        FieldUtil.set(pool, "fee", new BigInteger("4000000"));
+        FieldUtil.set(pool, "adminFee", new BigInteger("5000000000"));
+        // mock A
+        FieldUtil.set(pool, "initialA", new BigInteger("100"));
+        FieldUtil.set(pool, "futureA", new BigInteger("100"));
+        FieldUtil.set(pool, "timeInitialA", 0L);
+        FieldUtil.set(pool, "timeFutureA", 0L);
+        // mock balances
+        List<BigInteger> balances = Arrays.asList(new BigInteger("213980610348072217030877"),
+                                                  new BigInteger("1766750074472595543943163"),
+                                                  new BigInteger("1411460447587"));
+        FieldUtil.set(pool, "balances", balances);
+
+        IToken token0 = (IToken) pool.getTokens().get(0);
+        IToken token1 = (IToken) pool.getTokens().get(1);
+        BigInteger amountIn = BigInteger.valueOf(10).pow(token0.getDecimals());
+        BigInteger expectOut = new BigInteger("1120571402058473082");
+        BigInteger amountOut = pool.getAmountOut(((Contract) token0).getAddress(),
+                                                 ((Contract) token1).getAddress(),
+                                                 amountIn);
+        Assertions.assertEquals(expectOut, amountOut);
+        log.info("{} {} -> {} {}", amountIn, token0.getSymbol(), amountOut, token1.getSymbol());
     }
 
     @Test
@@ -165,7 +195,7 @@ public class CurvePoolTest {
     @BeforeEach
     public void setUp() {
         for (ContractConfigList.ContractConfig contractConfig : contractConfigList.getContracts()) {
-            if (CURVE_2POOL == contractConfig.getType()) {
+            if (CURVE_3POOL == contractConfig.getType()) {
                 config = contractConfig;
                 break;
             }
