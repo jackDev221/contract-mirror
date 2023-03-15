@@ -72,11 +72,13 @@ public class Curve4Abi extends Contract {
 
     public enum Events implements IEvent {
         TOKEN_EXCHANGE("TokenExchange", "address indexed,int128,uint256,int128,uint256"),
-        ADD_LIQUIDITY("AddLiquidity", "address indexed,uint256[],uint256[],uint256,uint256"),
-        REMOVE_LIQUIDITY("RemoveLiquidity", "address indexed,uint256[],uint256[],uint256"),
+        TOKEN_EXCHANGE_UNDERLYING("TokenExchangeUnderlying",
+                                  "address indexed,int128,uint256,int128,uint256"),
+        ADD_LIQUIDITY("AddLiquidity", "address indexed,uint256[4],uint256[4],uint256,uint256"),
+        REMOVE_LIQUIDITY("RemoveLiquidity", "address indexed,uint256[4],uint256[4],uint256"),
         REMOVE_LIQUIDITY_ONE("RemoveLiquidityOne", "address indexed,uint256,uint256"),
         REMOVE_LIQUIDITY_IMBLANCE("RemoveLiquidityImbalance",
-                                  "address indexed,uint256[],uint256[],uint256,uint256"),
+                                  "address indexed,uint256[4],uint256[4],uint256,uint256"),
         COMMIT_NEW_ADMIN("CommitNewAdmin", "uint256 indexed,address indexed"),
         NEW_ADMIN("NewAdmin", "address indexed"),
         COMMIT_NEW_FEE("CommitNewFee", "uint256 indexed,uint256,uint256"),
