@@ -26,6 +26,7 @@ public class EventService {
 
     public EventService(KafkaConfig kafkaConfig) {
         this.kafkaConfig = kafkaConfig;
+        initConsumer();
     }
 
     public long getInitialEndOffset() {
@@ -33,7 +34,6 @@ public class EventService {
     }
 
     public void listen() {
-        initConsumer();
         listenThread.start();
     }
 
