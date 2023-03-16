@@ -13,8 +13,8 @@ import java.util.*;
 
 @Slf4j
 public class DefaultStrategy implements IStrategy {
-    private final Graph graph;
-    private final RouterConfig routerConfig;
+    protected final Graph graph;
+    protected final RouterConfig routerConfig;
 
     public DefaultStrategy(Graph graph, RouterConfig routerConfig) {
         this.graph = graph;
@@ -67,6 +67,17 @@ public class DefaultStrategy implements IStrategy {
         return getTopN(candidates, routerConfig.getTopN(), maxStep);
     }
 
+    protected static String getLogPath(RouterPath path) {
+        String out = "";
+        for (int i = 0; i < path.getSteps().size(); i++) {
+            out = out.concat(path.getSteps().get(i).getEdge().getPool().getName());
+            if (i != path.getSteps().size() - 1) {
+                out = out.concat(" -> ");
+            }
+        }
+        return out;
+    }
+
     private static void cutPathAt(RouterPath pathToCut, int pos) {
         for (int j = pos; j < pathToCut.getSteps().size(); j++) {
             RouterPath.Step step = pathToCut.getSteps().get(j);
@@ -76,17 +87,6 @@ public class DefaultStrategy implements IStrategy {
             step.setAmountOut(BigInteger.ZERO);
         }
         log.debug("CUT BRANCH {} AT {}", getLogPath(pathToCut), pos);
-    }
-
-    private static String getLogPath(RouterPath path) {
-        String out = "";
-        for (int i = 0; i < path.getSteps().size(); i++) {
-            out = out.concat(path.getSteps().get(i).getEdge().getPool().getName());
-            if (i != path.getSteps().size() - 1) {
-                out = out.concat(" -> ");
-            }
-        }
-        return out;
     }
 
     private static List<RouterPath> getTopN(List<RouterPath> candidates, int topN, int maxStep) {
@@ -172,7 +172,7 @@ public class DefaultStrategy implements IStrategy {
         return List.of(path);
     }
 
-    private boolean checkWhiteBlackList(Edge edge) {
+    protected boolean checkWhiteBlackList(Edge edge) {
         if (routerConfig.getPoolBlackList().contains(edge.getPool().getAddress())) {
             return false;
         }

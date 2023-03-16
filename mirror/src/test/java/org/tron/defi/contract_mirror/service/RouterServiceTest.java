@@ -45,7 +45,7 @@ public class RouterServiceTest {
     private String usddAddress;
 
     @Test
-    public void getPathTest() {
+    public void getPathDefaultTest() {
         Assertions.assertNotNull(usdtAddress);
         Assertions.assertNotNull(usddAddress);
         IToken usdt = (IToken) contractManager.getContract(usdtAddress);
@@ -67,6 +67,26 @@ public class RouterServiceTest {
                                       Collections.emptySet(),
                                       Collections.emptySet());
         time1 = System.currentTimeMillis();
+        log.info("Time elapse {} ms, paths size {}", time1 - time0, paths.size());
+        log.info(JSONObject.toJSONString(paths));
+    }
+
+    @Test
+    public void getPathOptimisticTest() {
+        Assertions.assertNotNull(usdtAddress);
+        Assertions.assertNotNull(usddAddress);
+        IToken usdt = (IToken) contractManager.getContract(usdtAddress);
+        BigInteger amountIn = BigInteger.valueOf(10).pow(usdt.getDecimals());
+        long time0 = System.currentTimeMillis();
+        List<RouterPath> paths = routerService.getPath(usdtAddress,
+                                                       usddAddress,
+                                                       amountIn,
+                                                       "OPTIMISTIC",
+                                                       3,
+                                                       3,
+                                                       Collections.emptySet(),
+                                                       Collections.emptySet());
+        long time1 = System.currentTimeMillis();
         log.info("Time elapse {} ms, paths size {}", time1 - time0, paths.size());
         log.info(JSONObject.toJSONString(paths));
     }

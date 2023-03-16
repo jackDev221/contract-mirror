@@ -13,6 +13,8 @@ public class StrategyFactory {
 
     public IStrategy getStrategy(Graph graph, RouterConfig config) {
         switch (config.getStrategy()) {
+            case "OPTIMISTIC":
+                return new OptimisticStrategy(graph, config);
             default:
                 return new DefaultStrategy(graph, config);
         }
