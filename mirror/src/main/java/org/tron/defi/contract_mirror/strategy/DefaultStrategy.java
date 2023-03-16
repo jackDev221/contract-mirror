@@ -29,6 +29,7 @@ public class DefaultStrategy implements IStrategy {
             throw new IllegalArgumentException("INVALID FROM/TO ADDRESS");
         }
         List<RouterPath> candidates = new ArrayList<>();
+        long time0 = System.currentTimeMillis();
         // BFS
         Queue<RouterPath> searchPaths = new LinkedList<>();
         searchPaths.offer(new RouterPath(nodeFrom, amountIn, nodeTo));
@@ -60,7 +61,8 @@ public class DefaultStrategy implements IStrategy {
                 }
             }
         }
-        log.debug("Get {} paths, maxStep {}", candidates.size(), maxStep);
+        long time1 = System.currentTimeMillis();
+        log.info("Get {} paths in {}ms, maxStep {}", candidates.size(), time1 - time0, maxStep);
         return getTopN(candidates, routerConfig.getTopN(), maxStep);
     }
 
@@ -72,7 +74,7 @@ public class DefaultStrategy implements IStrategy {
             }
             step.setAmountOut(BigInteger.ZERO);
         }
-        log.info("CUT BRANCH {} AT {}", getLogPath(pathToCut), pos);
+        log.debug("CUT BRANCH {} AT {}", getLogPath(pathToCut), pos);
     }
 
     private static String getLogPath(RouterPath path) {
@@ -90,6 +92,7 @@ public class DefaultStrategy implements IStrategy {
         if (candidates.isEmpty()) {
             return candidates;
         }
+        long time0 = System.currentTimeMillis();
         PriorityQueue<RouterPath> minHeap = new PriorityQueue<>(topN,
                                                                 Comparator.comparing(RouterPath::getAmountOut));
         Map<Node, Pair<Integer, RouterPath>> bestPaths = new HashMap<>();
@@ -163,6 +166,8 @@ public class DefaultStrategy implements IStrategy {
         while (n-- > 0) {
             path[n] = minHeap.poll();
         }
+        long time1 = System.currentTimeMillis();
+        log.info("Get top {} from {} paths in {}ms", topN, candidates.size(), time1 - time0);
         return List.of(path);
     }
 
