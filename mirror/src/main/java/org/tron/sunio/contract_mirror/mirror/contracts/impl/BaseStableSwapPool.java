@@ -310,19 +310,21 @@ public class BaseStableSwapPool extends AbstractCurve {
      */
     @Override
     public double calcFee(String uniqueId, long timestamp, int j, IContractsHelper iContractsHelper) {
-        BigInteger[] rates = this.rates(uniqueId, timestamp, iContractsHelper);
-        BigDecimal feeV = new BigDecimal(this.getVarStableSwapBasePoolData(uniqueId).getFee());
-        BigDecimal adminFeeV = new BigDecimal(this.getVarStableSwapBasePoolData(uniqueId).getAdminFee());
-        BigDecimal fee = feeV.divide(new BigDecimal(FEE_DENOMINATOR), 6, RoundingMode.UP);
-        BigDecimal feeAdmin = fee.multiply(adminFeeV).multiply(new BigDecimal(PRECISION))
-                .divide(new BigDecimal(FEE_DENOMINATOR), 6, RoundingMode.UP).divide(new BigDecimal(rates[j]), 6, RoundingMode.UP);
-        return fee.add(feeAdmin).doubleValue();
+//        BigInteger[] rates = this.rates(uniqueId, timestamp, iContractsHelper);
+//        BigDecimal feeV = new BigDecimal(this.getVarStableSwapBasePoolData(uniqueId).getFee());
+//        BigDecimal adminFeeV = new BigDecimal(this.getVarStableSwapBasePoolData(uniqueId).getAdminFee());
+//        BigDecimal fee = feeV.divide(new BigDecimal(FEE_DENOMINATOR), 6, RoundingMode.UP);
+//        BigDecimal feeAdmin = fee.multiply(adminFeeV).multiply(new BigDecimal(PRECISION))
+//                .divide(new BigDecimal(FEE_DENOMINATOR), 6, RoundingMode.UP).divide(new BigDecimal(rates[j]), 6, RoundingMode.UP);
+//        return fee.add(feeAdmin).doubleValue();
+        return 0.0004;
     }
 
     @Override
     public double calcBasePoolFee(String uniqueId, long timestamp, int j, IContractsHelper iContractsHelper) {
-        AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(this.getVarStableSwapBasePoolData(uniqueId).getBasePool());
-        return curve.calcFee(uniqueId, timestamp, j, iContractsHelper);
+//        AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(this.getVarStableSwapBasePoolData(uniqueId).getBasePool());
+//        return curve.calcFee(uniqueId, timestamp, j, iContractsHelper);
+        return 0.0004;
     }
 
     @Override
