@@ -76,8 +76,8 @@ public class RouterController {
                                                            to,
                                                            amountIn,
                                                            strategy,
-                                                           topN,
                                                            maxCost,
+                                                           topN,
                                                            whitelistSet,
                                                            blacklistSet);
             long time2 = System.currentTimeMillis();
