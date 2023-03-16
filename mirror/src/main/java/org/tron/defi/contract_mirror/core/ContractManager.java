@@ -173,6 +173,7 @@ public class ContractManager {
         trxNode.addOutEdge(edge0);
         wtrxNode.addInEdge(edge0);
         wtrxNode.addOutEdge(edge1);
+        log.info("INIT WTRX {}", wtrx.getInfo());
     }
 
     public Contract registerContract(Contract contract) {

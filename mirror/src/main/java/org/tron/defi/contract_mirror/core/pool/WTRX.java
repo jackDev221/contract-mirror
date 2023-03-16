@@ -11,10 +11,8 @@ import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.core.token.TRC20;
 import org.tron.defi.contract_mirror.core.token.TRX;
 import org.tron.defi.contract_mirror.utils.TokenMath;
-import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
 import org.tron.defi.contract_mirror.utils.chain.TronContractTrigger;
 import org.web3j.abi.EventValues;
-import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.generated.Uint256;
 
 import java.math.BigInteger;
@@ -70,8 +68,7 @@ public class WTRX extends Pool implements IToken, ITRC20 {
     @Override
     public BigInteger getAmountOutUnsafe(IToken fromToken, IToken toToken, BigInteger amountIn) {
         BigInteger amountTo = amountIn;
-        if (TRX.getInstance() == toToken &&
-            toToken.balanceOf(getAddress()).compareTo(amountTo) < 0) {
+        if (getLpToken() == fromToken && totalSupply().compareTo(amountTo) < 0) {
             throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
         }
         return amountTo;
@@ -96,10 +93,6 @@ public class WTRX extends Pool implements IToken, ITRC20 {
     protected void getContractData() {
         wlock.lock();
         try {
-            TRX trx = TRX.getInstance();
-            trx.setBalance(getAddress(), trx.balanceOfFromChain(getAddress()));
-            log.info("{} balance {}", trx.getSymbol(), trx.balanceOf(getAddress()));
-
             setTotalSupply(getTotalSupplyFromChain());
             log.info("totalSupply = {}", getLpToken().totalSupply());
         } finally {
@@ -195,22 +188,16 @@ public class WTRX extends Pool implements IToken, ITRC20 {
 
     private boolean diffBalances() {
         TRX trx = TRX.getInstance();
-        BigInteger expectTrxBalance = trx.balanceOfFromChain(getAddress());
         BigInteger expectTotalSupply = getTotalSupplyFromChain();
-        BigInteger localTrxBalance;
         BigInteger localTotalSupply;
         rlock.lock();
         try {
-            localTrxBalance = trx.balanceOf(getAddress());
             localTotalSupply = totalSupply();
         } finally {
             rlock.unlock();
         }
-        if (0 != localTrxBalance.compareTo(expectTrxBalance) ||
-            0 != localTotalSupply.compareTo(expectTotalSupply)) {
-            log.info("expect trxBalance {}", expectTrxBalance);
+        if (0 != localTotalSupply.compareTo(expectTotalSupply)) {
             log.info("expect totalSupply {}", expectTotalSupply);
-            log.info("local trxBalance {}", localTrxBalance);
             log.info("local totalSupply {}", localTotalSupply);
             return true;
         }
@@ -219,35 +206,20 @@ public class WTRX extends Pool implements IToken, ITRC20 {
 
     private void handleDepositEvent(EventValues eventValues) {
         log.info("handleDepositEvent {}", getAddress());
-        String provider
-            = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
-                                                                            .get(0)).getValue());
         BigInteger trxAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
 
-        BigInteger balanceBefore = TRX.getInstance().balanceOf(getAddress());
-        BigInteger balanceAfter = TokenMath.increaseTRXBalance(getAddress(), trxAmount);
-        log.info("trxBalance {} -> {}", balanceBefore, balanceAfter);
-
-        TokenMath.increaseBalance((IToken) getLpToken(), provider, trxAmount);
-        balanceBefore = totalSupply();
-        balanceAfter = TokenMath.safeAdd(balanceBefore, trxAmount);
+        BigInteger balanceBefore = totalSupply();
+        BigInteger balanceAfter = TokenMath.safeAdd(balanceBefore, trxAmount);
         setTotalSupply(balanceAfter);
         log.info("totalSupply {} -> {}", balanceBefore, balanceAfter);
     }
 
     private void handleWithdrawEvent(EventValues eventValues) {
         log.info("handleWithdrawEvent {}", getAddress());
-        String provider
-            = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
-                                                                            .get(0)).getValue());
         BigInteger trxAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
-        BigInteger balanceBefore = TRX.getInstance().balanceOf(getAddress());
-        BigInteger balanceAfter = TokenMath.decreaseTRXBalance(getAddress(), trxAmount);
-        log.info("trxBalance {} -> {}", balanceBefore, balanceAfter);
 
-        TokenMath.decreaseBalance((IToken) getLpToken(), provider, trxAmount);
-        balanceBefore = totalSupply();
-        balanceAfter = TokenMath.safeSubtract(totalSupply(), trxAmount);
+        BigInteger balanceBefore = totalSupply();
+        BigInteger balanceAfter = TokenMath.safeSubtract(totalSupply(), trxAmount);
         setTotalSupply(balanceAfter);
         log.info("totalSupply {} -> {}", balanceBefore, balanceAfter);
     }

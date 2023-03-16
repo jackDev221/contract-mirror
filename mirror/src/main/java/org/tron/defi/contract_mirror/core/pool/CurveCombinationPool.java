@@ -627,9 +627,6 @@ public class CurveCombinationPool extends Pool {
 
     private void handleAddLiquidityEvent(EventValues eventValues) {
         log.info("handleAddLiquidityEvent {}", getAddress());
-        String provider
-            = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
-                                                                            .get(0)).getValue());
         List<BigInteger> amounts = ((DynamicArray<Uint256>) eventValues.getNonIndexedValues()
                                                                        .get(0)).getValue()
                                                                                .stream()
@@ -679,17 +676,10 @@ public class CurveCombinationPool extends Pool {
                     log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
                 }
             }
-            BigInteger amountMint = TokenMath.safeSubtract(tokenSupply, getLpToken().totalSupply());
             IToken token = (IToken) getLpToken();
-            BigInteger balanceBefore = token.balanceOf(provider);
-            BigInteger balanceAfter = TokenMath.increaseBalance(token, provider, amountMint);
+            BigInteger balanceBefore = getLpToken().totalSupply();
             getLpToken().setTotalSupply(tokenSupply);
-            log.info("{} totalSupply {}, {} balance {} -> {}",
-                     token.getSymbol(),
-                     tokenSupply,
-                     provider,
-                     balanceBefore,
-                     balanceAfter);
+            log.info("{} totalSupply {} -> {}", token.getSymbol(), balanceBefore, tokenSupply);
         } finally {
             wlock.unlock();
         }
@@ -735,9 +725,6 @@ public class CurveCombinationPool extends Pool {
 
     private void handleRemoveLiquidity(EventValues eventValues) {
         log.info("handleRemoveLiquidity {}", getAddress());
-        String provider
-            = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
-                                                                            .get(0)).getValue());
         List<BigInteger> amounts = ((DynamicArray<Uint256>) eventValues.getNonIndexedValues()
                                                                        .get(0)).getValue()
                                                                                .stream()
@@ -762,17 +749,10 @@ public class CurveCombinationPool extends Pool {
                 balances.set(i, balanceAfter);
                 log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
             }
-            BigInteger amountBurn = TokenMath.safeSubtract(getLpToken().totalSupply(), tokenSupply);
             IToken token = (IToken) getLpToken();
-            BigInteger balanceBefore = token.balanceOf(provider);
-            BigInteger balanceAfter = TokenMath.decreaseBalance(token, provider, amountBurn);
+            BigInteger balanceBefore = getLpToken().totalSupply();
             getLpToken().setTotalSupply(tokenSupply);
-            log.info("{} totalSupply {}, {} balance {} -> {}",
-                     token.getSymbol(),
-                     tokenSupply,
-                     provider,
-                     balanceBefore,
-                     balanceAfter);
+            log.info("{} totalSupply {} -> {}", token.getSymbol(), balanceBefore, tokenSupply);
         } finally {
             wlock.unlock();
         }
@@ -780,9 +760,6 @@ public class CurveCombinationPool extends Pool {
 
     private void handleRemoveLiquidityImbalance(EventValues eventValues) {
         log.info("handleRemoveLiquidityImbalance {}", getAddress());
-        String provider
-            = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
-                                                                            .get(0)).getValue());
         List<BigInteger> amounts = ((DynamicArray<Uint256>) eventValues.getNonIndexedValues()
                                                                        .get(0)).getValue()
                                                                                .stream()
@@ -815,17 +792,10 @@ public class CurveCombinationPool extends Pool {
                 balances.set(i, balanceAfter);
                 log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
             }
-            BigInteger amountBurn = TokenMath.safeSubtract(getLpToken().totalSupply(), tokenSupply);
             IToken token = (IToken) getLpToken();
-            BigInteger balanceBefore = token.balanceOf(provider);
-            BigInteger balanceAfter = TokenMath.decreaseBalance(token, provider, amountBurn);
+            BigInteger balanceBefore = getLpToken().totalSupply();
             getLpToken().setTotalSupply(tokenSupply);
-            log.info("{} totalSupply {}, {} balance {} -> {}",
-                     token.getSymbol(),
-                     tokenSupply,
-                     provider,
-                     balanceBefore,
-                     balanceAfter);
+            log.info("{} totalSupply {} -> {}", token.getSymbol(), balanceBefore, tokenSupply);
         } finally {
             wlock.unlock();
         }
