@@ -182,8 +182,8 @@ public class RouterServer {
         }
         BigDecimal dAmount = new BigDecimal(swapResult.amount);
         BigDecimal dIn = new BigDecimal(routerInput.getIn());
-        BigDecimal priceDiff = dIn.divide(dAmount, 18, RoundingMode.UP).multiply(swapResult.impactItem0).subtract(swapResult.impactItem1);
-        BigDecimal newPriceWithoutFee = dIn.divide(dAmount, 18, RoundingMode.UP);
+        BigDecimal priceDiff = dIn.divide(dAmount, 36, RoundingMode.UP).multiply(swapResult.impactItem0).subtract(swapResult.impactItem1);
+        BigDecimal newPriceWithoutFee = dIn.divide(dAmount, 36, RoundingMode.UP);
         BigDecimal impact = priceDiff.divide(newPriceWithoutFee, 6, RoundingMode.UP).abs();
         routItem.setImpact(impact.toString());
         routItem.setAmountV(swapResult.amount);
@@ -244,8 +244,8 @@ public class RouterServer {
                     swapResult.fee = swapResult.fee + (1 - swapResult.fee) * baseStableSwapPool.calcFee(CALL_FOR_ROUTER, timestamp, j, pathCacheContract);
                     int dxDecimals = (int) data.getCoinDecimals()[i];
                     BigInteger dx = BigInteger.TEN.pow(dxDecimals);
-                    BigInteger dy = baseStableSwapPool.getDy(CALL_FOR_ROUTER, i, j, dx, System.currentTimeMillis() / 1000, pathCacheContract);
-                    swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 18, RoundingMode.UP));
+                    BigInteger dy = baseStableSwapPool.getDy(CALL_FOR_ROUTER, i, j, dx, timestamp, pathCacheContract);
+                    swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 36, RoundingMode.UP));
                     swapResult.amount = baseStableSwapPool.exchange(CALL_FOR_ROUTER, i, j, swapResult.amount, BigInteger.ZERO, timestamp, pathCacheContract);
                 } else {
                     if (i - maxCoin < 0 || j - maxCoin < 0) {
@@ -262,8 +262,8 @@ public class RouterServer {
                         dxDecimals = (int) data.getBaseCoinDecimals()[i - maxCoin];
                     }
                     BigInteger dx = BigInteger.TEN.pow(dxDecimals);
-                    BigInteger dy = baseStableSwapPool.getDyUnderlying(CALL_FOR_ROUTER, i, j, dx, System.currentTimeMillis() / 1000, pathCacheContract);
-                    swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 18, RoundingMode.UP));
+                    BigInteger dy = baseStableSwapPool.getDyUnderlying(CALL_FOR_ROUTER, i, j, dx, timestamp, pathCacheContract);
+                    swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 36, RoundingMode.UP));
                     swapResult.amount = baseStableSwapPool.exchangeUnderlying(CALL_FOR_ROUTER, i, j, swapResult.amount, BigInteger.ZERO, timestamp, pathCacheContract);
                 }
             }
@@ -283,12 +283,12 @@ public class RouterServer {
             BigDecimal usdxDeci = new BigDecimal(BigInteger.TEN.pow(data.getTokenDecimal()));
             if (fromAddress.equalsIgnoreCase(data.getUsdd())) {
                 swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(1 - psm.calcUSDDToUSDXFee(data.getTout())));
-                swapResult.impactItem1 = swapResult.impactItem1.multiply(usddDeci.divide(usdxDeci, 18, RoundingMode.UP));
+                swapResult.impactItem1 = swapResult.impactItem1.multiply(usddDeci.divide(usdxDeci, 36, RoundingMode.UP));
                 swapResult.amount = psm.calcUSDDToUSDX(swapResult.amount, data.getTokenDecimal(), data.getTout())[0];
                 swapResult.fee = swapResult.fee + (1 - swapResult.fee) * psm.calcUSDDToUSDXFee(data.getTout());
             } else {
                 swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(1 - psm.calcUSDXToUSDDFee(data.getTin())));
-                swapResult.impactItem1 = swapResult.impactItem1.multiply(usdxDeci.divide(usddDeci, 18, RoundingMode.UP));
+                swapResult.impactItem1 = swapResult.impactItem1.multiply(usdxDeci.divide(usddDeci, 36, RoundingMode.UP));
                 swapResult.amount = psm.calcUSDXToUSDD(swapResult.amount, data.getTokenDecimal(), data.getTin())[1];
                 swapResult.fee = swapResult.fee + (1 - swapResult.fee) * psm.calcUSDXToUSDDFee(data.getTin());
             }
@@ -305,6 +305,7 @@ public class RouterServer {
         try {
             CurveBasePool curve = (CurveBasePool) baseContract;
             CurveBasePoolData data = curve.getVarCurveBasePoolData();
+            long timestamp = System.currentTimeMillis() / 1000;
             int[] indexes = data.getTokensIndex(fromAddress, toAddress);
             if (indexes[0] < 0 || indexes[1] < 0) {
                 log.error("Curve fail, from:{}, to:{}, contract:{}, amount:{}, wrong input tokens:{} {}",
@@ -315,9 +316,9 @@ public class RouterServer {
                 swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(0.9996));
                 int dxDecimals = (int) data.getCoinDecimals()[indexes[0]];
                 BigInteger dx = BigInteger.TEN.pow(dxDecimals);
-                BigInteger dy = curve.getDy(CALL_FOR_ROUTER, indexes[0], indexes[1], dx, System.currentTimeMillis() / 1000, pathCacheContract);
-                swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 18, RoundingMode.UP));
-                swapResult.amount = curve.exchange(CALL_FOR_ROUTER, indexes[0], indexes[1], swapResult.amount, BigInteger.ZERO, System.currentTimeMillis() / 1000, data);
+                BigInteger dy = curve.getDy(CALL_FOR_ROUTER, indexes[0], indexes[1], dx, timestamp, pathCacheContract);
+                swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 36, RoundingMode.UP));
+                swapResult.amount = curve.exchange(CALL_FOR_ROUTER, indexes[0], indexes[1], swapResult.amount, BigInteger.ZERO, timestamp, data);
 
             }
         } catch (Exception e) {
@@ -335,10 +336,10 @@ public class RouterServer {
             SwapV2PairData data = swapV2.getSwapV2PairData();
             if (data.getToken0().equals(fromAddress)) {
                 swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(data.getReserve0()))
-                        .divide(new BigDecimal(data.getReserve1()), 18, RoundingMode.UP);
+                        .divide(new BigDecimal(data.getReserve1()), 36, RoundingMode.UP);
             } else {
                 swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(data.getReserve1()))
-                        .divide(new BigDecimal(data.getReserve0()), 18, RoundingMode.UP);
+                        .divide(new BigDecimal(data.getReserve0()), 36, RoundingMode.UP);
             }
             swapResult.amount = swapV2.getAmountOut(fromAddress, toAddress, swapResult.amount, data);
         } catch (Exception e) {
@@ -356,11 +357,11 @@ public class RouterServer {
             SwapV1Data data = swapV1.getSwapV1Data();
             if (fromAddress.equals(EMPTY_ADDRESS)) {
                 swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(data.getTrxBalance()))
-                        .divide(new BigDecimal(data.getTokenBalance()), 18, RoundingMode.UP);
+                        .divide(new BigDecimal(data.getTokenBalance()), 36, RoundingMode.UP);
                 swapResult.amount = swapV1.trxToTokenInput(swapResult.amount, BigInteger.ZERO, data);
             } else {
                 swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(data.getTokenBalance()))
-                        .divide(new BigDecimal(data.getTrxBalance()), 18, RoundingMode.UP);
+                        .divide(new BigDecimal(data.getTrxBalance()), 36, RoundingMode.UP);
                 swapResult.amount = swapV1.tokenToTrxInput(swapResult.amount, BigInteger.ZERO, data);
             }
         } catch (Exception e) {

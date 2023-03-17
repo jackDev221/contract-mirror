@@ -24,9 +24,7 @@ import org.web3j.abi.datatypes.generated.StaticArray3;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.utils.Strings;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1191,7 +1189,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         BigInteger y = getY(uniqueId, i, j, x, xp, timestamp);
         BigInteger dy = xp[j].subtract(y).subtract(BigInteger.ONE);
         BigInteger fee = data.getFee().multiply(dy).divide(FEE_DENOMINATOR);
-        return dy.subtract(fee).multiply(PRECISION).divide(FEE_DENOMINATOR);
+        return dy.subtract(fee).multiply(PRECISION).divide(rates[j]);
     }
 
     private BigInteger[] empty(int num) {
