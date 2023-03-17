@@ -53,9 +53,12 @@ public class RouterPath {
 
     public boolean isBackward(Edge edge) {
         // It's not reasonable step to same pool of current step or an old node
+        return nodes.contains(edge.getTo()) || isDuplicateWithCurrent(edge);
+    }
+
+    public boolean isDuplicateWithCurrent(Edge edge) {
         Step currentStep = getCurrentStep();
-        return nodes.contains(edge.getTo()) ||
-               (null != currentStep && currentStep.getEdge().getPool().equals(edge.getPool()));
+        return null != currentStep && currentStep.getEdge().getPool().equals(edge.getPool());
     }
 
     @Data

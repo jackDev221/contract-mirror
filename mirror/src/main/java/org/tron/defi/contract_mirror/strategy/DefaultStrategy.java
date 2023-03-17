@@ -78,17 +78,6 @@ public class DefaultStrategy implements IStrategy {
         return out;
     }
 
-    private static void cutPathAt(RouterPath pathToCut, int pos) {
-        for (int j = pos; j < pathToCut.getSteps().size(); j++) {
-            RouterPath.Step step = pathToCut.getSteps().get(j);
-            if (null == step.getAmountIn() || 0 == step.getAmountIn().compareTo(BigInteger.ZERO)) {
-                return;
-            }
-            step.setAmountOut(BigInteger.ZERO);
-        }
-        log.debug("CUT BRANCH {} AT {}", getLogPath(pathToCut), pos);
-    }
-
     private static List<RouterPath> getTopN(List<RouterPath> candidates, int topN, int maxStep) {
         if (candidates.isEmpty()) {
             return candidates;
@@ -123,7 +112,7 @@ public class DefaultStrategy implements IStrategy {
                                                   step.getAmountIn());
                 } catch (RuntimeException e) {
                     log.debug("ERROR: {}", e.getMessage());
-                    cutPathAt(candidate, i);
+                    prunePathAt(candidate, i);
                     continue;
                 }
                 if (i == steps.size() - 1) {
@@ -149,12 +138,10 @@ public class DefaultStrategy implements IStrategy {
                     step.setAmountOut(amountOut);
                     bestPaths.put(edge.getTo(), Pair.of(i, candidate));
                     if (null != bestInfo && bestInfo.getFirst() >= i) {
-                        // cut branch
-                        cutPathAt(bestInfo.getSecond(), bestInfo.getFirst());
+                        prunePathAt(bestInfo.getSecond(), bestInfo.getFirst());
                     }
                 } else {
-                    // cut branch
-                    cutPathAt(candidate, i);
+                    prunePathAt(candidate, i);
                 }
             }
         }
@@ -172,11 +159,28 @@ public class DefaultStrategy implements IStrategy {
         return List.of(path);
     }
 
+    private static void prunePathAt(RouterPath pathToPrune, int pos) {
+        for (int j = pos; j < pathToPrune.getSteps().size(); j++) {
+            RouterPath.Step step = pathToPrune.getSteps().get(j);
+            if (null == step.getAmountIn() || 0 == step.getAmountIn().compareTo(BigInteger.ZERO)) {
+                break;
+            }
+            step.setAmountOut(BigInteger.ZERO);
+        }
+        log.debug("Prune {} at pos {}", getLogPath(pathToPrune), pos);
+    }
+
     protected boolean checkWhiteBlackList(Edge edge) {
         if (routerConfig.getPoolBlackList().contains(edge.getPool().getAddress())) {
+            log.debug("{} is blocked by blacklist", edge.getPool().getAddress());
             return false;
         }
-        return routerConfig.getTokenWhiteList().isEmpty() ||
-               routerConfig.getTokenWhiteList().contains(edge.getTo().getToken().getAddress());
+        boolean ok = routerConfig.getTokenWhiteList().isEmpty() ||
+                     routerConfig.getTokenWhiteList()
+                                 .contains(edge.getTo().getToken().getAddress());
+        if (!ok) {
+            log.debug("{} is blocked by whitelist", edge.getTo().getToken().getAddress());
+        }
+        return ok;
     }
 }

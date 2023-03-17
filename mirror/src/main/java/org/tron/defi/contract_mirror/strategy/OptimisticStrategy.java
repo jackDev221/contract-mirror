@@ -30,7 +30,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
         Map<Node, Pair<Integer, RouterPath>> bestPaths = new HashMap<>(30000);
         RouterPath initialPath = new RouterPath(nodeFrom, amountIn, nodeTo);
         bestPaths.put(nodeFrom, Pair.of(0, initialPath));
-        // BFS
+        // BFS with realtime pruning
         Queue<RouterPath> searchPaths = new LinkedList<>();
         searchPaths.offer(initialPath);
         int stepCount = 0;
@@ -44,7 +44,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                                           ? currentPath.getAmountIn()
                                           : currentStep.getAmountOut();
                 if (null == amountInStep || 0 == amountInStep.compareTo(BigInteger.ZERO)) {
-                    // branch has been cut
+                    // branch has been pruned
                     continue;
                 }
                 Node node = null == currentStep
@@ -54,7 +54,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                     boolean found = edge.getTo().isEqual(currentPath.getTo());
                     if (edge.getPool().cost() + currentPath.getCost() > routerConfig.getMaxCost() ||
                         edge.getTo().outDegree() <= 1 ||
-                        currentPath.isBackward(edge) ||
+                        currentPath.isDuplicateWithCurrent(edge) ||
                         (!found && !checkWhiteBlackList(edge))) {
                         continue;
                     }
@@ -66,7 +66,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                                                           amountInStep);
                     } catch (RuntimeException e) {
                         log.debug("ERROR: {}", e.getMessage());
-                        log.debug("CUT BRANCH {} |-> {}",
+                        log.debug("Prune {} |-> {}",
                                   getLogPath(currentPath),
                                   edge.getPool().getName());
                         continue;
@@ -94,7 +94,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                                                       .get(bestInfo.getFirst())
                                                       .getAmountOut();
                     if (null != bestAmount && bestAmount.compareTo(amountOutStep) >= 0) {
-                        log.debug("CUT BRANCH {} |-> {}",
+                        log.debug("Prune {} |-> {}",
                                   getLogPath(currentPath),
                                   edge.getPool().getName());
                         continue;
@@ -105,9 +105,9 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                     bestPaths.put(edge.getTo(), Pair.of(stepCount, path));
                     searchPaths.offer(path);
                     if (null != bestInfo && bestInfo.getFirst() >= stepCount) {
-                        RouterPath pathToCut = bestInfo.getSecond();
-                        pathToCut.setAmountOut(BigInteger.ZERO);
-                        log.debug("CUT BRANCH {} |-> {}",
+                        RouterPath pathToPrune = bestInfo.getSecond();
+                        pathToPrune.setAmountOut(BigInteger.ZERO);
+                        log.debug("Prune {} |-> {}",
                                   getLogPath(currentPath),
                                   edge.getPool().getName());
                     }
