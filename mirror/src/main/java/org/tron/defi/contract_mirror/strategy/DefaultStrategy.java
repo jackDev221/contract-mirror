@@ -55,7 +55,7 @@ public class DefaultStrategy implements IStrategy {
                     if (!found) {
                         searchPaths.offer(path);
                     } else {
-                        log.debug(getLogPath(path));
+                        log.debug(path.getPools());
                         candidates.add(path);
                         maxStep = Math.max(maxStep, path.getSteps().size());
                     }
@@ -65,17 +65,6 @@ public class DefaultStrategy implements IStrategy {
         long time1 = System.currentTimeMillis();
         log.info("Get {} paths in {}ms, maxStep {}", candidates.size(), time1 - time0, maxStep);
         return getTopN(candidates, routerConfig.getTopN(), maxStep);
-    }
-
-    protected static String getLogPath(RouterPath path) {
-        String out = "";
-        for (int i = 0; i < path.getSteps().size(); i++) {
-            out = out.concat(path.getSteps().get(i).getEdge().getPool().getName());
-            if (i != path.getSteps().size() - 1) {
-                out = out.concat(" -> ");
-            }
-        }
-        return out;
     }
 
     private static List<RouterPath> getTopN(List<RouterPath> candidates, int topN, int maxStep) {
@@ -118,12 +107,12 @@ public class DefaultStrategy implements IStrategy {
                 if (i == steps.size() - 1) {
                     candidate.setAmountOut(amountOut);
                     minHeap.offer(candidate);
-                    log.debug("NEW CANDIDATE {} {}", amountOut, getLogPath(candidate));
+                    log.debug("NEW CANDIDATE {} {}", amountOut, candidate.getPools());
                     if (minHeap.size() > topN) {
                         candidate = minHeap.poll();
                         log.debug("OBSOLETE CANDIDATE {} {}",
                                   candidate.getAmountOut(),
-                                  getLogPath(candidate));
+                                  candidate.getPools());
                     }
                     continue;
                 }
@@ -167,7 +156,7 @@ public class DefaultStrategy implements IStrategy {
             }
             step.setAmountOut(BigInteger.ZERO);
         }
-        log.debug("Prune {} at pos {}", getLogPath(pathToPrune), pos);
+        log.debug("Prune {} at pos {}", pathToPrune.getPools(), pos);
     }
 
     protected boolean checkWhiteBlackList(Edge edge) {

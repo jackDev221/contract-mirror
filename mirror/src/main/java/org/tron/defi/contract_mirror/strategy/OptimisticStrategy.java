@@ -36,6 +36,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
         int stepCount = 0;
         int candidateNum = 0;
         while (!searchPaths.isEmpty()) {
+            stepCount++;
             int n = searchPaths.size();
             while (n-- > 0) {
                 RouterPath currentPath = searchPaths.poll();
@@ -67,7 +68,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                     } catch (RuntimeException e) {
                         log.debug("ERROR: {}", e.getMessage());
                         log.debug("Prune {} |-> {}",
-                                  getLogPath(currentPath),
+                                  currentPath.getPools(),
                                   edge.getPool().getName());
                         continue;
                     }
@@ -77,25 +78,28 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         candidate.setAmountOut(amountOutStep);
                         minHeap.offer(candidate);
                         candidateNum++;
-                        log.debug("NEW CANDIDATE {} {}", amountOutStep, getLogPath(candidate));
+                        log.debug("NEW CANDIDATE {} {}", amountOutStep, candidate.getPools());
                         if (minHeap.size() > routerConfig.getTopN()) {
                             candidate = minHeap.poll();
                             log.debug("OBSOLETE CANDIDATE {} {}",
                                       candidate.getAmountOut(),
-                                      getLogPath(candidate));
+                                      candidate.getPools());
                         }
                         continue;
                     }
                     Pair<Integer, RouterPath> bestInfo = bestPaths.getOrDefault(edge.getTo(), null);
-                    BigInteger bestAmount = null == bestInfo
-                                            ? null
-                                            : bestInfo.getSecond()
-                                                      .getSteps()
-                                                      .get(bestInfo.getFirst())
-                                                      .getAmountOut();
+                    BigInteger bestAmount = null;
+                    if (null != bestInfo) {
+                        bestAmount = 0 == bestInfo.getFirst()
+                                     ? bestInfo.getSecond().getAmountIn()
+                                     : bestInfo.getSecond()
+                                               .getSteps()
+                                               .get(bestInfo.getFirst() - 1)
+                                               .getAmountOut();
+                    }
                     if (null != bestAmount && bestAmount.compareTo(amountOutStep) >= 0) {
                         log.debug("Prune {} |-> {}",
-                                  getLogPath(currentPath),
+                                  currentPath.getPools(),
                                   edge.getPool().getName());
                         continue;
                     }
@@ -108,12 +112,11 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         RouterPath pathToPrune = bestInfo.getSecond();
                         pathToPrune.setAmountOut(BigInteger.ZERO);
                         log.debug("Prune {} |-> {}",
-                                  getLogPath(currentPath),
+                                  currentPath.getPools(),
                                   edge.getPool().getName());
                     }
                 }
             }
-            stepCount++;
         }
         // to get result in order
         int n = minHeap.size();

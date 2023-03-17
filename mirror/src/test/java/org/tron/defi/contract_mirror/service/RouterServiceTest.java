@@ -1,6 +1,5 @@
 package org.tron.defi.contract_mirror.service;
 
-import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,7 +67,7 @@ public class RouterServiceTest {
                                       Collections.emptySet());
         time1 = System.currentTimeMillis();
         log.info("Time elapse {} ms, paths size {}", time1 - time0, paths.size());
-        log.info(JSONObject.toJSONString(paths));
+        log.info(paths.toString());
     }
 
     @Test
@@ -88,7 +87,7 @@ public class RouterServiceTest {
                                                        Collections.emptySet());
         long time1 = System.currentTimeMillis();
         log.info("Time elapse {} ms, paths size {}", time1 - time0, paths.size());
-        log.info(JSONObject.toJSONString(paths));
+        log.info(paths.toString());
     }
 
     @BeforeEach
@@ -138,11 +137,15 @@ public class RouterServiceTest {
                 default:
                     break;
             }
-            SunswapV1Pool v1Pool = (SunswapV1Pool) v1Factory.getExchange(config.getValue());
-            newExchange(v1Factory, config.getValue(), v1Pool.getAddress());
-            SunswapV2Pool v2Pool = (SunswapV2Pool) v2Factory.getPairFromChain(wtrx,
-                                                                              config.getValue());
-            newPair(v2Factory, v2Pool.getAddress(), ++count);
+            if (null == v1Factory.getToken(config.getValue())) {
+                SunswapV1Pool v1Pool = (SunswapV1Pool) v1Factory.getExchange(config.getValue());
+                newExchange(v1Factory, config.getValue(), v1Pool.getAddress());
+            }
+            if (null == v2Factory.getPair(wtrx, config.getValue())) {
+                SunswapV2Pool v2Pool = (SunswapV2Pool) v2Factory.getPairFromChain(wtrx,
+                                                                                  config.getValue());
+                newPair(v2Factory, v2Pool.getAddress(), ++count);
+            }
         }
     }
 

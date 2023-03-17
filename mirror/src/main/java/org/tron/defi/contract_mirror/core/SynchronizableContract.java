@@ -34,10 +34,11 @@ public abstract class SynchronizableContract extends Contract implements Synchro
     @Override
     public void onEvent(KafkaMessage<ContractLog> kafkaMessage,
                         long syncPeriod) throws InterruptedException {
+        ContractLog contractLog = kafkaMessage.getMessage();
+        log.trace("{}", contractLog);
         if (!isEventAccept()) {
             throw new InterruptedException();
         }
-        ContractLog contractLog = kafkaMessage.getMessage();
         if (timestamp0 > 0 &&
             syncPeriod > 0 &&
             contractLog.getTimeStamp() - timestamp0 >= syncPeriod) {
@@ -65,7 +66,9 @@ public abstract class SynchronizableContract extends Contract implements Synchro
             log.warn("Unsupported event: {}", contractLog);
         } else {
             try {
-                log.info("On {} event", prototype.getRawSignature());
+                log.info("On {} event, event timestamp {}",
+                         prototype.getRawSignature(),
+                         contractLog.getTimeStamp());
                 EventValues eventValues = decodeEvent(contractLog);
                 handleEvent(prototype.getName(), eventValues, contractLog.getTimeStamp());
                 log.debug("Processed event {}", contractLog);

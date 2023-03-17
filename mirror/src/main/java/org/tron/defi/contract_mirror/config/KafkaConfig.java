@@ -19,7 +19,8 @@ import java.util.Properties;
 public class KafkaConfig {
     private String bootstrapServers;
     private String groupId;
-    private long maxLag = 5 * 60 * 1000;
+    private long fallbackTime = 30 * 60 * 1000;
+    private long maxLag = 60 * 1000;
     private List<String> consumerTopics = new ArrayList<>();
     private List<String> producerTopics = new ArrayList<>();
 

@@ -47,10 +47,10 @@ public class EventService {
         }
         kafkaConsumer = new KafkaConsumer<>(kafkaConfig.getConsumerConfig());
         String topic = kafkaConfig.getConsumerTopics().get(0);
-        // initialize kafka start timestamp to now - maxLag
+        // initialize kafka start timestamp to now - fallbackTime
         fallbackRebalanceListener = new FallbackRebalanceListener(kafkaConsumer,
                                                                   topic,
-                                                                  kafkaConfig.getMaxLag());
+                                                                  kafkaConfig.getFallbackTime());
         kafkaConsumer.subscribe(Collections.singleton(topic), fallbackRebalanceListener);
     }
 

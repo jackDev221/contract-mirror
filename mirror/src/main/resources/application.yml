@@ -38,7 +38,7 @@ tron:
 kafka:
   bootstrapServers: 172.22.10.171:9092
   groupId: contract-mirror-0
-  maxLag: 60000
+  fallbackTime: 3600000
   consumerTopics:
     - contractlog
 

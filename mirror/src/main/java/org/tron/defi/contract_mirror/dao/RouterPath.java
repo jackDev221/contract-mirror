@@ -1,11 +1,14 @@
 package org.tron.defi.contract_mirror.dao;
 
+import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
 import org.tron.defi.contract_mirror.core.graph.Edge;
 import org.tron.defi.contract_mirror.core.graph.Node;
+import org.tron.defi.contract_mirror.core.token.IToken;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 public class RouterPath {
@@ -36,10 +39,21 @@ public class RouterPath {
         nodes = new HashSet<>(Collections.singleton(from));
     }
 
+    @Override
+    public String toString() {
+        JSONObject object = new JSONObject();
+        object.put("from", from.getToken().getInfo());
+        object.put("to", to.getToken().getInfo());
+        object.put("amountOut", amountOut);
+        object.put("fee", fee);
+        object.put("impact", impact);
+        object.put("cost", cost);
+        object.put("pools", getPools());
+        object.put("tokenPath", getTokenPath());
+        return object.toJSONString();
+    }
+
     public void addStep(Edge edge) {
-        if (isBackward(edge)) {
-            return;
-        }
         nodes.add(edge.getTo());
         Step nextStep = new Step();
         nextStep.setEdge(edge);
@@ -49,6 +63,22 @@ public class RouterPath {
 
     public Step getCurrentStep() {
         return steps.isEmpty() ? null : steps.get(steps.size() - 1);
+    }
+
+    public String getPools() {
+        return String.join(" -> ",
+                           steps.stream()
+                                .map(step -> step.getEdge().getPool().getName())
+                                .collect(Collectors.toList()));
+    }
+
+    public String getTokenPath() {
+        List<String> symbols = new ArrayList<>(steps.size() + 1);
+        symbols.add(((IToken) from.getToken()).getSymbol());
+        steps.forEach(step -> symbols.add(((IToken) step.getEdge()
+                                                        .getTo()
+                                                        .getToken()).getSymbol()));
+        return String.join(" -> ", symbols);
     }
 
     public boolean isBackward(Edge edge) {

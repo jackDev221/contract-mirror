@@ -145,6 +145,10 @@ public class SunswapV1Factory extends SynchronizableContract {
         return null != exist ? exist : pool;
     }
 
+    public ITRC20 getToken(String tokenAddress) {
+        return tokenMap.getOrDefault(tokenAddress, null);
+    }
+
     public int getTokenCount() {
         rlock.lock();
         try {
