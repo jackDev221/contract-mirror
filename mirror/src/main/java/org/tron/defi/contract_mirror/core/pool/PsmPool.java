@@ -66,7 +66,9 @@ public class PsmPool extends Pool {
 
     @Override
     public BigInteger getPrice(IToken fromToken, IToken toToken) {
-        return PRICE_FACTOR;
+        return fromToken == getUsdd()
+               ? PRICE_FACTOR.multiply(gemToUsddDecimalFactor)
+               : PRICE_FACTOR.divide(gemToUsddDecimalFactor);
     }
 
     @Override
