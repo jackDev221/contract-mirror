@@ -6,6 +6,7 @@ import org.tron.defi.contract_mirror.config.RouterConfig;
 import org.tron.defi.contract_mirror.core.graph.Edge;
 import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.graph.Node;
+import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.dao.RouterPath;
 
 import java.math.BigInteger;
@@ -73,6 +74,15 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         continue;
                     }
                     if (amountOutStep.compareTo(BigInteger.ZERO) <= 0) {
+                        log.debug("{} {} {} -> {} {}",
+                                  edge.getPool().getName(),
+                                  amountInStep,
+                                  ((IToken) edge.getFrom().getToken()).getSymbol(),
+                                  amountOutStep,
+                                  ((IToken) edge.getTo().getToken()).getSymbol());
+                        log.debug("Prune {} |-> {}",
+                                  currentPath.getPools(),
+                                  edge.getPool().getName());
                         continue;
                     }
                     if (found) {
