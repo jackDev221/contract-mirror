@@ -73,7 +73,7 @@ public class DefaultStrategy implements IStrategy {
         }
         long time0 = System.currentTimeMillis();
         PriorityQueue<RouterPath> minHeap = new PriorityQueue<>(topN,
-                                                                Comparator.comparing(RouterPath::getAmountOut));
+                                                                new RouterPath.RouterPathComparator());
         Map<Node, Pair<Integer, RouterPath>> bestPaths = new HashMap<>();
         bestPaths.put(candidates.get(0).getFrom(), Pair.of(0, candidates.get(0)));
         for (int i = 0; i < maxStep; i++) {

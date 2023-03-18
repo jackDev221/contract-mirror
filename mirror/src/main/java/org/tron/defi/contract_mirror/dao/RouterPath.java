@@ -22,6 +22,19 @@ public class RouterPath {
     private BigInteger impact;
     private int cost = 0;
 
+    public static class RouterPathComparator implements Comparator<RouterPath> {
+        @Override
+        public int compare(RouterPath path1, RouterPath path2) {
+            // path of smaller amountOut first
+            int result = path1.getAmountOut().compareTo(path2.getAmountOut());
+            if (0 != result) {
+                return result;
+            }
+            // path of more steps first
+            return path2.getSteps().size() - path1.getSteps().size();
+        }
+    }
+
     public RouterPath(RouterPath path) {
         from = path.getFrom();
         amountIn = path.getAmountIn();

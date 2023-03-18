@@ -27,7 +27,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
         }
         long time0 = System.currentTimeMillis();
         PriorityQueue<RouterPath> minHeap = new PriorityQueue<>(routerConfig.getTopN(),
-                                                                Comparator.comparing(RouterPath::getAmountOut));
+                                                                new RouterPath.RouterPathComparator());
         Map<Node, Pair<Integer, RouterPath>> bestPaths = new HashMap<>(30000);
         RouterPath initialPath = new RouterPath(nodeFrom, amountIn, nodeTo);
         bestPaths.put(nodeFrom, Pair.of(0, initialPath));

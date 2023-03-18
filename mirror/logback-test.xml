@@ -51,7 +51,6 @@
   </root>
 
   <logger name="ServerApi" level="ERROR"/>
-  <logger name="org.tron.defi.contract_mirror.strategy.DefaultStrategy" level="DEBUG"/>
   <logger name="org.tron.defi.contract_mirror.controller.RouterController" level="TRACE"/>
 
 </configuration>
