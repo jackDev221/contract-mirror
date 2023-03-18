@@ -104,6 +104,9 @@ public class DefaultStrategy implements IStrategy {
                     prunePathAt(candidate, i);
                     continue;
                 }
+                if (amountOut.compareTo(BigInteger.ZERO) <= 0) {
+                    continue;
+                }
                 if (i == steps.size() - 1) {
                     candidate.setAmountOut(amountOut);
                     minHeap.offer(candidate);

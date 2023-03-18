@@ -110,6 +110,7 @@ public class RouterController {
         } catch (RuntimeException e) {
             response.setCode(Response.Code.ERROR);
             response.setMessage(e.getMessage());
+            log.trace("Failed {}", response);
         }
         return response;
     }
@@ -171,6 +172,7 @@ public class RouterController {
         } catch (RuntimeException e) {
             response.setCode(Response.Code.ERROR);
             response.setMessage(e.getMessage());
+            log.trace("Failed {}", response);
         }
         return response;
     }

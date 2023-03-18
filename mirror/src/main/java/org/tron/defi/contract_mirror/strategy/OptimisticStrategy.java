@@ -72,6 +72,9 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                                   edge.getPool().getName());
                         continue;
                     }
+                    if (amountOutStep.compareTo(BigInteger.ZERO) <= 0) {
+                        continue;
+                    }
                     if (found) {
                         RouterPath candidate = new RouterPath(currentPath);
                         candidate.addStep(edge);

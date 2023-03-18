@@ -85,6 +85,11 @@ token-list:
     TUSD: TUpMhErZL2fhh4sVNULAbNKLokS4GjC1F4
     USDD: TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn
     USDJ: TMwFHYXLJaRUPeW6421aqXL4ZEzPRFGkGT
+  wrappedTokens:
+    TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR: T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
+    TXpw8XeWYeTUd4quDskoUqeQPowRh4jY65: TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9
+    TXWkP3jLBqRGojUih1ShzNyDaN5Csnebok: THb4CqiFdwNHsWsQCs4JhzwjMWys4aqCbF
+    TKfjV9RNKJJCqPvBtK8L7Knykh7DNWvnYt: TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4
 
 # router
 router:

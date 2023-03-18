@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.tron.defi.contract_mirror.config.PriceCenterConfig;
+import org.tron.defi.contract_mirror.config.TokenConfigList;
 import org.tron.defi.contract_mirror.dto.legacy.PriceResponse;
 import org.tron.defi.contract_mirror.utils.RestClient;
 
@@ -21,11 +22,15 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class PriceService {
     @Autowired
+    private TokenConfigList tokenConfigList;
+    @Autowired
     private PriceCenterConfig priceCenterConfig;
     private RestClient priceCenter = new RestClient(null);
     private Cache<String, BigDecimal> priceCache;
 
     public BigDecimal getPrice(String symbolOrAddress) {
+        symbolOrAddress = tokenConfigList.getWrapTokens()
+                                         .getOrDefault(symbolOrAddress, symbolOrAddress);
         BigDecimal price = getPriceFromCache(symbolOrAddress);
         if (null != price) {
             return price;
