@@ -79,7 +79,10 @@ public class PendingEventConsumer implements IEventConsumer {
             while (true) {
                 try {
                     while (!pendingQueue.isEmpty()) {
-                        consume();
+                        if (0 == consume()) {
+                            // no message can be consumed
+                            break;
+                        }
                     }
                 } catch (NullPointerException e) {
                     // concurrent remove case
@@ -99,7 +102,9 @@ public class PendingEventConsumer implements IEventConsumer {
             }
         }
 
-        private void consume() {
+        private int consume() {
+            int messageNum = 0;
+            int contractNum = 0;
             for (String address : pendingQueue.keySet()) {
                 // double check
                 if (!pendingQueue.containsKey(address)) {
@@ -120,9 +125,11 @@ public class PendingEventConsumer implements IEventConsumer {
                     log.warn("pending messages for {} is taken by other consumer", address);
                     continue;
                 }
+                contractNum++;
                 log.info("Processing " + messages.size() + " pending messages for " + address);
                 // handle messages
                 for (KafkaMessage<ContractLog> message : messages) {
+                    messageNum++;
                     if (!handleEvent(synchronizableContract, message)) {
                         // need sync again, drop this messages is safe
                         synchronizableContract.sync();
@@ -144,6 +151,8 @@ public class PendingEventConsumer implements IEventConsumer {
                     }
                 }
             }
+            log.info("consume {} pending messages of {} contracts", messageNum, contractNum);
+            return messageNum;
         }
 
         private boolean handleEvent(SynchronizableContract contract,
