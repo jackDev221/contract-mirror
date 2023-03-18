@@ -80,24 +80,17 @@ public class PendingEventConsumer implements IEventConsumer {
                 try {
                     while (!pendingQueue.isEmpty()) {
                         if (0 == consume()) {
-                            // no message can be consumed
+                            // no message can be consumed at this moment
                             break;
                         }
                     }
-                } catch (NullPointerException e) {
-                    // concurrent remove case
-                    continue;
+                    Thread.sleep(100);
+                } catch (NullPointerException | InterruptedException e) {
+                    // concurrent remove or sleep interrupted, doing nothing
+                    e.printStackTrace();
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     log.error("PendingEventConsumer error {}", ex.getMessage());
-                }
-                if (pendingQueue.isEmpty()) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        // it's fine doing nothing
-                        e.printStackTrace();
-                    }
                 }
             }
         }
