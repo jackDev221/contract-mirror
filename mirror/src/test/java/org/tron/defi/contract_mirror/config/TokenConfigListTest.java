@@ -21,5 +21,8 @@ public class TokenConfigListTest {
         Assertions.assertNotNull(tokenConfigList);
         log.info(tokenConfigList.toString());
         Assertions.assertNotNull(tokenConfigList.getTokens().getOrDefault("USDT", null));
+        Assertions.assertNotNull(tokenConfigList.getWrapTokens()
+                                                .getOrDefault("TXWkP3jLBqRGojUih1ShzNyDaN5Csnebok",
+                                                              null));
     }
 }
