@@ -49,6 +49,14 @@ public class RouterService {
           $numerator = |actualPrice - price|$
           $denominator = |amountIn / amountOut|$
          */
+        BigInteger denominator = path.getAmountIn()
+                                     .multiply(Pool.PRICE_FACTOR)
+                                     .divide(path.getAmountOut());
+        if (denominator.compareTo(BigInteger.ZERO) == 0) {
+            // impact is approximately equal to 0
+            path.setImpact(BigInteger.ZERO);
+            return path;
+        }
         BigInteger price = Pool.PRICE_FACTOR;
         for (RouterPath.Step step : path.getSteps()) {
             Edge edge = step.getEdge();
@@ -63,8 +71,6 @@ public class RouterService {
                                    .divide(path.getAmountOut())
                                    .subtract(price)
                                    .abs();
-        BigInteger denominator = path.getAmountIn().multiply(Pool.PRICE_FACTOR)
-                                     .divide(path.getAmountOut());
         path.setImpact(numerator.negate().multiply(Pool.PRICE_FACTOR).divide(denominator));
         return path;
     }
