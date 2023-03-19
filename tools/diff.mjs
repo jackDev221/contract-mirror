@@ -16,79 +16,67 @@ tokenList.set('TRX', {
   decimals: 6,
 });
 tokenList.set('SUN', {
-  address: 'TD3et9gS2pYz46ZC2mkCfYcKQGNwrnBLef',
+  address: 'TDqjTkZ63yHB19w2n7vPm2qAkLHwn9fKKk',
   decimals: 18,
 });
 tokenList.set('SUNOLD', {
-  address: 'TKkeiboTkxXKJpbmVFbv4a8ov5rAfRDMf9',
+  address: 'TWrZRHY9aKQZcyjpovdH6qeCEyYZrRQDZt',
   decimals: 18,
 });
 tokenList.set('BTC', {
-  address: 'TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9',
+  address: 'TG9XJ75ZWcUw69W8xViEJZQ365fRupGkFP',
   decimals: 8,
 });
 tokenList.set('WBTC', {
-  address: 'TXpw8XeWYeTUd4quDskoUqeQPowRh4jY65',
+  address: 'TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9',
   decimals: 8,
 });
 tokenList.set('ETH', {
-  address: 'THb4CqiFdwNHsWsQCs4JhzwjMWys4aqCbF',
+  address: 'TQz9i4JygMCzizdVu8NE4BdqesrsHv1L93',
   decimals: 18,
-});
-tokenList.set('WETH', {
-  address: 'TXWkP3jLBqRGojUih1ShzNyDaN5Csnebok',
-  decimals: 18,
-});
-tokenList.set('WBTT', {
-  address: 'TKfjV9RNKJJCqPvBtK8L7Knykh7DNWvnYt',
-  decimals: 6,
 });
 tokenList.set('WTRX', {
-  address: 'TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR',
+  address: 'TYsbWxNnyTgsZaTFaue9hqpxkU3Fkco94a',
   decimals: 6,
 });
 tokenList.set('JST', {
-  address: 'TCFLL5dx5ZJdKnWuesXxi1VPwjLVmWZZy9',
+  address: 'TF17BgPaZYbz8oxbjhriubPDsA7ArKoLX3',
   decimals: 18,
 });
 tokenList.set('WIN', {
-  address: 'TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7',
+  address: 'TNDSHKGBmgRx9mDYA9CnxPx55nu672yQw2',
   decimals: 6,
 });
 tokenList.set('DICE', {
-  address: 'TKttnV3FSY1iEoAwB4N52WK2DxdV94KpSd',
+  address: 'TLVu3Pzaep38SGvgCxUe1cUk2SNM6fyR4e',
   decimals: 6,
 });
 tokenList.set('LIVE', {
-  address: 'TVgAYofpQku5G4zenXnvxhbZxpzzrk8WVK',
+  address: 'TLwpNV2gVkVk1g7ejZJ2hqzsE7RZvDuRSb',
   decimals: 6,
 });
-tokenList.set('LTC', {
-  address: 'TR3DLthpnDdCGabhVDbD3VMsiJoCXY3bZd',
-  decimals: 8,
-});
 tokenList.set('HT', {
-  address: 'TDyvndWuvX5xTBwHPYJi7J3Yq8pq8yh62h',
+  address: 'TGfVzt44kg6ZJ4fUqpHzJy3Jb37YMf8pMH',
   decimals: 18,
 });
 tokenList.set('USDT', {
-  address: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+  address: 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf',
   decimals: 6,
 });
 tokenList.set('USDJ', {
-  address: 'TMwFHYXLJaRUPeW6421aqXL4ZEzPRFGkGT',
+  address: 'TLBaRhANQoJFTqre9Nf1mjuwNWjCJeYqUL',
   decimals: 18,
 });
 tokenList.set('TUSD', {
-  address: 'TUpMhErZL2fhh4sVNULAbNKLokS4GjC1F4',
+  address: 'TRz7J6dD2QWxBoumfYt4b3FaiRG23pXfop',
   decimals: 18,
 });
 tokenList.set('USDC', {
-  address: 'TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8',
+  address: 'TWMCMCoJPqCGw5RR7eChF2HoY3a9B8eYA3',
   decimals: 6,
 });
 tokenList.set('USDD', {
-  address: 'TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn',
+  address: 'TGjgvdTWWrybVLaVeFqSyVqJQWjxqRYbaK',
   decimals: 18,
 });
 
@@ -105,11 +93,11 @@ function pathKey(path) {
   return key;
 }
 
-async function diffPair(from, to) {
+async function diffPair(fromName, from, toName, to) {
   let amountIn = toBN(2)
     .mul(toBN(10).pow(toBN(from.decimals)))
     .toString();
-  let url = `http://${cfg.routerServer}/swap/router?fromToken=${from.address}&toToken=${to.address}&amountIn=${amountIn}`;
+  let url = `http://${cfg.routerServer}/swap/routingInV2?fromToken=${fromName}&fromTokenAddr=${from.address}&toToken=${toName}&toTokenAddr=${to.address}&inAmount=${amountIn}&fromDecimal=${from.decimals}&toDecimal=${to.decimals}`;
   console.log(url);
   try {
     total = total + 1;

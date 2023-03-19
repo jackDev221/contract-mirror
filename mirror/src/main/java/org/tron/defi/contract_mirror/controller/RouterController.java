@@ -137,8 +137,8 @@ public class RouterController {
         BigInteger amountIn = new BigInteger(amount);
         try {
             long time0 = System.currentTimeMillis();
-            BigDecimal inUsdPrice = priceService.getPrice(from);
-            BigDecimal outUsdPrice = priceService.getPrice(to);
+            BigDecimal inUsdPrice = priceService.getPrice(fromToken);
+            BigDecimal outUsdPrice = priceService.getPrice(toToken);
             log.debug("inUsdPrice={} outUsdPrice={}", inUsdPrice, outUsdPrice);
             long time1 = System.currentTimeMillis();
             List<RouterPath> paths = routerService.getPath(from, to, amountIn);
