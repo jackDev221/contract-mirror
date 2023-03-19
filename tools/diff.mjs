@@ -145,8 +145,8 @@ async function diffPair(from, to) {
     let versionLens = [];
     for (let pool in path.pool) {
       if (versions.length == 0 || versions[versions.length - 1] != pool) {
-        versions.add(pool);
-        versionLens.add(1);
+        versions.push(pool);
+        versionLens.push(1);
       } else {
         versionLens[versionLens.length - 1] += 1;
       }
