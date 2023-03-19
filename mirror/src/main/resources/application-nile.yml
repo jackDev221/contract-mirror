@@ -55,10 +55,10 @@ contract-list:
       address: TH6ZjnptwVgtaTFhCJfkv3B9WVjkGW9mcr
       type: CURVE_2POOL
     - name: old3pool
-      address: TDkZTWznmZ7c7QgmGK1WcDREM1W5v6Jofx
+      address: TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E
       type: CURVE_3POOL
     - name: oldusdcpool
-      address: THgnHLwca6dK8wZwfN12dvx7KSwAdnF9hW
+      address: TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr
       type: CURVE_COMBINATION_4POOL
     - name: usdtpsm
       address: TF12vhGuWttHNfxsrn6XueMLvxGLVCyN12
