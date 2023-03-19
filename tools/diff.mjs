@@ -122,7 +122,7 @@ async function diffPair(from, to) {
     totalTime += t;
     response = await response.json();
     console.log(response);
-    if (response.code != 0) {
+    if (response.code != 0 || response.data.length == 0) {
       console.log(response);
       return 0;
     }
