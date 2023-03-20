@@ -5,10 +5,10 @@ const { mainnet, nile } = config;
 import utils from 'web3-utils';
 const { toBN, toWei } = utils;
 
-const cfg = mainnet;
+const cfg = nile;
 const tronWeb = await initTronWeb(cfg);
 const router = await tronWeb.contract().at(cfg.smartRouter);
-const to = 'TF5MekHgFz6neU7zTpX4h2tha5miPDUj3z';
+const receiver = 'TF5MekHgFz6neU7zTpX4h2tha5miPDUj3z';
 
 let tokenList = new Map();
 tokenList.set('TRX', {
@@ -83,6 +83,7 @@ tokenList.set('USDD', {
 let paths = new Set();
 let total = 0;
 let success = 0;
+let diff = 0;
 let maxTime = 0;
 let minTime = 999999999999;
 let totalTime = 0;
@@ -93,6 +94,19 @@ function pathKey(path) {
   return key;
 }
 
+function decimalToBN(value, decimals) {
+  let negative = (value.substring(0, 1) === '-');
+  if (negative) {
+    value = value.substring(1);
+  }
+  let comps = value.split('.');
+  if (comps.length > 2 || (comps.length == 2 && comps[1].length > decimals)) {
+    throw `invalid value ${value} ${decimals}`;
+  }
+  let n = toBN(comps[0]).mul(toBN(10).pow(toBN(decimals))).add(toBN(comps[1]).mul(toBN(10).pow(toBN(decimals - comps[1].length))));
+  return negative ? n.neg() : n;
+}
+
 async function diffPair(fromName, from, toName, to) {
   let amountIn = toBN(2)
     .mul(toBN(10).pow(toBN(from.decimals)))
@@ -100,7 +114,7 @@ async function diffPair(fromName, from, toName, to) {
   let url = `http://${cfg.routerServer}/swap/routingInV2?fromToken=${fromName}&fromTokenAddr=${from.address}&toToken=${toName}&toTokenAddr=${to.address}&inAmount=${amountIn}&fromDecimal=${from.decimals}&toDecimal=${to.decimals}`;
   console.log(url);
   try {
-    total = total + 1;
+    total += 1;
     let t0 = Date.now();
     let response = await fetch(url);
     let t1 = Date.now();
@@ -109,13 +123,12 @@ async function diffPair(fromName, from, toName, to) {
     minTime = Math.min(minTime, t);
     totalTime += t;
     response = await response.json();
-    console.log(response);
     if (response.code != 0 || response.data.length == 0) {
       console.log(response);
       return 0;
     }
-    success = success + 1;
-    let path;
+    success += 1;
+    let path = null;
     for (let i = 0; i < response.data.length; i++) {
       path = response.data[i];
       let key = pathKey(path);
@@ -131,49 +144,51 @@ async function diffPair(fromName, from, toName, to) {
     }
     let versions = [];
     let versionLens = [];
-    for (let pool in path.pool) {
+    for (let i = 0 ; i < path.pool.length; i++) {
+      let pool = path.pool[i];
       if (versions.length == 0 || versions[versions.length - 1] != pool) {
         versions.push(pool);
-        versionLens.push(1);
+        versionLens.push(i == 0 ? 2 : 1);
       } else {
         versionLens[versionLens.length - 1] += 1;
       }
     }
     let amountsOut;
-    if (from === tokenList['TRX']) {
+    if (from === tokenList.get('TRX')) {
       amountsOut = await router
         .swapExactETHForTokens(
           amountIn.toString(),
           1,
-          path.roadForAddr,
+          JSON.parse(JSON.stringify(path.roadForAddr)),
           versions,
           versionLens,
-          to,
+          receiver,
           99999999999999,
         )
-        .send({ value: amountIn.toString(), shouldPollResponse: true });
+        .send({ callValue: amountIn.toString(), shouldPollResponse: true });
     } else {
       amountsOut = await router
         .swapExactTokensForTokens(
           amountIn.toString(),
           1,
-          path.roadForAddr,
+          JSON.parse(JSON.stringify(path.roadForAddr)),
           versions,
           versionLens,
-          to,
+          receiver,
           99999999999999,
         )
         .send({ shouldPollResponse: true });
     }
+    amountsOut = amountsOut.amountsOut;
     let amountOut = null;
     if (amountsOut.length > 0) {
       amountOut = amountsOut[amountsOut.length - 1].toString();
     }
-    let expectOut = toBN(path.amount)
-      .mul(toBN(10).pow(toBN(to.decimals)))
-      .toString();
-    if (amountOut.length == null || amountOut != expectOut) {
-      console.log(`diff ${path} ${amountsOut} != ${expectOut}`);
+    let expectOut = decimalToBN(path.amount, to.decimals).toString();
+    if (amountOut === null || amountOut != expectOut) {
+      diff += 1;
+      console.log(JSON.stringify(path))
+      console.log(`diff ${amountsOut} != ${expectOut}`);
     }
     return 1;
   } catch (e) {
@@ -184,16 +199,16 @@ async function diffPair(fromName, from, toName, to) {
 
 for (let [name0, token0] of tokenList) {
   for (let [name1, token1] of tokenList) {
-    if (name0 == name1) {
+    if (name0 === name1) {
       continue;
     }
     let count = 0;
     do {
-      count = await diffPair(token0, token1);
+      count = await diffPair(name0, token0, name1, token1);
     } while (count > 0);
   }
 }
 console.log(
-  `total=${total} success=${success} maxTime=${maxTime} minTime=${minTime} avgTime=`,
+  `total=${total} success=${success} diff=${diff} maxTime=${maxTime} minTime=${minTime} avgTime=`,
   totalTime / total,
 );

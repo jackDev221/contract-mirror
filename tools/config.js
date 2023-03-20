@@ -8,6 +8,7 @@ module.exports = {
   nile: {
     netId: 'nile',
     rpcURL: 'https://nile.trongrid.io',
+    routerServer: '127.0.0.1:8089',
     smartRouter: 'TLCinYBDnF9n31s9ss1cJjiAF6N1akF11c',
   },
 };
