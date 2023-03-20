@@ -107,3 +107,5 @@ router:
     - TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn
     - TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8
     - TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S
+  poolBlackList:
+    - TTnSHzUoho1CU6zFYVzVSCKq8EX8ZddkVv

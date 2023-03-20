@@ -94,3 +94,5 @@ router:
   strategy: OPTIMISTIC
   maxCost: 3
   topN: 3
+  poolBlackList:
+    - TKugRaXPsTaJNEYFbfgecCKe6QWQPc9Xwp
