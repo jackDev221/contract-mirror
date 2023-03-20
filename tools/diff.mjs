@@ -126,14 +126,14 @@ async function diffPair(fromName, from, toName, to) {
   }
   success += 1;
   let path = null;
+  let key = null;
   for (let i = 0; i < response.data.length; i++) {
     path = response.data[i];
-    let key = pathKey(path);
+    key = pathKey(path);
     if (paths.has(key)) {
       path = null;
       continue;
     }
-    paths.add(key);
     break;
   }
   if (path === null) {
@@ -187,6 +187,7 @@ async function diffPair(fromName, from, toName, to) {
     console.log(JSON.stringify(path));
     console.log(`diff ${amountsOut} != ${expectOut}`);
   }
+  paths.add(key);
   return 1;
 }
 
@@ -201,7 +202,11 @@ for (let [name0, token0] of tokenList) {
         count = await diffPair(name0, token0, name1, token1);
       } catch (e) {
         console.log(e);
-        count = 1; // retry
+        if (e.error === 'Cannot find result in solidity node') {
+          count = 1; // retry
+        } else {
+          count = 0;
+        }
       }
     } while (count > 0);
   }
