@@ -151,30 +151,40 @@ async function diffPair(fromName, from, toName, to) {
     }
   }
   let amountsOut;
-  if (from === tokenList.get('TRX')) {
-    amountsOut = await router
-      .swapExactETHForTokens(
-        amountIn.toString(),
-        1,
-        JSON.parse(JSON.stringify(path.roadForAddr)),
-        versions,
-        versionLens,
-        receiver,
-        99999999999999,
-      )
-      .send({ callValue: amountIn.toString(), shouldPollResponse: true });
-  } else {
-    amountsOut = await router
-      .swapExactTokensForTokens(
-        amountIn.toString(),
-        1,
-        JSON.parse(JSON.stringify(path.roadForAddr)),
-        versions,
-        versionLens,
-        receiver,
-        99999999999999,
-      )
-      .send({ shouldPollResponse: true });
+  try {
+    if (from === tokenList.get('TRX')) {
+      amountsOut = await router
+        .swapExactETHForTokens(
+          amountIn.toString(),
+          1,
+          JSON.parse(JSON.stringify(path.roadForAddr)),
+          versions,
+          versionLens,
+          receiver,
+          99999999999999,
+        )
+        .send({ callValue: amountIn.toString(), shouldPollResponse: true });
+    } else {
+      amountsOut = await router
+        .swapExactTokensForTokens(
+          amountIn.toString(),
+          1,
+          JSON.parse(JSON.stringify(path.roadForAddr)),
+          versions,
+          versionLens,
+          receiver,
+          99999999999999,
+        )
+        .send({ shouldPollResponse: true });
+    }
+  } catch (e) {
+    console.log(e);
+    if (e.error === 'Cannot find result in solidity node') {
+    } else {
+      console.log(JSON.stringify(path));
+      paths.add(key);
+    }
+    return 1; // retry
   }
   amountsOut = amountsOut.amountsOut;
   let amountOut = null;
@@ -198,16 +208,7 @@ for (let [name0, token0] of tokenList) {
     }
     let count = 0;
     do {
-      try {
-        count = await diffPair(name0, token0, name1, token1);
-      } catch (e) {
-        console.log(e);
-        if (e.error === 'Cannot find result in solidity node') {
-          count = 1; // retry
-        } else {
-          count = 0;
-        }
-      }
+      count = await diffPair(name0, token0, name1, token1);
     } while (count > 0);
   }
 }
