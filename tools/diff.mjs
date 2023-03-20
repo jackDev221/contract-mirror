@@ -27,10 +27,6 @@ tokenList.set('BTC', {
   address: 'TG9XJ75ZWcUw69W8xViEJZQ365fRupGkFP',
   decimals: 8,
 });
-tokenList.set('WBTC', {
-  address: 'TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9',
-  decimals: 8,
-});
 tokenList.set('ETH', {
   address: 'TQz9i4JygMCzizdVu8NE4BdqesrsHv1L93',
   decimals: 18,
@@ -115,88 +111,83 @@ async function diffPair(fromName, from, toName, to) {
     .toString();
   let url = `http://${cfg.routerServer}/swap/routingInV2?fromToken=${fromName}&fromTokenAddr=${from.address}&toToken=${toName}&toTokenAddr=${to.address}&inAmount=${amountIn}&fromDecimal=${from.decimals}&toDecimal=${to.decimals}`;
   console.log(url);
-  try {
-    total += 1;
-    let t0 = Date.now();
-    let response = await fetch(url);
-    let t1 = Date.now();
-    let t = t1 - t0;
-    maxTime = Math.max(maxTime, t);
-    minTime = Math.min(minTime, t);
-    totalTime += t;
-    response = await response.json();
-    if (response.code != 0 || response.data.length == 0) {
-      console.log(response);
-      return 0;
-    }
-    success += 1;
-    let path = null;
-    for (let i = 0; i < response.data.length; i++) {
-      path = response.data[i];
-      let key = pathKey(path);
-      if (paths.has(key)) {
-        path = null;
-        continue;
-      }
-      paths.add(key);
-      break;
-    }
-    if (path === null) {
-      return 0;
-    }
-    let versions = [];
-    let versionLens = [];
-    for (let i = 0; i < path.pool.length; i++) {
-      let pool = path.pool[i];
-      if (versions.length == 0 || versions[versions.length - 1] != pool) {
-        versions.push(pool);
-        versionLens.push(i == 0 ? 2 : 1);
-      } else {
-        versionLens[versionLens.length - 1] += 1;
-      }
-    }
-    let amountsOut;
-    if (from === tokenList.get('TRX')) {
-      amountsOut = await router
-        .swapExactETHForTokens(
-          amountIn.toString(),
-          1,
-          JSON.parse(JSON.stringify(path.roadForAddr)),
-          versions,
-          versionLens,
-          receiver,
-          99999999999999,
-        )
-        .send({ callValue: amountIn.toString(), shouldPollResponse: true });
-    } else {
-      amountsOut = await router
-        .swapExactTokensForTokens(
-          amountIn.toString(),
-          1,
-          JSON.parse(JSON.stringify(path.roadForAddr)),
-          versions,
-          versionLens,
-          receiver,
-          99999999999999,
-        )
-        .send({ shouldPollResponse: true });
-    }
-    amountsOut = amountsOut.amountsOut;
-    let amountOut = null;
-    if (amountsOut.length > 0) {
-      amountOut = amountsOut[amountsOut.length - 1].toString();
-    }
-    let expectOut = decimalToBN(path.amount, to.decimals).toString();
-    if (amountOut === null || amountOut != expectOut) {
-      diff += 1;
-      console.log(JSON.stringify(path));
-      console.log(`diff ${amountsOut} != ${expectOut}`);
-    }
-    return 1;
-  } catch (e) {
-    console.log(`error ${e}, ${url}`);
+  total += 1;
+  let t0 = Date.now();
+  let response = await fetch(url);
+  let t1 = Date.now();
+  let t = t1 - t0;
+  maxTime = Math.max(maxTime, t);
+  minTime = Math.min(minTime, t);
+  totalTime += t;
+  response = await response.json();
+  if (response.code != 0 || response.data.length == 0) {
+    console.log(response);
     return 0;
   }
+  success += 1;
+  let path = null;
+  for (let i = 0; i < response.data.length; i++) {
+    path = response.data[i];
+    let key = pathKey(path);
+    if (paths.has(key)) {
+      path = null;
+      continue;
+    }
+    paths.add(key);
+    break;
+  }
+  if (path === null) {
+    return 0;
+  }
+  let versions = [];
+  let versionLens = [];
+  for (let i = 0; i < path.pool.length; i++) {
+    let pool = path.pool[i];
+    if (versions.length == 0 || versions[versions.length - 1] != pool) {
+      versions.push(pool);
+      versionLens.push(i == 0 ? 2 : 1);
+    } else {
+      versionLens[versionLens.length - 1] += 1;
+    }
+  }
+  let amountsOut;
+  if (from === tokenList.get('TRX')) {
+    amountsOut = await router
+      .swapExactETHForTokens(
+        amountIn.toString(),
+        1,
+        JSON.parse(JSON.stringify(path.roadForAddr)),
+        versions,
+        versionLens,
+        receiver,
+        99999999999999,
+      )
+      .send({ callValue: amountIn.toString(), shouldPollResponse: true });
+  } else {
+    amountsOut = await router
+      .swapExactTokensForTokens(
+        amountIn.toString(),
+        1,
+        JSON.parse(JSON.stringify(path.roadForAddr)),
+        versions,
+        versionLens,
+        receiver,
+        99999999999999,
+      )
+      .send({ shouldPollResponse: true });
+  }
+  amountsOut = amountsOut.amountsOut;
+  let amountOut = null;
+  if (amountsOut.length > 0) {
+    amountOut = amountsOut[amountsOut.length - 1].toString();
+  }
+  let expectOut = decimalToBN(path.amount, to.decimals).toString();
+  if (amountOut === null || amountOut != expectOut) {
+    diff += 1;
+    console.log(JSON.stringify(path));
+    console.log(`diff ${amountsOut} != ${expectOut}`);
+  }
+  return 1;
 }
 
 for (let [name0, token0] of tokenList) {
@@ -206,7 +197,11 @@ for (let [name0, token0] of tokenList) {
     }
     let count = 0;
     do {
-      count = await diffPair(name0, token0, name1, token1);
+      try {
+        count = await diffPair(name0, token0, name1, token1);
+      } catch (e) {
+        console.log(e);
+      }
     } while (count > 0);
   }
 }
