@@ -20,7 +20,7 @@ cargo build --release
   "compareResPath": "", // 输出对比路径
   "compareResDetailPath": "", //输出对比diff路径 
   "useBaseTokens": "true", //是否使用baseToken
-  "maxCount": 100, //最大请求次数。
+  "maxCount": 1000000, //最大请求次数。
   "restoreInput": false, // 是否重新存储旧版本服务器日志，搭配请求去重，加快下次测试测试
   "restoreInputPath": "", // 重新存储旧版本服务器日志目录 
   "rmDuplicate":true, // 请求是否去重，基于交换币对唯一性

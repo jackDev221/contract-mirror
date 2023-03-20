@@ -5,7 +5,7 @@
   "compareResPath": "",
   "compareResDetailPath": "",
   "useBaseTokens": "true",
-  "maxCount": 100,
+  "maxCount": 1000000,
   "restoreInput": false,
   "restoreInputPath": "",
   "rmDuplicate":true,
