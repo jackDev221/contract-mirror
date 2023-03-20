@@ -95,7 +95,7 @@ function pathKey(path) {
 }
 
 function decimalToBN(value, decimals) {
-  let negative = (value.substring(0, 1) === '-');
+  let negative = value.substring(0, 1) === '-';
   if (negative) {
     value = value.substring(1);
   }
@@ -103,7 +103,9 @@ function decimalToBN(value, decimals) {
   if (comps.length > 2 || (comps.length == 2 && comps[1].length > decimals)) {
     throw `invalid value ${value} ${decimals}`;
   }
-  let n = toBN(comps[0]).mul(toBN(10).pow(toBN(decimals))).add(toBN(comps[1]).mul(toBN(10).pow(toBN(decimals - comps[1].length))));
+  let n = toBN(comps[0])
+    .mul(toBN(10).pow(toBN(decimals)))
+    .add(toBN(comps[1]).mul(toBN(10).pow(toBN(decimals - comps[1].length))));
   return negative ? n.neg() : n;
 }
 
@@ -144,7 +146,7 @@ async function diffPair(fromName, from, toName, to) {
     }
     let versions = [];
     let versionLens = [];
-    for (let i = 0 ; i < path.pool.length; i++) {
+    for (let i = 0; i < path.pool.length; i++) {
       let pool = path.pool[i];
       if (versions.length == 0 || versions[versions.length - 1] != pool) {
         versions.push(pool);
@@ -187,7 +189,7 @@ async function diffPair(fromName, from, toName, to) {
     let expectOut = decimalToBN(path.amount, to.decimals).toString();
     if (amountOut === null || amountOut != expectOut) {
       diff += 1;
-      console.log(JSON.stringify(path))
+      console.log(JSON.stringify(path));
       console.log(`diff ${amountsOut} != ${expectOut}`);
     }
     return 1;
