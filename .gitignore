@@ -6,7 +6,7 @@ build/
 !**/src/test/**/build/
 */.DS_Store
 .DS_Store
-
+test_tools/prase_logs/target
 ### STS ###
 .apt_generated
 .classpath
@@ -37,3 +37,5 @@ out/
 
 ### VS Code ###
 .vscode/
+
+
