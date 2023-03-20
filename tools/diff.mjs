@@ -201,6 +201,7 @@ for (let [name0, token0] of tokenList) {
         count = await diffPair(name0, token0, name1, token1);
       } catch (e) {
         console.log(e);
+        count = 1; // retry
       }
     } while (count > 0);
   }
