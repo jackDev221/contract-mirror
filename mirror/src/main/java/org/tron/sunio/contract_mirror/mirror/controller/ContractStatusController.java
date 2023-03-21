@@ -74,7 +74,7 @@ public class ContractStatusController {
                                            @RequestParam(name = "inAmount", required = true) String inAmount,
                                            @RequestParam(name = "fromDecimal", required = true) int fromDecimal,
                                            @RequestParam(name = "toDecimal", required = true) int toDecimal,
-                                           @RequestParam(name = "useBaseTokens", required = false) boolean isUseBaseToken
+                                           @RequestParam(name = "useBaseTokens", required = false, defaultValue = "true") boolean isUseBaseToken
     ) {
 
         try {
