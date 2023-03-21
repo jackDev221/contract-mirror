@@ -79,17 +79,14 @@ tokenList.set('USDD', {
 let paths = new Map();
 let total = 0;
 let success = 0;
+let fail = 0;
 let diff = 0;
 let t = 0;
 let maxTime = 0;
 let minTime = 999999999999;
 let totalTime = 0;
 
-function record(isdiff) {
-  if (isdiff) {
-    diff += 1;
-  }
-  success += 1;
+function record() {
   total += 1;
   totalTime += t;
   maxTime = Math.max(maxTime, t);
@@ -205,7 +202,8 @@ async function diffPair(fromName, from, toName, to) {
     error = error === undefined ? 1 : error + 1;
     paths.set(key, error);
     if (error === 3) {
-      record(true);
+      fail += 1;
+      record();
       return 0;
     }
     return 1; // retry
@@ -222,13 +220,16 @@ async function diffPair(fromName, from, toName, to) {
     console.log(JSON.stringify(path));
     console.log(`diff ${error} ${amountsOut} != ${expectOut}`);
     if (error === 3) {
-      record(true);
+      success += 1;
+      diff += 1;
+      record();
       return 0;
     }
     return 1; // retry
   }
   paths.set(key, 0);
-  record(false);
+  success += 1;
+  record();
   return 1;
 }
 
