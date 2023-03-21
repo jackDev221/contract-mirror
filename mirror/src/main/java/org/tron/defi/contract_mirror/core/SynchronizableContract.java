@@ -11,16 +11,16 @@ import org.web3j.abi.EventValues;
 @Slf4j
 public abstract class SynchronizableContract extends Contract implements Synchronizable {
     @Getter
-    protected long timestamp0 = 0;
+    protected volatile long timestamp0 = 0;
     @Getter
-    protected long timestamp1 = 0;
+    protected volatile long timestamp1 = 0;
     @Getter
-    protected long timestamp2 = 0;
+    protected volatile long timestamp2 = 0;
     @Getter
     protected BlockInfo lastBlock;
     @Getter
-    protected long lastEventTimestamp;
-    protected boolean ready = false;
+    protected volatile long lastEventTimestamp;
+    protected volatile boolean ready = false;
 
     public SynchronizableContract(String address) {
         super(address);
@@ -28,7 +28,7 @@ public abstract class SynchronizableContract extends Contract implements Synchro
 
     @Override
     public boolean isEventAccept() {
-        return timestamp0 > 0 && timestamp1 > timestamp0;
+        return timestamp0 > 0 && timestamp1 >= timestamp0;
     }
 
     @Override
