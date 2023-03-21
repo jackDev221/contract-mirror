@@ -1,0 +1,74 @@
+class CoverageExtension {
+    List<String> excludePackages
+    List<String> excludeClasses
+}
+
+project.extensions.create('coverage', CoverageExtension)
+
+apply plugin: 'jacoco'
+
+jacoco {
+    toolVersion = '0.8.6'
+}
+
+jacocoTestReport {
+    description = 'Generates an aggregate report from every subprojects'
+    dependsOn(subprojects.test)
+    reports {
+        html.enabled = true
+        xml.enabled = true
+        csv.enabled false
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.0
+            }
+        }
+    }
+
+    afterEvaluate {
+        def excludePackagesPattern = coverage.excludePackages.collect {
+            it.replaceAll('\\.', '/') + '/*'
+        }
+        def excludeClassesPattern = coverage.excludeClasses.collect {
+            it.replaceAll('\\.', '/') + '.class'
+        }
+
+        classDirectories.from(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [excludePackagesPattern, excludeClassesPattern].flatten())
+        }))
+    }
+}
+
+task jacocoRootReport(type: JacocoReport, group: 'Coverage reports') {
+    description = 'Generates an aggregate report from all subprojects'
+    dependsOn(subprojects.test)
+
+    getAdditionalSourceDirs().from(subprojects.sourceSets.main.allSource.srcDirs)
+    getSourceDirectories().from(subprojects.sourceSets.main.allSource.srcDirs)
+    getClassDirectories().from(subprojects.sourceSets.main.output)
+    getExecutionData().from(subprojects.jacocoTestReport.executionData)
+
+    reports {
+        html.enabled = true
+        xml.enabled = true
+        csv.enabled false
+    }
+
+    doFirst {
+        getExecutionData().from(executionData.findAll { it.exists() })
+    }
+}
+
+jacocoTestCoverageVerification.dependsOn test
+jacocoTestCoverageVerification.shouldRunAfter jacocoTestReport
+jacocoTestCoverageVerification.shouldRunAfter jacocoRootReport
+jacocoRootReport.shouldRunAfter jacocoTestReport
+test.finalizedBy jacocoTestReport, jacocoRootReport
+
+check.dependsOn jacocoTestCoverageVerification, jacocoTestReport, jacocoRootReport
+

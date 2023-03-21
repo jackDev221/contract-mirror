@@ -1,0 +1,13 @@
+{
+  "oldUrl": "",
+  "newUrl": "",
+  "logFilePath": "",
+  "compareResPath": "",
+  "compareResDetailPath": "",
+  "useBaseTokens": "true",
+  "maxCount": 1000000,
+  "restoreInput": false,
+  "restoreInputPath": "",
+  "rmDuplicate":true,
+  "tokenPairOfLargePaths": ""
+}

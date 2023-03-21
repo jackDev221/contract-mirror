@@ -1,0 +1,31 @@
+buildscript {
+    ext {
+
+    }
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+    }
+
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+    }
+}
+
+apply plugin: 'application'
+apply plugin: 'org.springframework.boot'
+
+mainClassName = 'org.tron.sunio.contract_mirror.mirror.MirrorApplication'
+archivesBaseName = 'contract-mirror'
+version = "1.0.0"
+
+dependencies {
+    implementation project(':tronsdk')
+    implementation project(':event_decode')
+    implementation 'com.google.protobuf:protobuf-java:3.12.0'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.3'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.3'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.13.3'
+}
+
