@@ -92,7 +92,7 @@ function record() {
   maxTime = Math.max(maxTime, t);
   minTime = Math.min(minTime, t);
   console.log(
-    `total=${total} success=${success} diff=${diff} maxTime=${maxTime} minTime=${minTime} avgTime=`,
+    `total=${total} success=${success} fail=${fail} diff=${diff} maxTime=${maxTime} minTime=${minTime} avgTime=`,
     totalTime / total,
   );
 }
