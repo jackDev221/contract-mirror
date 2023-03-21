@@ -76,13 +76,29 @@ tokenList.set('USDD', {
   decimals: 18,
 });
 
-let paths = new Set();
+let paths = new Map();
 let total = 0;
 let success = 0;
 let diff = 0;
+let t = 0;
 let maxTime = 0;
 let minTime = 999999999999;
 let totalTime = 0;
+
+function record(isdiff) {
+  if (isdiff) {
+    diff += 1;
+  }
+  success += 1;
+  total += 1;
+  totalTime += t;
+  maxTime = Math.max(maxTime, t);
+  minTime = Math.min(minTime, t);
+  console.log(
+    `total=${total} success=${success} diff=${diff} maxTime=${maxTime} minTime=${minTime} avgTime=`,
+    totalTime / total,
+  );
+}
 
 function pathKey(path) {
   let key = path.roadForName.join('');
@@ -111,26 +127,22 @@ async function diffPair(fromName, from, toName, to) {
     .toString();
   let url = `http://${cfg.routerServer}/swap/routingInV2?fromToken=${fromName}&fromTokenAddr=${from.address}&toToken=${toName}&toTokenAddr=${to.address}&inAmount=${amountIn}&fromDecimal=${from.decimals}&toDecimal=${to.decimals}`;
   console.log(url);
-  total += 1;
   let t0 = Date.now();
   let response = await fetch(url);
   let t1 = Date.now();
-  let t = t1 - t0;
-  maxTime = Math.max(maxTime, t);
-  minTime = Math.min(minTime, t);
-  totalTime += t;
+  t = t1 - t0;
   response = await response.json();
   if (response.code != 0 || response.data.length == 0) {
     console.log(response);
     return 0;
   }
-  success += 1;
   let path = null;
   let key = null;
   for (let i = 0; i < response.data.length; i++) {
     path = response.data[i];
     key = pathKey(path);
-    if (paths.has(key)) {
+    let error = paths.get(key);
+    if (error === 0) {
       path = null;
       continue;
     }
@@ -178,11 +190,13 @@ async function diffPair(fromName, from, toName, to) {
         .send({ shouldPollResponse: true });
     }
   } catch (e) {
+    console.log(JSON.stringify(path));
     console.log(e);
-    if (e.error === 'Cannot find result in solidity node') {
-    } else {
-      console.log(JSON.stringify(path));
-      paths.add(key);
+    error = error === null ? 1 : error + 1;
+    paths.set(key, error);
+    if (error === 3) {
+      record(true);
+      return 0;
     }
     return 1; // retry
   }
@@ -193,11 +207,18 @@ async function diffPair(fromName, from, toName, to) {
   }
   let expectOut = decimalToBN(path.amount, to.decimals).toString();
   if (amountOut === null || amountOut != expectOut) {
-    diff += 1;
     console.log(JSON.stringify(path));
     console.log(`diff ${amountsOut} != ${expectOut}`);
+    error = error === null ? 1 : error + 1;
+    paths.set(key, error);
+    if (error === 3) {
+      record(true);
+      return 0;
+    }
+    return 1; // retry
   }
-  paths.add(key);
+  paths.set(key, 0);
+  record(false);
   return 1;
 }
 
@@ -212,7 +233,3 @@ for (let [name0, token0] of tokenList) {
     } while (count > 0);
   }
 }
-console.log(
-  `total=${total} success=${success} diff=${diff} maxTime=${maxTime} minTime=${minTime} avgTime=`,
-  totalTime / total,
-);
