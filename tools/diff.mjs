@@ -122,8 +122,9 @@ function decimalToBN(value, decimals) {
 }
 
 async function diffPair(fromName, from, toName, to) {
+  // 0.2
   let amountIn = toBN(2)
-    .mul(toBN(10).pow(toBN(from.decimals)))
+    .mul(toBN(10).pow(toBN(from.decimals - 1)))
     .toString();
   let url = `http://${cfg.routerServer}/swap/routingInV2?fromToken=${fromName}&fromTokenAddr=${from.address}&toToken=${toName}&toTokenAddr=${to.address}&inAmount=${amountIn}&fromDecimal=${from.decimals}&toDecimal=${to.decimals}`;
   console.log(url);
@@ -138,7 +139,7 @@ async function diffPair(fromName, from, toName, to) {
   }
   let path = null;
   let key = null;
-  let error = null;
+  let error = undefined;
   for (let i = 0; i < response.data.length; i++) {
     path = response.data[i];
     key = pathKey(path);
@@ -201,7 +202,7 @@ async function diffPair(fromName, from, toName, to) {
   } catch (e) {
     console.log(JSON.stringify(path));
     console.log(e);
-    error = error === null ? 1 : error + 1;
+    error = error === undefined ? 1 : error + 1;
     paths.set(key, error);
     if (error === 3) {
       record(true);
@@ -216,10 +217,10 @@ async function diffPair(fromName, from, toName, to) {
   }
   let expectOut = decimalToBN(path.amount, to.decimals).toString();
   if (amountOut === null || amountOut != expectOut) {
-    console.log(JSON.stringify(path));
-    console.log(`diff ${amountsOut} != ${expectOut}`);
-    error = error === null ? 1 : error + 1;
+    error = error === undefined ? 1 : error + 1;
     paths.set(key, error);
+    console.log(JSON.stringify(path));
+    console.log(`diff ${error} ${amountsOut} != ${expectOut}`);
     if (error === 3) {
       record(true);
       return 0;
