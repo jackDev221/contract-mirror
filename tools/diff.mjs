@@ -138,10 +138,11 @@ async function diffPair(fromName, from, toName, to) {
   }
   let path = null;
   let key = null;
+  let error = null;
   for (let i = 0; i < response.data.length; i++) {
     path = response.data[i];
     key = pathKey(path);
-    let error = paths.get(key);
+    error = paths.get(key);
     if (error === 0) {
       path = null;
       continue;
@@ -163,6 +164,7 @@ async function diffPair(fromName, from, toName, to) {
     }
   }
   let amountsOut;
+  let now = Math.floor(Date.now() / 1000);
   try {
     if (from === tokenList.get('TRX')) {
       amountsOut = await router
@@ -173,9 +175,13 @@ async function diffPair(fromName, from, toName, to) {
           versions,
           versionLens,
           receiver,
-          99999999999999,
+          now + 6000,
         )
-        .send({ callValue: amountIn.toString(), shouldPollResponse: true });
+        .send({
+          feeLimit: 1000 * 1e6,
+          callValue: amountIn.toString(),
+          shouldPollResponse: true,
+        });
     } else {
       amountsOut = await router
         .swapExactTokensForTokens(
@@ -185,9 +191,12 @@ async function diffPair(fromName, from, toName, to) {
           versions,
           versionLens,
           receiver,
-          99999999999999,
+          now + 6000,
         )
-        .send({ shouldPollResponse: true });
+        .send({
+          feeLimit: 1000 * 1e6,
+          shouldPollResponse: true,
+        });
     }
   } catch (e) {
     console.log(JSON.stringify(path));
