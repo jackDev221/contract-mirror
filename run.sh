@@ -54,7 +54,7 @@ start(){
   if [ $? -eq "0" ]; then
     echo ">>> ${JAR_NAME} is already running PID=${pid} <<<"
   else
-    nohup /opt/jdk-11.0.18/bin/java -Xms1g -Xmx8g -jar $JAR_NAME  --spring.profiles.active=$PROFILE --server.port=$PORT >/dev/null 2>&1 &
+    nohup /opt/jdk-11.0.18/bin/java -Xms1g -Xmx8g -jar $JAR_NAME  --spring.profiles.active=$PROFILE --server.port=$PORT --kafka.groupId=contract_mirror_${PROFILE}_${PORT} >/dev/null 2>&1 &
     echo $! > $PID
     echo ">>> start $JAR_NAME successed PID=$! <<<"
    fi
