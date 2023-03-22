@@ -117,6 +117,7 @@ public class AssemblePool extends BaseContract {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getStatus() {
         return (T) getVarPoolData();
     }
@@ -127,6 +128,7 @@ public class AssemblePool extends BaseContract {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_TOKEN:

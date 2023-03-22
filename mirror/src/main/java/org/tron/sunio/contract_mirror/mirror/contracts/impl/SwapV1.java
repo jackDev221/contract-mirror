@@ -153,6 +153,7 @@ public class SwapV1 extends BaseContract {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getStatus() {
         return (T) getVarSwapV1Data();
     }
@@ -169,6 +170,7 @@ public class SwapV1 extends BaseContract {
     *
     * */
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_NAME:

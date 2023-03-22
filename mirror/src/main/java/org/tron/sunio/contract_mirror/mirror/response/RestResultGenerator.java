@@ -12,9 +12,9 @@ public class RestResultGenerator {
         response.setMessage(ResponseEnum.SUCCESS.getMessage());
         response.setResponseEnum(ResponseEnum.SUCCESS);
         response.setData(result);
-        log.info("--------> response:{}", JacksonMapper.toJsonString(response));
+        log.info("response:{}", JacksonMapper.toJsonString(response));
         if (log.isDebugEnabled()) {
-            log.debug("--------> response:{}", JacksonMapper.toJsonString(response));
+            log.debug("response:{}", JacksonMapper.toJsonString(response));
         }
         return response;
     }
@@ -26,7 +26,7 @@ public class RestResultGenerator {
         response.setResponseEnum(responseEnum);
 
         if (log.isDebugEnabled()) {
-            log.debug("--------> response:{}", JacksonMapper.toJsonString(response));
+            log.debug("response:{}", JacksonMapper.toJsonString(response));
         }
 
         return response;
@@ -37,7 +37,7 @@ public class RestResultGenerator {
         response.setCode(1);
         response.setMessage(msg);
         if (log.isDebugEnabled()) {
-            log.debug("--------> response:{}", JacksonMapper.toJsonString(response));
+            log.debug("response:{}", JacksonMapper.toJsonString(response));
         }
 
         return response;
@@ -50,7 +50,7 @@ public class RestResultGenerator {
         response.setResponseEnum(responseEnum);
 
         if (log.isDebugEnabled()) {
-            log.debug("--------> response:{}", JacksonMapper.toJsonString(response));
+            log.debug("response:{}", JacksonMapper.toJsonString(response));
         }
 
         return response;

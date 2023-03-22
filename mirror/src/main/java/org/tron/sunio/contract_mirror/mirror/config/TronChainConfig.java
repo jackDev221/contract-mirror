@@ -18,7 +18,7 @@ public class TronChainConfig {
     @Bean("mirrorTronClient")
     public TronGrpcClient createClient() {
         log.info("选择Tron url:{} / {}", grpcEndpoint, grpcEndpointSolidity);
-        return new TronGrpcClient(grpcEndpoint, grpcEndpointSolidity);
+        return TronGrpcClient.ofNetwork(grpcEndpoint, grpcEndpointSolidity);
 
     }
 }
