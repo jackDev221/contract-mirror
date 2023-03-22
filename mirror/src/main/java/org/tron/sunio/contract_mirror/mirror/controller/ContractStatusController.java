@@ -2,6 +2,7 @@ package org.tron.sunio.contract_mirror.mirror.controller;
 
 import cn.hutool.core.util.ObjectUtil;
 import io.swagger.annotations.ApiParam;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +30,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 
 
 @RestController
+@Slf4j
 public class ContractStatusController {
     @Autowired
     private ContractMirror contractMirror;
@@ -45,6 +47,7 @@ public class ContractStatusController {
             var res = baseContract.handRequest(method, "");
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
+            log.error("Fail to response request: address:{}, method:{}, error:{}", address, method, e.toString());
             return RestResultGenerator.genErrorWithMessage(e.getMessage());
         }
     }
@@ -62,6 +65,7 @@ public class ContractStatusController {
             var res = baseContract.handRequest(method, param.getParams());
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
+            log.error("Fail to response request: address:{}, method:{}, error:{}", address, method, e.toString());
             return RestResultGenerator.genErrorWithMessage(e.getMessage());
         }
     }
@@ -79,6 +83,7 @@ public class ContractStatusController {
 
         try {
             if (!contractMirror.isFirstFinishLoadData()) {
+                log.info("Load contracts not finished");
                 return RestResultGenerator.genErrorWithMessage("Load contracts not finished");
             }
             String[] prices = contractMirror.getRouterServer().getTokenPrice(fromTokenAddr, toTokenAddr, fromToken, toToken);
@@ -88,6 +93,7 @@ public class ContractStatusController {
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
             e.printStackTrace();
+            log.error("Fail to response router request, error:{}", e.toString());
             return RestResultGenerator.genErrorWithMessage(e.getMessage());
         }
     }
@@ -103,6 +109,7 @@ public class ContractStatusController {
             var res = baseContract.handRequest(METHOD_VERSION, "");
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
+            log.error("Fail to response request: contract:{} version, error:{}", address, e.toString());
             return RestResultGenerator.genErrorWithMessage(e.getMessage());
         }
     }
