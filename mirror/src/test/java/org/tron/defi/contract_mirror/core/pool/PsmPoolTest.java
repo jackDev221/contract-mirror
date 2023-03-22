@@ -62,8 +62,10 @@ public class PsmPoolTest {
         Assertions.assertDoesNotThrow(() -> pool.init());
         IToken token0 = (IToken) pool.getTokens().get(0);
         IToken token1 = (IToken) pool.getTokens().get(1);
-        Assertions.assertEquals(Pool.PRICE_FACTOR, pool.getPrice(token0, token1));
-        Assertions.assertEquals(Pool.PRICE_FACTOR, pool.getPrice(token1, token0));
+        Assertions.assertEquals(Pool.PRICE_FACTOR.multiply(pool.getGemToUsddDecimalFactor()),
+                                pool.getPrice(token0, token1));
+        Assertions.assertEquals(Pool.PRICE_FACTOR.divide(pool.getGemToUsddDecimalFactor()),
+                                pool.getPrice(token1, token0));
     }
 
     @BeforeEach

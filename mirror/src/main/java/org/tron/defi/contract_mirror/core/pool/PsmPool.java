@@ -1,5 +1,6 @@
 package org.tron.defi.contract_mirror.core.pool;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.PsmAbi;
@@ -26,6 +27,7 @@ public class PsmPool extends Pool {
     private final String polyAddress;
     private PsmPoly poly;
     private PsmPoly.PsmInfo info;
+    @Getter
     private BigInteger gemToUsddDecimalFactor;
 
     public PsmPool(String address, String polyAddress) {
