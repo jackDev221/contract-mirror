@@ -22,5 +22,15 @@ public class ContractConfigList {
         private String address;
         private ContractType type;
         private String polyAddress;
+        private CurveConfig curveConfig;
+    }
+
+    @Data
+    public static class CurveConfig {
+        private int feeIndex;
+        private int feeDenominator;
+        private int precision;
+        private int precisionA;
+        private List<Integer> rates;
     }
 }

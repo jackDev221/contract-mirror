@@ -3,6 +3,7 @@ package org.tron.defi.contract_mirror.core.pool;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.CurveAbi;
+import org.tron.defi.contract_mirror.config.ContractConfigList;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.core.token.IToken;
@@ -28,8 +29,8 @@ import java.util.stream.Collectors;
 public class CurvePool extends Pool {
     private static final ArrayList<PoolType> CURVE_TYPE
         = new ArrayList<>(Arrays.asList(PoolType.CURVE2, PoolType.CURVE3));
-    private static final BigInteger FEE_DENOMINATOR = BigInteger.valueOf(10).pow(10);
-    private static final BigInteger PRECISION = BigInteger.valueOf(10).pow(18);
+    private final BigInteger FEE_DENOMINATOR;
+    private final BigInteger PRECISION;
     private final List<BigInteger> RATES;
     private final int FEE_INDEX;
     private final List<BigInteger> balances;
@@ -40,25 +41,25 @@ public class CurvePool extends Pool {
     private BigInteger futureA;
     private long timeFutureA;
 
-    public CurvePool(String address, PoolType type) {
+    public CurvePool(String address, PoolType type, ContractConfigList.CurveConfig curveConfig) {
         super(address);
         int index = CURVE_TYPE.indexOf(type);
         if (index < 0) {
             throw new IllegalArgumentException("UNEXPECTED TYPE " + type.name());
         }
         this.type = type;
+        FEE_INDEX = curveConfig.getFeeIndex();
+        FEE_DENOMINATOR = BigInteger.valueOf(10).pow(curveConfig.getFeeDenominator());
+        PRECISION = BigInteger.valueOf(10).pow(curveConfig.getPrecision());
+        RATES = curveConfig.getRates()
+                           .stream()
+                           .map(i -> BigInteger.valueOf(10).pow(i))
+                           .collect(Collectors.toList());
         switch (type) {
             case CURVE2:
-                RATES = Arrays.asList(BigInteger.valueOf(10).pow(30),
-                                      BigInteger.valueOf(10).pow(18));
-                FEE_INDEX = 2;
                 balances = Arrays.asList(BigInteger.ZERO, BigInteger.ZERO);
                 break;
             case CURVE3:
-                RATES = Arrays.asList(BigInteger.valueOf(10).pow(18),
-                                      BigInteger.valueOf(10).pow(18),
-                                      BigInteger.valueOf(10).pow(30));
-                FEE_INDEX = 3;
                 balances = Arrays.asList(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO);
                 break;
             default:
@@ -494,12 +495,11 @@ public class CurvePool extends Pool {
                                 xp,
                                 getA(timestamp),
                                 null);
-            BigInteger dy = TokenMath.safeSubtract(xp.get(toTokenId), y)
-                                     .subtract(BigInteger.ONE)
-                                     .multiply(PRECISION)
-                                     .divide(RATES.get(toTokenId));
+            BigInteger dy = TokenMath.safeSubtract(xp.get(toTokenId), y).subtract(BigInteger.ONE);
             // dy = dy - dy * fee / FEE_DENOMINATOR
-            dy = dy.subtract(dy.multiply(fee).divide(FEE_DENOMINATOR));
+            dy = dy.subtract(dy.multiply(fee).divide(FEE_DENOMINATOR))
+                   .multiply(PRECISION)
+                   .divide(RATES.get(toTokenId));
             if (balances.get(toTokenId).compareTo(dy) < 0) {
                 throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }

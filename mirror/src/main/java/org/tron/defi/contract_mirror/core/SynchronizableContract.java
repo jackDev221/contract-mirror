@@ -28,7 +28,11 @@ public abstract class SynchronizableContract extends Contract implements Synchro
 
     @Override
     public boolean isEventAccept() {
-        return timestamp0 > 0 && timestamp1 >= timestamp0;
+        boolean result = timestamp0 > 0 && timestamp1 >= timestamp0;
+        if (!result) {
+            log.debug("t0={} t1={} t2={}", timestamp0, timestamp1, timestamp2);
+        }
+        return result;
     }
 
     @Override

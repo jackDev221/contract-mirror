@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.Curve4Abi;
 import org.tron.defi.contract.abi.pool.CurveAbi;
+import org.tron.defi.contract_mirror.config.ContractConfigList;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.token.ITRC20;
 import org.tron.defi.contract_mirror.core.token.IToken;
@@ -32,12 +33,11 @@ public class CurveCombinationPool extends Pool {
     private static final int N_COINS = 2;
     private static final int TOKEN_COIN_ID = 0;
     private static final int LP_TOKEN_COIN_ID = 1;
-    private static final int FEE_INDEX = 3;
-    private static final BigInteger FEE_DENOMINATOR = BigInteger.valueOf(10).pow(10);
-    private static final BigInteger PRECISION = BigInteger.valueOf(10).pow(18);
-    private static final BigInteger A_PRECISION = BigInteger.valueOf(100);
-    private static final List<BigInteger> RATES = Arrays.asList(BigInteger.valueOf(10).pow(30),
-                                                                BigInteger.valueOf(10).pow(18));
+    private final int FEE_INDEX;
+    private final BigInteger FEE_DENOMINATOR;
+    private final BigInteger PRECISION;
+    private final BigInteger A_PRECISION;
+    private final List<BigInteger> RATES;
     private static final long CACHE_EXPIRE_TIME = 10 * 60; // 10 min
     private List<BigInteger> balances;
     private BigInteger fee;
@@ -51,9 +51,19 @@ public class CurveCombinationPool extends Pool {
     @Getter
     private CurvePool underlyingPool;
 
-    public CurveCombinationPool(String address, PoolType type) {
+    public CurveCombinationPool(String address,
+                                PoolType type,
+                                ContractConfigList.CurveConfig curveConfig) {
         super(address);
         this.type = type;
+        FEE_INDEX = curveConfig.getFeeIndex();
+        FEE_DENOMINATOR = BigInteger.valueOf(10).pow(curveConfig.getFeeDenominator());
+        PRECISION = BigInteger.valueOf(10).pow(curveConfig.getPrecision());
+        A_PRECISION = BigInteger.valueOf(10).pow(curveConfig.getPrecisionA());
+        RATES = curveConfig.getRates()
+                           .stream()
+                           .map(i -> BigInteger.valueOf(10).pow(i))
+                           .collect(Collectors.toList());
     }
 
     @Override

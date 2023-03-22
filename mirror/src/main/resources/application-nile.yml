@@ -54,12 +54,35 @@ contract-list:
     - name: 2pool
       address: TH6ZjnptwVgtaTFhCJfkv3B9WVjkGW9mcr
       type: CURVE_2POOL
+      curveConfig:
+        feeIndex: 1
+        feeDenominator: 10
+        precision: 18
+        rates:
+          - 18
+          - 30
     - name: old3pool
       address: TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E
       type: CURVE_3POOL
+      curveConfig:
+        feeIndex: 2
+        feeDenominator: 10
+        precision: 18
+        rates:
+          - 18
+          - 18
+          - 30
     - name: oldusdcpool
       address: TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr
       type: CURVE_COMBINATION_4POOL
+      curveConfig:
+        feeIndex: 3
+        feeDenominator: 10
+        precision: 18
+        precisionA: 2
+        rates:
+          - 30
+          - 18
     - name: usdtpsm
       address: TF12vhGuWttHNfxsrn6XueMLvxGLVCyN12
       type: PSM_POOL

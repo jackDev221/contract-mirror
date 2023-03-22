@@ -68,11 +68,14 @@ public class ContractManager {
         switch (config.getType()) {
             case CURVE_2POOL:
             case CURVE_3POOL:
-                pool = (Pool) registerContract(new CurvePool(config.getAddress(), poolType));
+                pool = (Pool) registerContract(new CurvePool(config.getAddress(),
+                                                             poolType,
+                                                             config.getCurveConfig()));
                 break;
             case CURVE_COMBINATION_4POOL:
                 pool = (Pool) registerContract(new CurveCombinationPool(config.getAddress(),
-                                                                        poolType));
+                                                                        poolType,
+                                                                        config.getCurveConfig()));
                 break;
             default:
                 throw new IllegalArgumentException(config.getType().name());

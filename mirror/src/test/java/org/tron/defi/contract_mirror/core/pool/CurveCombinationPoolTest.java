@@ -228,6 +228,7 @@ public class CurveCombinationPoolTest {
         log.info(config.toString());
         pool = (CurveCombinationPool) contractManager.registerContract(new CurveCombinationPool(
             config.getAddress(),
-            PoolType.CURVE_COMBINATION4));
+            PoolType.CURVE_COMBINATION4,
+            config.getCurveConfig()));
     }
 }

@@ -204,6 +204,7 @@ public class CurvePoolTest {
         log.info(config.toString());
         pool = (CurvePool) contractManager.registerContract(new CurvePool(config.getAddress(),
                                                                           PoolType.convertFromContractType(
-                                                                              config.getType())));
+                                                                              config.getType()),
+                                                                          config.getCurveConfig()));
     }
 }
