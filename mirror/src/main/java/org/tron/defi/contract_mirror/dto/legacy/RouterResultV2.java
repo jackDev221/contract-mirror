@@ -29,7 +29,7 @@ public class RouterResultV2 {
         resultV2.setAmount(amountToString(path.getAmountOut(), token.getDecimals()));
         token = (IToken) path.getFrom().getToken();
         resultV2.setFee(amountToString(path.getFee(), token.getDecimals()));
-        resultV2.setImpact(amountToString(path.getImpact(), Pool.PRICE_DECIMALS));
+        resultV2.setImpact(amountToString(path.getImpact(), Pool.PRICE_DECIMALS, 6));
 
         int n = path.getSteps().size();
         List<String> roadForAddr = new ArrayList<>(n + 1);
@@ -52,9 +52,13 @@ public class RouterResultV2 {
     }
 
     private static String amountToString(BigInteger amount, int decimal) {
+        return amountToString(amount, decimal, decimal);
+    }
+
+    private static String amountToString(BigInteger amount, int decimal, int scale) {
         return new BigDecimal(amount.toString()).divide(BigDecimal.valueOf(10).pow(decimal),
-                                                        decimal,
-                                                        RoundingMode.HALF_UP).toString();
+                                                        scale,
+                                                        RoundingMode.UP).toString();
     }
 
     private static String getPoolVersion(Pool pool) {
