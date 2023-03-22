@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 import org.tron.sunio.contract_mirror.mirror.config.RouterConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.BaseStableSwapPool;
@@ -67,13 +68,13 @@ public class RouterServer {
     private RouterConfig routerConfig;
 
     public List<RoutItem> getRouter(RouterInput routerInput, Map<String, BaseContract> contractMaps) {
-        log.info("getRouter:Receive router call:{}", routerInput);
+        log.info("RouterServer receive request:{}", GsonUtil.objectToGson(routerInput));
+        long t0 = System.currentTimeMillis();
         convertTrxInRouterInput(routerInput);
         RoutNode routNode = routNodeMap.get(routerInput.getFromToken());
         List<RoutItem> res = new ArrayList<>();
         if (!ObjectUtil.isNull(routNode)) {
             List<List<StepInfo>> paths = null;
-            long t0 = System.currentTimeMillis();
 //            String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
 //            paths = cachedPaths.get(key);
             if (ObjectUtil.isNull(paths)) {
@@ -86,9 +87,7 @@ public class RouterServer {
             }
             long t1 = System.currentTimeMillis();
             // test
-            long cast = t1 - t0;
-            long pathSize = paths.size();
-            log.info("getRouter finish get paths, size:{}, cast:{}", paths.size(), t1 - t0);
+            log.info("RouterServer finish get paths, size:{}, cast:{}", paths.size(), t1 - t0);
             BigDecimal outAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getToDecimal()));
             BigDecimal inAmountUnit = new BigDecimal(BigInteger.TEN.pow(routerInput.getFromDecimal()));
             PathCacheContract pathCacheContract = new PathCacheContract();
@@ -98,26 +97,23 @@ public class RouterServer {
                 if (ObjectUtil.isNull(routItem)) {
                     continue;
                 }
-                // test
-//                routItem.setCast(cast);
-//                routItem.setPaths(pathSize);
                 res.add(routItem);
             }
             long t2 = System.currentTimeMillis();
-            log.info("getRouter finish calc result, cast {}", t2 - t1);
+            log.info("RouterServer finish calc result, cast {}", t2 - t1);
             res = res.stream().sorted(Comparator.comparing(RoutItem::getAmountV, (s1, s2) -> {
                 return (new BigDecimal(s2)).compareTo(new BigDecimal(s1));
             })).collect(Collectors.toList());
             if (res.size() > routerConfig.getMaxResultSize()) {
                 res = res.subList(0, routerConfig.getMaxResultSize());
             }
-            long t3 = System.currentTimeMillis();
-            log.info("getRouter finish sorted result, cast {}", t3 - t2);
         }
         // 数量不够补齐
         for (int i = res.size(); i < routerConfig.getMaxResultSize(); i++) {
             res.add(RoutItem.getNullInstance());
         }
+        long t3 = System.currentTimeMillis();
+        log.info("RouterServer response, cast:{}", t3 - t0);
         return res;
     }
 
@@ -198,7 +194,8 @@ public class RouterServer {
     }
 
     private void swapToken(String fromAddress, String toAddress, SwapResult swapResult, BaseContract baseContract, PathCacheContract pathCacheContract) {
-        if (ObjectUtil.isNull(baseContract)) {
+        if (ObjectUtil.isNull(baseContract) || !baseContract.isReady()) {
+            swapResult.amount = BigInteger.ZERO;
             return;
         }
         switch (baseContract.getType()) {
