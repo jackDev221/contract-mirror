@@ -193,11 +193,13 @@ public class SwapV2Pair extends BaseContract {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getStatus() {
         return (T) getVarSwapV2PairData();
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_NAME:

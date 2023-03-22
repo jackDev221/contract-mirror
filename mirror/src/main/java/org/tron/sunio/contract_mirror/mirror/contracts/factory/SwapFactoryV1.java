@@ -158,11 +158,13 @@ public class SwapFactoryV1 extends BaseFactory {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getStatus() {
         return (T) getVarFactoryV1Data();
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_FEE_TO:
@@ -182,6 +184,7 @@ public class SwapFactoryV1 extends BaseFactory {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T handleCallGetTokenWithID(String params) {
         List<TypeReference<?>> outputParameters = List.of(new TypeReference<Uint256>() {
         });
@@ -193,6 +196,7 @@ public class SwapFactoryV1 extends BaseFactory {
         return (T) this.getVarFactoryV1Data().getIdTokenMap().getOrDefault(id, "");
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T handleCallGetExchangeOrToken(String params, boolean outExchange) {
         List<TypeReference<?>> outputParameters = List.of(new TypeReference<Address>() {
         });

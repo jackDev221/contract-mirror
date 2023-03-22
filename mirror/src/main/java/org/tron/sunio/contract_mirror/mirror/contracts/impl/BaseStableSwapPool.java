@@ -462,6 +462,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getStatus() {
         return (T) this.getVarStableSwapBasePoolData();
     }

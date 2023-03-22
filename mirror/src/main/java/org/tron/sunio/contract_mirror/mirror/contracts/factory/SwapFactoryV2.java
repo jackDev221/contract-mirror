@@ -162,11 +162,13 @@ public class SwapFactoryV2 extends BaseFactory {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getStatus() {
         return (T) getVarFactoryV2Data();
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_FEE_TO:
@@ -183,6 +185,7 @@ public class SwapFactoryV2 extends BaseFactory {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T handleCallAllPairs(String params) throws Exception {
         List<TypeReference<?>> outputParameters = List.of(new TypeReference<Uint256>() {
         });
@@ -194,6 +197,7 @@ public class SwapFactoryV2 extends BaseFactory {
         return (T) this.getVarFactoryV2Data().getPairsMap().getOrDefault(id, "");
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T handleCallGetPairs(String params) throws Exception {
         List<TypeReference<?>> outputParameters = new ArrayList<>();
         outputParameters.add(new TypeReference<Uint256>() {
