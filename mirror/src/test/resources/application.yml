@@ -103,16 +103,31 @@ contract-list:
 token-list:
   tokens:
     TRX: T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
+    WTRX: TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR
+    SUN: TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S
+    SUNOLD: TKkeiboTkxXKJpbmVFbv4a8ov5rAfRDMf9
     USDT: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
-    USDC: TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8
+    USDJ: TMwFHYXLJaRUPeW6421aqXL4ZEzPRFGkGT
     TUSD: TUpMhErZL2fhh4sVNULAbNKLokS4GjC1F4
     USDD: TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn
-    USDJ: TMwFHYXLJaRUPeW6421aqXL4ZEzPRFGkGT
+    USDC: TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8
+    BTT: TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4
+    NFT: TFczxzPhnThNSqr5by8tvxsdCFRRz6cPNq
+    BTC: TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9
+    WBTC: TXpw8XeWYeTUd4quDskoUqeQPowRh4jY65
+    ETH: THb4CqiFdwNHsWsQCs4JhzwjMWys4aqCbF
+    WETH: TXWkP3jLBqRGojUih1ShzNyDaN5Csnebok
+    WBTT: TKfjV9RNKJJCqPvBtK8L7Knykh7DNWvnYt
+    JST: TCFLL5dx5ZJdKnWuesXxi1VPwjLVmWZZy9
+    WIN: TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7
+    LTC: TR3DLthpnDdCGabhVDbD3VMsiJoCXY3bZd
+    HT: TDyvndWuvX5xTBwHPYJi7J3Yq8pq8yh62h
+    BUSD: TMz2SWatiAtZVVcH2ebpsbVtYwUPT9EdjH
   wrapTokens:
-    TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR: T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
-    TXpw8XeWYeTUd4quDskoUqeQPowRh4jY65: TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9
-    TXWkP3jLBqRGojUih1ShzNyDaN5Csnebok: THb4CqiFdwNHsWsQCs4JhzwjMWys4aqCbF
-    TKfjV9RNKJJCqPvBtK8L7Knykh7DNWvnYt: TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4
+    WTRX: TRX
+    WBTC: BTC
+    WETH: ETH
+    WBTT: BTT
 
 # router
 router:
@@ -120,12 +135,26 @@ router:
   maxCost: 3
   topN: 3
   tokenWhiteList:
-    - T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
-    - TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR
-    - TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S
-    - TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
-    - TMwFHYXLJaRUPeW6421aqXL4ZEzPRFGkGT
-    - TUpMhErZL2fhh4sVNULAbNKLokS4GjC1F4
-    - TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn
-    - TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8
-    - TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S
+    - TRX
+    - WTRX
+    - SUN
+    - SUNOLD
+    - USDT
+    - USDJ
+    - TUSD
+    - USDD
+    - USDC
+    - BTT
+    - NFT
+    - BTC
+    - WBTC
+    - ETH
+    - WETH
+    - WBTT
+    - JST
+    - WIN
+    - LTC
+    - HT
+    - BUS
+  poolBlackList:
+    - TTnSHzUoho1CU6zFYVzVSCKq8EX8ZddkVv

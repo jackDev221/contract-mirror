@@ -127,6 +127,7 @@ public class RouterServiceTest {
         for (Map.Entry<String, String> config : tokenConfigList.getTokens().entrySet()) {
             switch (config.getKey()) {
                 case "TRX":
+                case "WTRX":
                     continue;
                 case "USDT":
                     usdtAddress = config.getValue();
@@ -138,13 +139,27 @@ public class RouterServiceTest {
                     break;
             }
             if (null == v1Factory.getToken(config.getValue())) {
-                SunswapV1Pool v1Pool = (SunswapV1Pool) v1Factory.getExchange(config.getValue());
-                newExchange(v1Factory, config.getValue(), v1Pool.getAddress());
+                try {
+                    SunswapV1Pool v1Pool = (SunswapV1Pool) v1Factory.getExchange(config.getValue());
+                    if (null != v1Pool) {
+                        newExchange(v1Factory, config.getValue(), v1Pool.getAddress());
+                    }
+                } catch (Exception e) {
+                    log.info("Failed to get {} v1 pool", config.getKey());
+                    e.printStackTrace();
+                }
             }
             if (null == v2Factory.getPair(wtrx, config.getValue())) {
-                SunswapV2Pool v2Pool = (SunswapV2Pool) v2Factory.getPairFromChain(wtrx,
-                                                                                  config.getValue());
-                newPair(v2Factory, v2Pool.getAddress(), ++count);
+                try {
+                    SunswapV2Pool v2Pool = (SunswapV2Pool) v2Factory.getPairFromChain(wtrx,
+                                                                                      config.getValue());
+                    if (null != v2Pool) {
+                        newPair(v2Factory, v2Pool.getAddress(), ++count);
+                    }
+                } catch (Exception e) {
+                    log.info("Failed to get {} v2 pool", config.getKey());
+                    e.printStackTrace();
+                }
             }
         }
     }

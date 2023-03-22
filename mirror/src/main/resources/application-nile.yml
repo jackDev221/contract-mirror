@@ -109,13 +109,48 @@ token-list:
     TUSD: TRz7J6dD2QWxBoumfYt4b3FaiRG23pXfop
     USDD: TGjgvdTWWrybVLaVeFqSyVqJQWjxqRYbaK
     USDJ: TLBaRhANQoJFTqre9Nf1mjuwNWjCJeYqUL
+    WTRX: TYsbWxNnyTgsZaTFaue9hqpxkU3Fkco94a
+    SUN: TDqjTkZ63yHB19w2n7vPm2qAkLHwn9fKKk
+    SUNOLD: TWrZRHY9aKQZcyjpovdH6qeCEyYZrRQDZt
+    BTC: TG9XJ75ZWcUw69W8xViEJZQ365fRupGkFP
+    ETH: TQz9i4JygMCzizdVu8NE4BdqesrsHv1L93
+    JST: TF17BgPaZYbz8oxbjhriubPDsA7ArKoLX3
+    WIN: TNDSHKGBmgRx9mDYA9CnxPx55nu672yQw2
+    DICE: TLVu3Pzaep38SGvgCxUe1cUk2SNM6fyR4e
+    LIVE: TLwpNV2gVkVk1g7ejZJ2hqzsE7RZvDuRSb
+    HT: TGfVzt44kg6ZJ4fUqpHzJy3Jb37YMf8pMH
   wrapTokens:
-    TYsbWxNnyTgsZaTFaue9hqpxkU3Fkco94a: T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
+    WTRX: TRX
+    WBTC: BTC
+    WETH: ETH
+    WBTT: BTT
 
 # router
 router:
   strategy: OPTIMISTIC
   maxCost: 3
   topN: 3
+  tokenWhiteList:
+    - TRX
+    - WTRX
+    - SUN
+    - SUNOLD
+    - USDT
+    - USDJ
+    - TUSD
+    - USDD
+    - USDC
+    - BTT
+    - NFT
+    - BTC
+    - WBTC
+    - ETH
+    - WETH
+    - WBTT
+    - JST
+    - WIN
+    - LTC
+    - HT
+    - BUSD
   poolBlackList:
     - TKugRaXPsTaJNEYFbfgecCKe6QWQPc9Xwp

@@ -13,6 +13,7 @@ import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.graph.Node;
 import org.tron.defi.contract_mirror.core.pool.Pool;
 import org.tron.defi.contract_mirror.core.pool.SunswapV2Pool;
+import org.tron.defi.contract_mirror.core.token.TRX;
 import org.tron.defi.contract_mirror.utils.chain.AddressConverter;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.datatypes.Address;
@@ -163,6 +164,10 @@ public class SunswapV2Factory extends SynchronizableContract {
                                                            token1)));
         String pairAddress
             = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
+        if (pairAddress.equals(TRX.getInstance().getAddress())) {
+            log.warn("No SunswapV2 for {} {}", token0, token1);
+            return null;
+        }
         return getPairByAddress(pairAddress);
     }
 

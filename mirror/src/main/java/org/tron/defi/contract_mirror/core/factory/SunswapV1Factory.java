@@ -235,6 +235,10 @@ public class SunswapV1Factory extends SynchronizableContract {
                                          Collections.singletonList(ethAddress));
         String poolAddress
             = AddressConverter.EthToTronBase58Address(((Address) response.get(0)).getValue());
+        if (poolAddress.equals(TRX.getInstance().getAddress())) {
+            log.warn("No SunswapV1 for {}", tokenAddress);
+            return null;
+        }
         return getExchangeWithAddress(tokenAddress, poolAddress);
     }
 
