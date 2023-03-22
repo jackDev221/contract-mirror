@@ -5,20 +5,10 @@ import org.springframework.stereotype.Service;
 import org.tron.defi.contract_mirror.core.Contract;
 import org.tron.defi.contract_mirror.core.ContractManager;
 
-import javax.annotation.PostConstruct;
-
 @Service
 public class ContractService {
     @Autowired
     ContractManager contractManager;
-    @Autowired
-    SyncEventService syncEventService;
-
-    @PostConstruct
-    public void init() {
-        contractManager.init();
-        syncEventService.listen();
-    }
 
     public String call(String address, String method) {
         Contract contract = contractManager.getContract(address);

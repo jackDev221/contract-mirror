@@ -22,5 +22,7 @@ public class SyncEventService extends EventService {
                                                                             new PendingEventConsumer(
                                                                                 serverConfig,
                                                                                 contractManager))));
+        contractManager.init();
+        listen();
     }
 }
