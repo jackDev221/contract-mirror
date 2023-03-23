@@ -465,10 +465,10 @@ public class RouterServer {
         for (BaseContract baseContract : contractMaps.values()) {
             switch (baseContract.getType()) {
                 case SWAP_V1:
-                    initV1((SwapV1) baseContract);
+                    initV1((SwapV1) baseContract, true);
                     break;
                 case SWAP_V2_PAIR:
-                    initV2((SwapV2Pair) baseContract);
+                    initV2((SwapV2Pair) baseContract, true);
                     break;
                 case CONTRACT_CURVE_2POOL:
                 case CONTRACT_CURVE_3POOL:
@@ -494,10 +494,10 @@ public class RouterServer {
             }
             switch (baseContract.getType()) {
                 case SWAP_V1:
-                    initV1((SwapV1) baseContract);
+                    initV1((SwapV1) baseContract, false);
                     break;
                 case SWAP_V2_PAIR:
-                    initV2((SwapV2Pair) baseContract);
+                    initV2((SwapV2Pair) baseContract, false);
                     break;
                 case CONTRACT_CURVE_2POOL:
                 case CONTRACT_CURVE_3POOL:
@@ -574,11 +574,13 @@ public class RouterServer {
         }
     }
 
-    private void initV1(SwapV1 swapV1) {
+    private void initV1(SwapV1 swapV1, boolean isInit) {
         SwapV1Data data = swapV1.getSwapV1Data();
-        if (data.getTokenBalance().compareTo(BigInteger.ZERO) <= 0
-                || data.getTrxBalance().compareTo(BigInteger.ZERO) <= 0) {
-            return;
+        if (isInit) {
+            if (data.getTokenBalance().compareTo(BigInteger.ZERO) <= 0
+                    || data.getTrxBalance().compareTo(BigInteger.ZERO) <= 0) {
+                return;
+            }
         }
         String token0 = EMPTY_ADDRESS;
         String token1 = data.getTokenAddress();
@@ -590,11 +592,13 @@ public class RouterServer {
         updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, poolType, contract);
     }
 
-    private void initV2(SwapV2Pair swapV2Pair) {
+    private void initV2(SwapV2Pair swapV2Pair, boolean isInit) {
         SwapV2PairData data = swapV2Pair.getSwapV2PairData();
-        if (data.getReserve0().compareTo(BigInteger.ZERO) <= 0 ||
-                data.getReserve1().compareTo(BigInteger.ZERO) <= 0) {
-            return;
+        if (isInit) {
+            if (data.getReserve0().compareTo(BigInteger.ZERO) <= 0 ||
+                    data.getReserve1().compareTo(BigInteger.ZERO) <= 0) {
+                return;
+            }
         }
         String token0 = data.getToken0();
         String token1 = data.getToken1();
