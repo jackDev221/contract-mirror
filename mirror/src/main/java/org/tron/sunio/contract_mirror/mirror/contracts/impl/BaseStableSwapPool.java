@@ -290,6 +290,10 @@ public class BaseStableSwapPool extends AbstractCurve {
                 sigMap
         );
         pool.setStableSwapPoolData(data);
+        pool.setReady(this.isReady);
+        pool.setAddExchangeContracts(this.isAddExchangeContracts);
+        pool.setDirty(this.isDirty);
+        pool.setUsing(this.isUsing);
         if (ObjectUtil.isNotNull(preSwapPoolData)) {
             pool.setPreSwapPoolData(preSwapPoolData.copySelf());
             pool.setCurrentTx(currentTx);
