@@ -230,9 +230,9 @@ public class SwapFactoryV2 extends BaseFactory {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleCreatePair fail!, unique id :%s",
                     address, type, handleEventExtraData.getUniqueId()));
         }
-        String token0 = (String) eventValues.getIndexedValues().get(0).getValue();
-        String token1 = (String) eventValues.getIndexedValues().get(1).getValue();
-        String pairAddress = (String) eventValues.getNonIndexedValues().get(0).getValue();
+        String token0 = WalletUtil.hexStringToTron((String) eventValues.getIndexedValues().get(0).getValue());
+        String token1 = WalletUtil.hexStringToTron((String) eventValues.getIndexedValues().get(1).getValue());
+        String pairAddress = WalletUtil.hexStringToTron((String) eventValues.getNonIndexedValues().get(0).getValue());
         SwapV2Pair swapV2Pair = new SwapV2Pair(
                 pairAddress,
                 this.address,
