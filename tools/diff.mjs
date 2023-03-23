@@ -108,14 +108,50 @@ function decimalToBN(value, decimals) {
   if (negative) {
     value = value.substring(1);
   }
-  let comps = value.split('.');
+  let num;
+  let exp = toBN(decimals);
+  let factor;
+  let comps = value.split('E');
+  if (comps.length > 2) {
+    throw `invalid value ${value} ${decimals}`;
+  } else if (comps.length == 2) {
+    exp = exp.add(toBN(comps[1]));
+  }
+  factor = toBN(10).pow(exp.abs());
+  comps = comps[0].split('.');
   if (comps.length > 2 || (comps.length == 2 && comps[1].length > decimals)) {
     throw `invalid value ${value} ${decimals}`;
+  } else if (comps.length == 1) {
+    let n = toBN(comps[0]);
+    if (exp.isNeg()) {
+      let r = n.divmod(factor);
+      if (!r.mod.isZero()) {
+        throw `invalid value ${value} ${decimals}`;
+      }
+      num = r.div;
+    } else {
+      num = n.mul(factor);
+    }
+  } else {
+    let n = toBN(comps[0]);
+    let fraction = toBN(comps[1]);
+    if (exp.isNeg()) {
+      let r = n.divmod(factor);
+      if (!r.mod.isZero() || !fraction.isZero()) {
+        throw `invalid value ${value} ${decimals}`;
+      }
+      num = r.div;
+    } else {
+      let r = toBN(fraction)
+        .mul(factor)
+        .divmod(toBN(10).pow(toBN(fraction.length)));
+      if (!r.mod.isZero()) {
+        throw `invalid value ${value} ${decimals}`;
+      }
+      num = r.div.add(n.mul(factor));
+    }
   }
-  let n = toBN(comps[0])
-    .mul(toBN(10).pow(toBN(decimals)))
-    .add(toBN(comps[1]).mul(toBN(10).pow(toBN(decimals - comps[1].length))));
-  return negative ? n.neg() : n;
+  return negative ? num.neg() : num;
 }
 
 async function diffPair(fromName, from, toName, to) {
