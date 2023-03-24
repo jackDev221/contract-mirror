@@ -57,7 +57,11 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                     if (edge.getPool().cost() + currentPath.getCost() > routerConfig.getMaxCost() ||
                         edge.getTo().outDegree() <= 1 ||
                         currentPath.isDuplicateWithCurrent(edge) ||
+                        !checkWTRXPath(currentPath, edge) ||
                         (!found && !checkWhiteBlackList(edge))) {
+                        log.debug("Prune {} |-> {}",
+                                  currentPath.getPools(),
+                                  edge.getPool().getName());
                         continue;
                     }
                     BigInteger amountOutStep;
@@ -85,7 +89,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                                   edge.getPool().getName());
                         continue;
                     }
-                    if (found) {
+                    if (found && checkWTRXPath(currentPath, null)) {
                         RouterPath candidate = new RouterPath(currentPath);
                         candidate.addStep(edge);
                         candidate.setAmountOut(amountOutStep);
@@ -94,8 +98,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         log.debug("NEW CANDIDATE {} {}", amountOutStep, candidate.getPools());
                         if (minHeap.size() > routerConfig.getTopN()) {
                             candidate = minHeap.poll();
-                            log.debug("OBSOLETE CANDIDATE {} {}",
-                                      candidate.getAmountOut(),
+                            log.debug("OBSOLETE CANDIDATE {} {}", candidate.getAmountOut(),
                                       candidate.getPools());
                         }
                         continue;

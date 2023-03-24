@@ -6,6 +6,7 @@ import org.tron.defi.contract_mirror.config.RouterConfig;
 import org.tron.defi.contract_mirror.core.graph.Edge;
 import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.graph.Node;
+import org.tron.defi.contract_mirror.core.pool.PoolType;
 import org.tron.defi.contract_mirror.dao.RouterPath;
 
 import java.math.BigInteger;
@@ -47,12 +48,16 @@ public class DefaultStrategy implements IStrategy {
                     if (edge.getPool().cost() + currentPath.getCost() > routerConfig.getMaxCost() ||
                         edge.getTo().outDegree() <= 1 ||
                         currentPath.isBackward(edge) ||
+                        !checkWTRXPath(currentPath, edge) ||
                         (!found && !checkWhiteBlackList(edge))) {
+                        log.debug("Prune {} |-> {}",
+                                  currentPath.getPools(),
+                                  edge.getPool().getName());
                         continue;
                     }
                     RouterPath path = new RouterPath(currentPath);
                     path.addStep(edge);
-                    if (!found) {
+                    if (!found && checkWTRXPath(path, null)) {
                         searchPaths.offer(path);
                     } else {
                         log.debug(path.getPools());
@@ -160,6 +165,22 @@ public class DefaultStrategy implements IStrategy {
             step.setAmountOut(BigInteger.ZERO);
         }
         log.debug("Prune {} at pos {}", pathToPrune.getPools(), pos);
+    }
+
+    protected static boolean checkWTRXPath(RouterPath path, Edge edge) {
+        // wtrx pool must be following or followed by sunswap v2 right now
+        List<RouterPath.Step> steps = path.getSteps();
+        if (steps.isEmpty() ||
+            PoolType.WTRX != steps.get(steps.size() - 1).getEdge().getPool().getType()) {
+            return true;
+        }
+        if (steps.size() >= 2 &&
+            PoolType.SUNSWAP_V2 == steps.get(steps.size() - 2).getEdge().getPool().getType()) {
+            // v2->wtrx
+            return true;
+        }
+        // wtrx->v2
+        return null != edge && PoolType.SUNSWAP_V2 == edge.getPool().getType();
     }
 
     protected boolean checkWhiteBlackList(Edge edge) {
