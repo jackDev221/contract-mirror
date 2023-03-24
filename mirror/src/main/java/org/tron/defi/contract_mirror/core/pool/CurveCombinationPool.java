@@ -360,12 +360,14 @@ public class CurveCombinationPool extends Pool {
         for (Contract token : getTokens()) {
             tokenBalances.add(((IToken) token).balanceOfFromChain(getAddress()));
         }
+        IToken underlyingLpToken = (IToken) getUnderlyingPool().getLpToken();
+        BigInteger underlyingTokenBalance = underlyingLpToken.balanceOfFromChain(getAddress());
         rlock.lock();
         try {
             for (int i = 0; i < N_COINS; i++) {
                 if (0 != currentBalances.get(i).compareTo(balances.get(i))) {
-                    log.error("expect balances {}", currentBalances);
-                    log.error("local balances {}", balances);
+                    log.error("expect balance{} {}", i, currentBalances);
+                    log.error("local balance{} {}", i, balances);
                     return true;
                 }
             }
@@ -377,6 +379,14 @@ public class CurveCombinationPool extends Pool {
                     log.error("local token{} balance {}", i, balance);
                     return true;
                 }
+            }
+            BigInteger balance = underlyingLpToken.balanceOf(getAddress());
+            if (0 != balance.compareTo(underlyingTokenBalance)) {
+                log.error("expect {} balance {}",
+                          underlyingLpToken.getSymbol(),
+                          underlyingTokenBalance);
+                log.error("local {} balance {}", underlyingLpToken.getSymbol(), balance);
+                return true;
             }
             return false;
         } finally {
