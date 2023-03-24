@@ -835,7 +835,18 @@ public class CurveCombinationPool extends Pool {
         BigInteger amountSold = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
         int buyId = ((Int128) eventValues.getNonIndexedValues().get(2)).getValue().intValue();
         BigInteger amountBuy = ((Uint256) eventValues.getNonIndexedValues().get(3)).getValue();
-
+        // only TOKEN_COIN_ID <-> LP_TOKEN_COIN_ID will produce this event
+        IToken tokenSold = soldId == LP_TOKEN_COIN_ID
+                           ? (IToken) getUnderlyingPool().getLpToken()
+                           : (IToken) getTokens().get(soldId);
+        IToken tokenBuy = buyId == LP_TOKEN_COIN_ID
+                          ? (IToken) getUnderlyingPool().getLpToken()
+                          : (IToken) getTokens().get(buyId);
+        log.info("{} {} -> {} {}",
+                 amountSold,
+                 tokenSold.getSymbol(),
+                 amountBuy,
+                 tokenBuy.getSymbol());
         // dyFee = dy * fee / FEE_DENOMINATOR
         // amountBuy = (dy - dyFee) * PRECISION / RATES[buyId]
         // dyFee = amountBuy * RATES[buyId] * fee / PRECISION / (FEE_DENOMINATOR - fee)
@@ -847,9 +858,6 @@ public class CurveCombinationPool extends Pool {
                                          .divide(FEE_DENOMINATOR.subtract(fee));
         wlock.lock();
         try {
-            IToken tokenSold = (IToken) getTokens().get(soldId);
-            IToken tokenBuy = (IToken) getTokens().get(buyId);
-
             BigInteger balanceBefore = tokenSold.balanceOf(getAddress());
             BigInteger balanceAfter = TokenMath.increaseBalance(tokenSold,
                                                                 getAddress(),
@@ -889,20 +897,40 @@ public class CurveCombinationPool extends Pool {
 
         IToken tokenSold = (IToken) getTokens().get(soldId);
         IToken tokenBuy = (IToken) getTokens().get(buyId);
+        log.info("{} {} -> {} {}",
+                 amountSold,
+                 tokenSold.getSymbol(),
+                 amountBuy,
+                 tokenBuy.getSymbol());
         // only token0 <-> base tokens will produce this event, TOKEN_COIN_ID must be one of them
         int i = soldId == TOKEN_COIN_ID ? TOKEN_COIN_ID : LP_TOKEN_COIN_ID;
         int j = buyId == TOKEN_COIN_ID ? TOKEN_COIN_ID : LP_TOKEN_COIN_ID;
-
-        // dyFee = dy * fee / FEE_DENOMINATOR
-        // amountBuy = (dy - dyFee) * PRECISION / RATES[j]
-        // dyFee = amountBuy * RATES[j] * fee / PRECISION / (FEE_DENOMINATOR - fee)
-        // dyAdminFee = dyFee * adminFee / FEE_DENOMINATOR * PRECISION / RATES[j]
-        //            = amountBuy * fee * adminFee / FEE_DENOMINATOR / (FEE_DENOMINATOR - fee)
-        BigInteger dyAdminFee = amountBuy.multiply(fee)
-                                         .multiply(adminFee)
+        BigInteger price = getVirtualPrice(eventTime / 1000, true);
+        List<BigInteger> xp = getXP(getBalances(), price);
+        BigInteger A = getA(eventTime / 1000);
+        if (j == LP_TOKEN_COIN_ID) {
+            // token0 -> base token
+            if (soldId == FEE_INDEX) {
+                // event can't handle
+                throw new IllegalStateException();
+            }
+            // x = xp[i] + amountSold * RATES[i] / PRECISION
+            BigInteger x = xp.get(i).add(amountSold.multiply(RATES.get(i)).divide(PRECISION));
+            // use x cal y
+            BigInteger y = getY(i, j, x, xp, A);
+            // dy = xp[j] - y - 1
+            BigInteger dy = xp.get(j).subtract(y).subtract(BigInteger.ONE);
+            // dyFee = dy * fee / FEE_DENOMINATOR
+            BigInteger dyFee = dy.multiply(fee).divide(FEE_DENOMINATOR);
+            // dyAdminFee = dyFee * adminFee / FEE_DENOMINATOR * PRECISION / RATES[j]
+            // where RATES[j] = price
+            BigInteger dyAdminFee = dyFee.multiply(adminFee)
+                                         .multiply(PRECISION)
                                          .divide(FEE_DENOMINATOR)
-                                         .divide(FEE_DENOMINATOR.subtract(fee));
-        if (soldId != FEE_INDEX) {
+                                         .divide(price);
+            // dy = (dy - dyFee) * PRECISION / RATES[j]
+            // where RATES[j] = price
+            dy = dy.subtract(dyFee).multiply(PRECISION).divide(price);
             wlock.lock();
             try {
                 BigInteger balanceBefore = tokenSold.balanceOf(getAddress());
@@ -911,13 +939,72 @@ public class CurveCombinationPool extends Pool {
                                                                     amountSold);
                 log.info("{} balance {} -> {}", tokenSold.getSymbol(), balanceBefore, balanceAfter);
 
+                IToken underlyingLpToken = (IToken) getUnderlyingPool().getLpToken();
+                balanceBefore = underlyingLpToken.balanceOf(getAddress());
+                balanceAfter = TokenMath.decreaseBalance(underlyingLpToken, getAddress(), dy);
+                log.info("{} balance {} -> {}",
+                         underlyingLpToken.getSymbol(),
+                         balanceBefore,
+                         balanceAfter);
+
+                balanceBefore = balances.get(i);
+                balanceAfter = TokenMath.safeAdd(balanceBefore, amountSold);
+                balances.set(i, balanceAfter);
+                log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
+
+                balanceBefore = balances.get(j);
+                balanceAfter = TokenMath.safeSubtract(balanceBefore,
+                                                      TokenMath.safeAdd(dy, dyAdminFee));
+                balances.set(j, balanceAfter);
+                log.info("balance{} {} -> {}", j, balanceBefore, balanceAfter);
+            } finally {
+                wlock.unlock();
+            }
+        } else {
+            // base tokens -> token0
+
+            // dyFee = dy * fee / FEE_DENOMINATOR
+            // amountBuy = (dy - dyFee) * PRECISION / RATES[j]
+            // dyFee = amountBuy * RATES[j] * fee / PRECISION / (FEE_DENOMINATOR - fee)
+            // dyAdminFee = dyFee * adminFee / FEE_DENOMINATOR * PRECISION / RATES[j]
+            //            = amountBuy * fee * adminFee / FEE_DENOMINATOR / (FEE_DENOMINATOR - fee)
+            BigInteger dyAdminFee = amountBuy.multiply(fee)
+                                             .multiply(adminFee)
+                                             .divide(FEE_DENOMINATOR)
+                                             .divide(FEE_DENOMINATOR.subtract(fee));
+            // dyAdminFee =
+            //   dy * fee / FEE_DENOMINATOR * adminFee / FEE_DENOMINATOR * PRECISION / RATES[j]
+            BigInteger dy = dyAdminFee.multiply(FEE_DENOMINATOR)
+                                      .multiply(FEE_DENOMINATOR)
+                                      .multiply(RATES.get(j))
+                                      .divide(fee)
+                                      .divide(adminFee)
+                                      .divide(PRECISION);
+            // dy = xp[j] - y - 1
+            BigInteger y = xp.get(j).subtract(dy).subtract(BigInteger.ONE);
+            // use y cal x
+            BigInteger x = getY(buyId, soldId, y, xp, A);
+            // x = dx * RATES[i] / PRECISION + xp[i] where RATES[i] = price
+            BigInteger dx = x.subtract(xp.get(i)).multiply(PRECISION).divide(price);
+            assert dx.compareTo(BigInteger.ZERO) >= 0;
+            wlock.lock();
+            try {
+                IToken underlyingLpToken = (IToken) getUnderlyingPool().getLpToken();
+                BigInteger balanceBefore = underlyingLpToken.balanceOf(getAddress());
+                BigInteger balanceAfter = TokenMath.increaseBalance(underlyingLpToken,
+                                                                    getAddress(),
+                                                                    dx);
+                log.info("{} balance {} -> {}",
+                         underlyingLpToken.getSymbol(),
+                         balanceBefore,
+                         balanceAfter);
+
                 balanceBefore = tokenBuy.balanceOf(getAddress());
                 balanceAfter = TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
                 log.info("{} balance {} -> {}", tokenBuy.getSymbol(), balanceBefore, balanceAfter);
 
-                // It's easy when amountSold is equal to token received by contract
                 balanceBefore = balances.get(i);
-                balanceAfter = TokenMath.safeAdd(balanceBefore, amountSold);
+                balanceAfter = TokenMath.safeAdd(balanceBefore, dx);
                 balances.set(i, balanceAfter);
                 log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
 
@@ -929,50 +1016,6 @@ public class CurveCombinationPool extends Pool {
             } finally {
                 wlock.unlock();
             }
-            return;
-        }
-        // dyAdminFee =
-        //   dy * fee / FEE_DENOMINATOR * adminFee / FEE_DENOMINATOR * PRECISION / RATES[j]
-        BigInteger dy = dyAdminFee.multiply(FEE_DENOMINATOR)
-                                  .multiply(FEE_DENOMINATOR)
-                                  .multiply(RATES.get(j))
-                                  .divide(fee)
-                                  .divide(adminFee)
-                                  .divide(PRECISION);
-        // dy = xp[j] - y - 1
-        BigInteger price = getVirtualPrice(eventTime / 1000, true);
-        List<BigInteger> xp = getXP(getBalances(), price);
-        BigInteger y = xp.get(j).subtract(dy).subtract(BigInteger.ONE);
-        // use y cal x
-        BigInteger A = getA(eventTime / 1000);
-        BigInteger x = getY(buyId, soldId, y, xp, A);
-        // x = dx * RATES[i] / PRECISION + xp[i] where RATES[i] = price
-        BigInteger dx = x.subtract(xp.get(i)).multiply(PRECISION).divide(price);
-        assert dx.compareTo(BigInteger.ZERO) >= 0;
-        wlock.lock();
-        try {
-            BigInteger balanceBefore = tokenSold.balanceOf(getAddress());
-            BigInteger balanceAfter = TokenMath.increaseBalance(tokenSold,
-                                                                getAddress(),
-                                                                amountSold);
-            log.info("{} balance {} -> {}", tokenSold.getSymbol(), balanceBefore, balanceAfter);
-
-            balanceBefore = tokenBuy.balanceOf(getAddress());
-            balanceAfter = TokenMath.decreaseBalance(tokenBuy, getAddress(), amountBuy);
-            log.info("{} balance {} -> {}", tokenBuy.getSymbol(), balanceBefore, balanceAfter);
-
-            balanceBefore = balances.get(i);
-            balanceAfter = TokenMath.safeAdd(balanceBefore, dx);
-            balances.set(i, balanceAfter);
-            log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
-
-            balanceBefore = balances.get(j);
-            balanceAfter = TokenMath.safeSubtract(balanceBefore,
-                                                  TokenMath.safeAdd(amountBuy, dyAdminFee));
-            balances.set(j, balanceAfter);
-            log.info("balance{} {} -> {}", j, balanceBefore, balanceAfter);
-        } finally {
-            wlock.unlock();
         }
     }
 
