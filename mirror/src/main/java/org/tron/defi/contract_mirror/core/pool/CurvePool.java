@@ -102,8 +102,8 @@ public class CurvePool extends Pool {
                 handleRemoveLiquidity(eventValues);
                 break;
             case "RemoveLiquidityOne":
-                // event can't handle
-                throw new IllegalStateException();
+                handleRemoveLiquidityOne(eventValues);
+                break;
             case "RemoveLiquidityImbalance":
                 checkEventTimestamp(eventTime);
                 handleRemoveLiquidityImbalance(eventValues);
@@ -121,6 +121,15 @@ public class CurvePool extends Pool {
                 log.warn("Ignore event " + eventName);
                 break;
         }
+    }
+
+    private void handleRemoveLiquidityOne(EventValues eventValues) {
+        log.info("handleRemoveLiquidityOne {}", getAddress());
+        BigInteger tokenAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
+        BigInteger dy = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
+        log.info("{} {} -> {} unknown token", tokenAmount, ((IToken) getLpToken()).getSymbol(), dy);
+        // event can't handle
+        throw new IllegalStateException();
     }
 
     @Override

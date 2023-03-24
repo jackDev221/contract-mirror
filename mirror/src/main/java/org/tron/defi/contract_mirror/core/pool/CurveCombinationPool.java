@@ -367,8 +367,8 @@ public class CurveCombinationPool extends Pool {
         try {
             for (int i = 0; i < N_COINS; i++) {
                 if (0 != currentBalances.get(i).compareTo(balances.get(i))) {
-                    log.error("expect balance{} {}", i, currentBalances);
-                    log.error("local balance{} {}", i, balances);
+                    log.error("expect balance {}", currentBalances);
+                    log.error("local balance {}", balances);
                     return true;
                 }
             }
