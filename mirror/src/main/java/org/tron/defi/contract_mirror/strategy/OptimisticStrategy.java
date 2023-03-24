@@ -89,19 +89,22 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                                   edge.getPool().getName());
                         continue;
                     }
-                    if (found && checkWTRXPath(currentPath, null)) {
+                    if (found) {
                         RouterPath candidate = new RouterPath(currentPath);
                         candidate.addStep(edge);
-                        candidate.setAmountOut(amountOutStep);
-                        minHeap.offer(candidate);
-                        candidateNum++;
-                        log.debug("NEW CANDIDATE {} {}", amountOutStep, candidate.getPools());
-                        if (minHeap.size() > routerConfig.getTopN()) {
-                            candidate = minHeap.poll();
-                            log.debug("OBSOLETE CANDIDATE {} {}", candidate.getAmountOut(),
-                                      candidate.getPools());
+                        if (checkWTRXPath(currentPath, null)) {
+                            candidate.setAmountOut(amountOutStep);
+                            minHeap.offer(candidate);
+                            candidateNum++;
+                            log.debug("NEW CANDIDATE {} {}", amountOutStep, candidate.getPools());
+                            if (minHeap.size() > routerConfig.getTopN()) {
+                                candidate = minHeap.poll();
+                                log.debug("OBSOLETE CANDIDATE {} {}",
+                                          candidate.getAmountOut(),
+                                          candidate.getPools());
+                            }
+                            continue;
                         }
-                        continue;
                     }
                     Pair<Integer, RouterPath> bestInfo = bestPaths.getOrDefault(edge.getTo(), null);
                     BigInteger bestAmount = null;

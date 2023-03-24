@@ -185,14 +185,14 @@ public class DefaultStrategy implements IStrategy {
 
     protected boolean checkWhiteBlackList(Edge edge) {
         if (routerConfig.getPoolBlackList().contains(edge.getPool().getAddress())) {
-            log.debug("{} is blocked by blacklist", edge.getPool().getAddress());
+            log.trace("{} is blocked by blacklist", edge.getPool().getAddress());
             return false;
         }
         boolean ok = routerConfig.getTokenWhiteList().isEmpty() ||
                      routerConfig.getTokenWhiteList()
                                  .contains(edge.getTo().getToken().getAddress());
         if (!ok) {
-            log.debug("{} is blocked by whitelist", edge.getTo().getToken().getAddress());
+            log.trace("{} is blocked by whitelist", edge.getTo().getToken().getAddress());
         }
         return ok;
     }
