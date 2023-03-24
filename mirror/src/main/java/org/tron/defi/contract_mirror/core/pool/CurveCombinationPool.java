@@ -70,6 +70,7 @@ public class CurveCombinationPool extends Pool {
     public boolean doDiff(String eventName) {
         switch (eventName) {
             case "TokenExchange":
+            case "TokenExchangeUnderlying":
                 return diffBalances();
             case "AddLiquidity":
             case "RemoveLiquidity":
