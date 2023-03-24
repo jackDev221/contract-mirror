@@ -135,7 +135,6 @@ router:
     - WTRX
     - SUN
     - SUNOLD
-    - USDT
     - USDJ
     - TUSD
     - USDD
@@ -152,5 +151,3 @@ router:
     - LTC
     - HT
     - BUSD
-  poolBlackList:
-    - TKugRaXPsTaJNEYFbfgecCKe6QWQPc9Xwp

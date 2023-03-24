@@ -155,6 +155,4 @@ router:
     - WIN
     - LTC
     - HT
-    - BUS
-  poolBlackList:
-    - TTnSHzUoho1CU6zFYVzVSCKq8EX8ZddkVv
+    - BUSD

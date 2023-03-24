@@ -157,5 +157,3 @@ router:
     - LTC
     - HT
     - BUSD
-  poolBlackList:
-    - TTnSHzUoho1CU6zFYVzVSCKq8EX8ZddkVv
