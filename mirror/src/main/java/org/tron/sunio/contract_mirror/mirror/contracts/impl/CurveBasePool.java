@@ -1016,6 +1016,10 @@ public class CurveBasePool extends AbstractCurve {
                 sigMap
         );
         pool.setCurveBasePoolData(poolData);
+        pool.setReady(this.isReady);
+        pool.setAddExchangeContracts(this.isAddExchangeContracts);
+        pool.setDirty(this.isDirty);
+        pool.setUsing(this.isUsing);
         if (ObjectUtil.isNotNull(preCurveBaseData)) {
             pool.setPreCurveBaseData(preCurveBaseData.copySelf());
             pool.setCurrentTx(currentTx);

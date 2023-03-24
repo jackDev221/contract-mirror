@@ -261,8 +261,8 @@ public class SwapFactoryV1 extends BaseFactory {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handEventNewExchange fail!, unique id :%s",
                     address, type, handleEventExtraData.getUniqueId()));
         }
-        String token = (String) eventValues.getIndexedValues().get(0).getValue();
-        String exchange = (String) eventValues.getIndexedValues().get(1).getValue();
+        String token =  WalletUtil.hexStringToTron((String) eventValues.getIndexedValues().get(0).getValue());
+        String exchange =WalletUtil.hexStringToTron( (String) eventValues.getIndexedValues().get(1).getValue());
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         factoryV1Data.getTokenToExchangeMap().put(token, exchange);
         factoryV1Data.getExchangeToTokenMap().put(exchange, token);

@@ -28,6 +28,7 @@ import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 import org.tron.sunio.contract_mirror.mirror.tools.TimeTool;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +61,8 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
 
     @Autowired
     RouterServer routerServer;
+
+    private List<String> preUpdatedContracts = new ArrayList<>();
 
     private boolean firstFinishLoadData = false;
 
@@ -261,9 +264,13 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
 
                 if (firstFinishLoadData) {
                     // v1 v2
+                    if (ObjectUtil.isNotNull(preUpdatedContracts) && preUpdatedContracts.size() > 0 && unReadyContract == 0) {
+                        this.routerServer.addRoutNodeMap(this.contractHashMap, preUpdatedContracts);
+                        preUpdatedContracts = new ArrayList<>();
+                    }
                     List<String> addContractAddrs = addRes.getValue();
                     if (addContractAddrs.size() > 0) {
-                        this.routerServer.addRoutNodeMap(this.contractHashMap, addContractAddrs);
+                        preUpdatedContracts.addAll(addContractAddrs);
                     }
                 }
 
