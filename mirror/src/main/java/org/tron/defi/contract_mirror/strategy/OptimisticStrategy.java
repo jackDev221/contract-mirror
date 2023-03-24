@@ -59,7 +59,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         currentPath.isDuplicateWithCurrent(edge) ||
                         !checkWTRXPath(currentPath, edge) ||
                         (!found && !checkWhiteBlackList(edge))) {
-                        log.debug("Prune {} |-> {}",
+                        log.trace("Prune {} |-> {}",
                                   currentPath.getPools(),
                                   edge.getPool().getName());
                         continue;

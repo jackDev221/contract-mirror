@@ -50,7 +50,7 @@ public class DefaultStrategy implements IStrategy {
                         currentPath.isBackward(edge) ||
                         !checkWTRXPath(currentPath, edge) ||
                         (!found && !checkWhiteBlackList(edge))) {
-                        log.debug("Prune {} |-> {}",
+                        log.trace("Prune {} |-> {}",
                                   currentPath.getPools(),
                                   edge.getPool().getName());
                         continue;
