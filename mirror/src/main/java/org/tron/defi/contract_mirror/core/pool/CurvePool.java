@@ -1,6 +1,7 @@
 package org.tron.defi.contract_mirror.core.pool;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.Pair;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.pool.CurveAbi;
 import org.tron.defi.contract_mirror.config.ContractConfigList;
@@ -102,7 +103,8 @@ public class CurvePool extends Pool {
                 handleRemoveLiquidity(eventValues);
                 break;
             case "RemoveLiquidityOne":
-                handleRemoveLiquidityOne(eventValues);
+                checkEventTimestamp(eventTime);
+                handleRemoveLiquidityOne(eventValues, eventTime);
                 break;
             case "RemoveLiquidityImbalance":
                 checkEventTimestamp(eventTime);
@@ -123,13 +125,52 @@ public class CurvePool extends Pool {
         }
     }
 
-    private void handleRemoveLiquidityOne(EventValues eventValues) {
-        log.info("handleRemoveLiquidityOne {}", getAddress());
-        BigInteger tokenAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
-        BigInteger dy = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
-        log.info("{} {} -> {} unknown token", tokenAmount, ((IToken) getLpToken()).getSymbol(), dy);
-        // event can't handle
-        throw new IllegalStateException();
+    public Pair<BigInteger, BigInteger> calcWithdrawOneCoin(BigInteger amountIn,
+                                                            int tokenId,
+                                                            long timestamp) {
+        // feeRate = (fee * N) / ((N- 1) * 4);
+        BigInteger N = BigInteger.valueOf(getN());
+        final BigInteger feeRate = fee.multiply(N)
+                                      .divide(N.subtract(BigInteger.ONE)
+                                               .multiply(BigInteger.valueOf(4)));
+        BigInteger A = getA(timestamp);
+        List<BigInteger> xp;
+        BigInteger D0;
+        BigInteger D1;
+        rlock.lock();
+        try {
+            xp = getXP(balances);
+            D0 = getD(xp, A);
+            // D1 = (totalSupply - amountIn) / totalSupply * D0
+            BigInteger totalSupply = getLpToken().totalSupply();
+            // D1 = D0 - D0 * amountIn / totalSupply
+            D1 = D0.subtract(D0.multiply(amountIn).divide(totalSupply));
+        } finally {
+            rlock.unlock();
+        }
+        // pick any i != tokenId with specified D1, 'i' has no meaning
+        int i = tokenId == 0 ? 1 : 0;
+        BigInteger y = getY(i, tokenId, xp.get(i), xp, A, D1);
+        BigInteger dy = TokenMath.safeSubtract(xp.get(tokenId), y)
+                                 .multiply(PRECISION)
+                                 .divide(RATES.get(tokenId));
+        // calculate fee
+        for (int j = 0; j < xp.size(); j++) {
+            // dx = xp_j - xp_j * D1 / D0
+            // dx = xp_j * D1 / D0 - y
+            BigInteger dx = j != tokenId
+                            ? xp.get(j).subtract(xp.get(j).multiply(D1).divide(D0))
+                            : xp.get(j).multiply(D1).divide(D0).subtract(y);
+            // xp_j = xp_j - dx * feeRate / FEE_DENOMINATOR
+            xp.set(j, xp.get(j).subtract(dx.multiply(feeRate).divide(FEE_DENOMINATOR)));
+        }
+        y = getY(i, tokenId, xp.get(i), xp, A, D1);
+        // amountOut = (y_prev - y - 1) * PRECISION / RATES[tokenId]
+        BigInteger amountOut = TokenMath.safeSubtract(xp.get(tokenId), y)
+                                        .subtract(BigInteger.ONE)
+                                        .multiply(PRECISION)
+                                        .divide(RATES.get(tokenId));
+        return Pair.of(amountOut, dy.subtract(amountOut));
     }
 
     @Override
@@ -253,46 +294,42 @@ public class CurvePool extends Pool {
         }
     }
 
-    public BigInteger calcWithdrawOneCoin(BigInteger amountIn, int tokenId, long timestamp) {
-        // feeRate = (fee * N) / ((N- 1) * 4);
-        BigInteger N = BigInteger.valueOf(getN());
-        final BigInteger feeRate = fee.multiply(N)
-                                      .divide(N.subtract(BigInteger.ONE)
-                                               .multiply(BigInteger.valueOf(4)));
-        BigInteger A = getA(timestamp);
-        List<BigInteger> xp;
-        BigInteger D0;
-        BigInteger D1;
-        rlock.lock();
-        try {
-            xp = getXP(balances);
-            D0 = getD(xp, A);
-            // D1 = (totalSupply - amountIn) / totalSupply * D0
-            BigInteger totalSupply = getLpToken().totalSupply();
-            // D1 = D0 - D0 * amountIn / totalSupply
-            D1 = D0.subtract(D0.multiply(amountIn).divide(totalSupply));
-        } finally {
-            rlock.unlock();
+    private void handleRemoveLiquidityOne(EventValues eventValues, long eventTime) {
+        log.info("handleRemoveLiquidityOne {}", getAddress());
+        String provider
+            = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
+                                                                            .get(0)).getValue());
+        BigInteger tokenAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
+        BigInteger dy = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
+        for (int i = 0; i < getN(); i++) {
+            Pair<BigInteger, BigInteger> data = calcWithdrawOneCoin(tokenAmount,
+                                                                    i,
+                                                                    eventTime / 1000);
+            if (0 != data.getFirst().compareTo(dy)) {
+                continue;
+            }
+            IToken tokenIn = (IToken) getLpToken();
+            IToken tokenOut = (IToken) getTokens().get(i);
+            log.info("{} {} -> {} {}", tokenAmount, tokenIn.getSymbol(), dy, tokenOut.getSymbol());
+            BigInteger balanceBefore = getLpToken().totalSupply();
+            BigInteger balanceAfter = TokenMath.safeSubtract(balanceBefore, tokenAmount);
+            getLpToken().setTotalSupply(balanceAfter);
+            log.info("{} totalSupply {} -> {}", tokenIn.getSymbol(), balanceBefore, balanceAfter);
+
+            BigInteger dyFee = data.getSecond().multiply(adminFee).divide(FEE_DENOMINATOR);
+            balanceBefore = balances.get(i);
+            balanceAfter = TokenMath.safeSubtract(balanceBefore, TokenMath.safeAdd(dy, dyFee));
+            balances.set(i, balanceAfter);
+            log.info("balance{} {} -> {}", i, balanceBefore, balanceAfter);
+
+            balanceBefore = tokenOut.balanceOf(getAddress());
+            balanceAfter = TokenMath.decreaseBalance(tokenOut, getAddress(), dy);
+            log.info("{} balance {} -> {}", tokenOut.getSymbol(), balanceBefore, balanceAfter);
+            return;
         }
-        // pick any i != tokenId with specified D1, 'i' has no meaning
-        int i = tokenId == 0 ? 1 : 0;
-        BigInteger y = getY(i, tokenId, xp.get(i), xp, A, D1);
-        // calculate fee
-        for (int j = 0; j < xp.size(); j++) {
-            // dx = xp_j - xp_j * D1 / D0
-            // dx = xp_j * D1 / D0 - y
-            BigInteger dx = j != tokenId
-                            ? xp.get(j).subtract(xp.get(j).multiply(D1).divide(D0))
-                            : xp.get(j).multiply(D1).divide(D0).subtract(y);
-            // xp_j = xp_j - dx * feeRate / FEE_DENOMINATOR
-            xp.set(j, xp.get(j).subtract(dx.multiply(feeRate).divide(FEE_DENOMINATOR)));
-        }
-        y = getY(i, tokenId, xp.get(i), xp, A, D1);
-        // amountOut = (y_prev - y - 1) * PRECISION / RATES[tokenId]
-        return TokenMath.safeSubtract(xp.get(tokenId), y)
-                        .subtract(BigInteger.ONE)
-                        .multiply(PRECISION)
-                        .divide(RATES.get(tokenId));
+        log.info("{} {} -> {} unknown token", tokenAmount, ((IToken) getLpToken()).getSymbol(), dy);
+        // event can't handle
+        throw new IllegalStateException();
     }
 
     public BigInteger getA(long timestamp) {

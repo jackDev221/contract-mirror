@@ -101,7 +101,8 @@ public class CurvePoolTest {
         BigInteger expectOut = new BigInteger("889466862886478962");
         BigInteger amountOut = pool.calcWithdrawOneCoin(amountIn,
                                                         0,
-                                                        System.currentTimeMillis() / 1000);
+                                                        System.currentTimeMillis() / 1000)
+                                   .getFirst();
         Assertions.assertEquals(expectOut, amountOut);
     }
 
