@@ -76,6 +76,7 @@ public class CurvePool extends Pool {
             case "AddLiquidity":
             case "RemoveLiquidity":
             case "RemoveLiquidityImbalance":
+            case "RemoveLiquidityOne":
                 return diffBalances() || diffLiquidity();
             case "NewFee":
                 return diffFee();
