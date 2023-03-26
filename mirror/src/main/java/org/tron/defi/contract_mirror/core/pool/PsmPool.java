@@ -171,6 +171,7 @@ public class PsmPool extends Pool {
     }
 
     private boolean diffAll() {
+        log.info("diffAll {}", getAddress());
         PsmPoly.PsmInfo current = poly.getInfo(getAddress());
         rlock.lock();
         try {

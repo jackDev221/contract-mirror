@@ -297,9 +297,6 @@ public class CurvePool extends Pool {
 
     private void handleRemoveLiquidityOne(EventValues eventValues, long eventTime) {
         log.info("handleRemoveLiquidityOne {}", getAddress());
-        String provider
-            = AddressConverter.EthToTronBase58Address(((Address) eventValues.getIndexedValues()
-                                                                            .get(0)).getValue());
         BigInteger tokenAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
         BigInteger dy = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
         for (int i = 0; i < getN(); i++) {
