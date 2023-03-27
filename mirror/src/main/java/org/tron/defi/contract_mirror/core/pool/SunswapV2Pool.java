@@ -147,6 +147,7 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     protected boolean doDiff(String eventName) {
+        log.info("Diff {} {}", eventName, getAddress());
         switch (eventName) {
             case "Sync":
                 return diffBalances();
@@ -257,12 +258,14 @@ public class SunswapV2Pool extends Pool implements IToken, ITRC20 {
         }
         if (0 != localBalance0.compareTo(reserves.get(0)) ||
             0 != localBalance1.compareTo(reserves.get(1))) {
-            log.info("expect balance0 {}", reserves.get(0));
-            log.info("expect balance1 {}", reserves.get(1));
-            log.info("local balance0 {}", localBalance0);
-            log.info("local balance1 {}", localBalance1);
+            log.error("expect balance0 {}", reserves.get(0));
+            log.error("expect balance1 {}", reserves.get(1));
+            log.error("local balance0 {}", localBalance0);
+            log.error("local balance1 {}", localBalance1);
             return true;
         }
+        log.trace("current balance0 {}", reserves.get(0));
+        log.trace("current balance1 {}", reserves.get(1));
         return false;
     }
 

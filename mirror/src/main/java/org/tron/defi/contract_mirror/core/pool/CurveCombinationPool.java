@@ -68,6 +68,7 @@ public class CurveCombinationPool extends Pool {
 
     @Override
     public boolean doDiff(String eventName) {
+        log.info("diff {} {}", eventName, getAddress());
         switch (eventName) {
             case "TokenExchange":
             case "TokenExchangeUnderlying":
@@ -334,20 +335,24 @@ public class CurveCombinationPool extends Pool {
                 expectTimeA != timeInitialA ||
                 0 != expectFutureA.compareTo(futureA) ||
                 expectTimeFutureA != timeFutureA) {
-                log.info("expect initialA = {}", expectA);
-                log.info("expect timeInitialA = {}", expectTimeA);
-                log.info("expect futureA = {}", expectFutureA);
-                log.info("expect timeFutureA = {}", expectTimeFutureA);
-                log.info("local initialA = {}", initialA);
-                log.info("local timeInitialA = {}", timeInitialA);
-                log.info("local futureA = {}", futureA);
-                log.info("local timeFutureA = {}", timeFutureA);
+                log.error("expect initialA = {}", expectA);
+                log.error("expect timeInitialA = {}", expectTimeA);
+                log.error("expect futureA = {}", expectFutureA);
+                log.error("expect timeFutureA = {}", expectTimeFutureA);
+                log.error("local initialA = {}", initialA);
+                log.error("local timeInitialA = {}", timeInitialA);
+                log.error("local futureA = {}", futureA);
+                log.error("local timeFutureA = {}", timeFutureA);
                 return true;
             }
-            return false;
         } finally {
             rlock.unlock();
         }
+        log.trace("expect initialA = {}", expectA);
+        log.trace("expect timeInitialA = {}", expectTimeA);
+        log.trace("expect futureA = {}", expectFutureA);
+        log.trace("expect timeFutureA = {}", expectTimeFutureA);
+        return false;
     }
 
     private boolean diffBalances() {
@@ -390,10 +395,11 @@ public class CurveCombinationPool extends Pool {
                 log.error("local {} balance {}", underlyingLpToken.getSymbol(), balance);
                 return true;
             }
-            return false;
         } finally {
             rlock.unlock();
         }
+        log.trace("current balance {}", currentBalances);
+        return false;
     }
 
     private boolean diffFee() {
@@ -405,16 +411,18 @@ public class CurveCombinationPool extends Pool {
         rlock.lock();
         try {
             if (0 != currentFee.compareTo(fee) || 0 != currentAdminFee.compareTo(adminFee)) {
-                log.info("expect fee = {}", currentFee);
-                log.info("expect adminFee = {}", currentAdminFee);
-                log.info("local fee = {}", fee);
-                log.info("local adminFee = {}", adminFee);
+                log.error("expect fee = {}", currentFee);
+                log.error("expect adminFee = {}", currentAdminFee);
+                log.error("local fee = {}", fee);
+                log.error("local adminFee = {}", adminFee);
                 return true;
             }
-            return false;
         } finally {
             rlock.unlock();
         }
+        log.trace("current fee = {}", currentFee);
+        log.trace("current adminFee = {}", currentAdminFee);
+        return false;
     }
 
     private boolean diffLiquidity() {
@@ -428,10 +436,11 @@ public class CurveCombinationPool extends Pool {
                 log.error("local totalSupply {}", totalSupply);
                 return true;
             }
-            return false;
         } finally {
             rlock.unlock();
         }
+        log.trace("current totalSupply {}", currentTotalSupply);
+        return false;
     }
 
     private BigInteger getD(List<BigInteger> xp, BigInteger A) {
@@ -660,6 +669,9 @@ public class CurveCombinationPool extends Pool {
                                                                             .map(NumericType::getValue)
                                                                             .collect(Collectors.toList());
         BigInteger tokenSupply = ((Uint256) eventValues.getNonIndexedValues().get(3)).getValue();
+        log.info("amounts {}", amounts);
+        log.info("fees {}", fees);
+        log.info("totalSupply {}", tokenSupply);
 
         if (amounts.size() != N_COINS || amounts.size() != fees.size()) {
             throw new IllegalArgumentException("SIZE NOT MATCH");
@@ -753,6 +765,9 @@ public class CurveCombinationPool extends Pool {
                                                                                .map(NumericType::getValue)
                                                                                .collect(Collectors.toList());
         BigInteger tokenSupply = ((Uint256) eventValues.getNonIndexedValues().get(2)).getValue();
+        log.info("amounts {}", amounts);
+        log.info("tokenSupply {}", tokenSupply);
+
         if (amounts.size() != N_COINS) {
             throw new IllegalArgumentException("SIZE NOT MATCH");
         }
@@ -793,6 +808,9 @@ public class CurveCombinationPool extends Pool {
                                                                             .map(NumericType::getValue)
                                                                             .collect(Collectors.toList());
         BigInteger tokenSupply = ((Uint256) eventValues.getNonIndexedValues().get(3)).getValue();
+        log.info("amounts {}", amounts);
+        log.info("fees {}", fees);
+        log.info("tokenSupply {}", tokenSupply);
 
         if (amounts.size() != N_COINS || amounts.size() != fees.size()) {
             throw new IllegalArgumentException("SIZE NOT MATCH");
@@ -902,10 +920,6 @@ public class CurveCombinationPool extends Pool {
         BigInteger amountSold = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
         int buyId = ((Int128) eventValues.getNonIndexedValues().get(2)).getValue().intValue();
         BigInteger amountBuy = ((Uint256) eventValues.getNonIndexedValues().get(3)).getValue();
-        if (soldId != TOKEN_COIN_ID && buyId != TOKEN_COIN_ID) {
-            // exchange in base pool
-            return;
-        }
 
         IToken tokenSold = (IToken) getTokens().get(soldId);
         IToken tokenBuy = (IToken) getTokens().get(buyId);
@@ -914,6 +928,11 @@ public class CurveCombinationPool extends Pool {
                  tokenSold.getSymbol(),
                  amountBuy,
                  tokenBuy.getSymbol());
+
+        if (soldId != TOKEN_COIN_ID && buyId != TOKEN_COIN_ID) {
+            // exchange in base pool
+            return;
+        }
         // re-sync immediately
         throw new IllegalStateException();
     }

@@ -136,10 +136,10 @@ public class WTRX extends Pool implements IToken, ITRC20 {
 
     @Override
     protected boolean doDiff(String eventName) {
+        log.info("Diff {} {}", eventName, getAddress());
         switch (eventName) {
             case "Deposit":
             case "Withdrawal":
-                log.info("diff {} {}", eventName, getAddress());
                 return diffBalances();
             default:
                 return false;
@@ -191,6 +191,7 @@ public class WTRX extends Pool implements IToken, ITRC20 {
     }
 
     private boolean diffBalances() {
+        log.info("diffBalances {}", getAddress());
         BigInteger expectTrxBalance = TRX.getInstance().balanceOfFromChain(getAddress());
         BigInteger expectTotalSupply = getTotalSupplyFromChain();
         BigInteger localTrxBalance;
@@ -204,12 +205,14 @@ public class WTRX extends Pool implements IToken, ITRC20 {
         }
         if (0 != localTrxBalance.compareTo(expectTrxBalance) ||
             0 != localTotalSupply.compareTo(expectTotalSupply)) {
-            log.info("expect trxBalance {}", expectTrxBalance);
-            log.info("expect totalSupply {}", expectTotalSupply);
-            log.info("local trxBalance {}", localTrxBalance);
-            log.info("local totalSupply {}", localTotalSupply);
+            log.error("expect trxBalance {}", expectTrxBalance);
+            log.error("expect totalSupply {}", expectTotalSupply);
+            log.error("local trxBalance {}", localTrxBalance);
+            log.error("local totalSupply {}", localTotalSupply);
             return true;
         }
+        log.trace("current trxBalance {}", expectTrxBalance);
+        log.trace("current totalSupply {}", expectTotalSupply);
         return false;
     }
 

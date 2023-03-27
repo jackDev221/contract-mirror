@@ -138,6 +138,7 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
+        log.info("Diff {} {}", eventName, getAddress());
         switch (eventName) {
             case "Snapshot":
                 handleSnapshotEvent(eventValues);
@@ -205,12 +206,14 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
         }
         if (0 != localBalance0.compareTo(expectBalance0) ||
             0 != localBalance1.compareTo(expectBalance1)) {
-            log.info("expect balance0 {}", expectBalance0);
-            log.info("expect balance1 {}", expectBalance1);
-            log.info("local balance0 {}", localBalance0);
-            log.info("local balance1 {}", localBalance1);
+            log.error("expect balance0 {}", expectBalance0);
+            log.error("expect balance1 {}", expectBalance1);
+            log.error("local balance0 {}", localBalance0);
+            log.error("local balance1 {}", localBalance1);
             return true;
         }
+        log.trace("current balance0 {}", expectBalance0);
+        log.trace("current balance1 {}", expectBalance1);
         return false;
     }
 

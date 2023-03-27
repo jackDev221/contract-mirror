@@ -106,11 +106,11 @@ public class PsmPool extends Pool {
 
     @Override
     protected boolean doDiff(String eventName) {
+        log.info("Diff {} {}", eventName, getAddress());
         switch (eventName) {
             case "File":
             case "SellGem":
             case "BuyGem":
-                log.info("Diff {} {}", eventName, getAddress());
                 return diffAll();
             default:
                 return false;
@@ -180,10 +180,11 @@ public class PsmPool extends Pool {
                 log.error("actual {}", info);
                 return true;
             }
-            return false;
         } finally {
             rlock.unlock();
         }
+        log.info("current psmInfo {}", current);
+        return false;
     }
 
     private ITRC20 getGemFromChain() {
@@ -213,6 +214,9 @@ public class PsmPool extends Pool {
         log.info("handleBuyGemEvent {}", getAddress());
         BigInteger gemAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
         BigInteger fee = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
+        log.info("gemAmount {}", gemAmount);
+        log.info("fee {}", fee);
+
         BigInteger usddAmount = gemAmount.multiply(gemToUsddDecimalFactor).add(fee);
         wlock.lock();
         try {
@@ -269,6 +273,9 @@ public class PsmPool extends Pool {
         log.info("handleSellGemEvent {}", getAddress());
         BigInteger gemAmount = ((Uint256) eventValues.getNonIndexedValues().get(0)).getValue();
         BigInteger fee = ((Uint256) eventValues.getNonIndexedValues().get(1)).getValue();
+        log.info("gemAmount {}", gemAmount);
+        log.info("fee {}", fee);
+
         BigInteger usddAmount = gemAmount.multiply(gemToUsddDecimalFactor).subtract(fee);
         wlock.lock();
         try {
