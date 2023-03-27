@@ -274,6 +274,48 @@ public class CurvePool extends Pool {
         return tronContractTrigger.contractAt(CurveAbi.class, getAddress());
     }
 
+    public BigInteger calcAddLiquidity(List<BigInteger> amounts, long timestamp) {
+        BigInteger N = BigInteger.valueOf(getN());
+        if (amounts.size() != N.intValue()) {
+            throw new IllegalArgumentException();
+        }
+        rlock.lock();
+        try {
+            BigInteger totalSupply = getLpToken().totalSupply();
+            boolean zeroTokenSupply = 0 == totalSupply.compareTo(BigInteger.ZERO);
+            // NOTICE: will add read lock in read lock, be aware of write locks
+            BigInteger A = getA(timestamp);
+            BigInteger D0 = zeroTokenSupply ? BigInteger.ZERO : getD(getXP(balances), A);
+            List<BigInteger> newBalance = new ArrayList<>(amounts.size());
+            for (int i = 0; i < N.intValue(); i++) {
+                if (zeroTokenSupply && 0 == amounts.get(i).compareTo(BigInteger.ZERO)) {
+                    throw new IllegalArgumentException();
+                }
+                newBalance.add(TokenMath.safeAdd(balances.get(i), amounts.get(i)));
+            }
+            BigInteger D1 = getD(getXP(newBalance), A);
+            BigInteger tokenAmount = D1;
+            if (!zeroTokenSupply) {
+                BigInteger feeRate = fee.multiply(N)
+                                        .divide(N.subtract(BigInteger.ONE)
+                                                 .multiply(BigInteger.valueOf(4)));
+                for (int i = 0; i < N.intValue(); i++) {
+                    BigInteger idealBalance = balances.get(i).multiply(D1).divide(D0);
+                    BigInteger imbalanceFee = idealBalance.subtract(newBalance.get(i))
+                                                          .abs()
+                                                          .multiply(feeRate)
+                                                          .divide(FEE_DENOMINATOR);
+                    newBalance.set(i, TokenMath.safeSubtract(newBalance.get(i), imbalanceFee));
+                }
+                tokenAmount = totalSupply.multiply(getD(getXP(newBalance), A).subtract(D0))
+                                         .divide(D0);
+            }
+            return tokenAmount;
+        } finally {
+            rlock.unlock();
+        }
+    }
+
     public BigInteger calcTokenAmount(List<BigInteger> amounts, boolean deposit, long timestamp) {
         if (amounts.size() != getN()) {
             throw new IllegalArgumentException();

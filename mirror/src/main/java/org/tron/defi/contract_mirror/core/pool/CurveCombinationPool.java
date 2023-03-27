@@ -277,7 +277,7 @@ public class CurveCombinationPool extends Pool {
         long timestamp = System.currentTimeMillis() / 1000;
         return hasLpToken
                ? getDeltaY(fromTokenId, toTokenId, amountIn, timestamp)
-               : getDeltaYUnderlying(fromTokenId, toTokenId, amountIn, timestamp);
+               : getDeltaYUnderlyingExact(fromTokenId, toTokenId, amountIn, timestamp);
     }
 
     @Override
@@ -512,8 +512,7 @@ public class CurveCombinationPool extends Pool {
 
     private BigInteger getDeltaYUnderlying(int fromTokenId,
                                            int toTokenId,
-                                           BigInteger amountIn,
-                                           long timestamp) {
+                                           BigInteger amountIn, long timestamp) {
         if (TOKEN_COIN_ID != fromTokenId && TOKEN_COIN_ID != toTokenId) {
             // exchange between base tokens
             return underlyingPool.getAmountOut(getTokens().get(fromTokenId).getAddress(),
@@ -534,11 +533,67 @@ public class CurveCombinationPool extends Pool {
                 baseInputs.add(k == fromTokenId ? amountIn : BigInteger.ZERO);
             }
             BigInteger dxp = underlyingPool.calcTokenAmount(baseInputs, true, timestamp)
-                                           .multiply(price).divide(PRECISION);
+                                           .multiply(price)
+                                           .divide(PRECISION);
             // approximate fee = dx * fee() / (2 * FEE_DENOMINATOR)
             BigInteger feeLp = dxp.multiply(underlyingPool.getFee())
                                   .divide(BigInteger.TWO.multiply(FEE_DENOMINATOR));
             x = xp.get(i).add(dxp.subtract(feeLp));
+        } else {
+            x = amountIn.multiply(RATES.get(i)).divide(PRECISION).add(xp.get(i));
+        }
+        BigInteger y = getY(i, j, x, xp, getA(timestamp));
+        // dy = y_pre - y - 1
+        BigInteger dy = TokenMath.safeSubtract(xp.get(j), y).subtract(BigInteger.ONE);
+        // dy = dy - dy * fee / FEE_DENOMINATOR)
+        dy = dy.subtract(dy.multiply(fee).divide(FEE_DENOMINATOR));
+
+        BigInteger amountOut;
+        if (j == LP_TOKEN_COIN_ID) {
+            amountOut = underlyingPool.calcWithdrawOneCoin(dy.multiply(PRECISION).divide(price),
+                                                           toTokenId - LP_TOKEN_COIN_ID,
+                                                           timestamp).getFirst();
+        } else {
+            amountOut = dy.multiply(PRECISION).divide(RATES.get(j));
+        }
+        rlock.lock();
+        try {
+            if (toTokenId == 0 && balances.get(toTokenId).compareTo(amountOut) < 0) {
+                throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
+            }
+            return amountOut;
+        } finally {
+            rlock.unlock();
+        }
+    }
+
+    private BigInteger getDeltaYUnderlyingExact(int fromTokenId,
+                                                int toTokenId,
+                                                BigInteger amountIn,
+                                                long timestamp) {
+        if (TOKEN_COIN_ID != fromTokenId && TOKEN_COIN_ID != toTokenId) {
+            // exchange between base tokens
+            return underlyingPool.getAmountOut(getTokens().get(fromTokenId).getAddress(),
+                                               getTokens().get(toTokenId).getAddress(),
+                                               amountIn);
+        }
+        // exchange between token0 and base token
+        int i = fromTokenId == TOKEN_COIN_ID ? TOKEN_COIN_ID : LP_TOKEN_COIN_ID;
+        int j = toTokenId == TOKEN_COIN_ID ? TOKEN_COIN_ID : LP_TOKEN_COIN_ID;
+        assert i != j;
+        BigInteger price = getVirtualPrice(timestamp, false);
+        List<BigInteger> xp = getXP(getBalances(), price);
+        BigInteger x;
+        if (i == LP_TOKEN_COIN_ID) {
+            // base token to lp token first
+            List<BigInteger> baseInputs = new ArrayList<>();
+            for (int k = LP_TOKEN_COIN_ID; k < getTokens().size(); k++) {
+                baseInputs.add(k == fromTokenId ? amountIn : BigInteger.ZERO);
+            }
+            BigInteger dx = underlyingPool.calcAddLiquidity(baseInputs, timestamp)
+                                          .multiply(price)
+                                          .divide(PRECISION);
+            x = xp.get(i).add(dx);
         } else {
             x = amountIn.multiply(RATES.get(i)).divide(PRECISION).add(xp.get(i));
         }
