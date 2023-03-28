@@ -81,6 +81,37 @@ public class PSM extends BaseContract {
         this.poolName = poolName;
     }
 
+    public PSM(ContractType type, PSMData psmData, PSMTotalData psmTotalData, IChainHelper iChainHelper, IContractsHelper
+            iContractsHelper, Map<String, String> sigMap) {
+        this(type, psmData.getAddress(), psmData.getPolyAddress(), psmData.getPoolName(), iChainHelper, iContractsHelper, psmTotalData, sigMap);
+        this.setPsmData(psmData);
+        this.setPsmTotalData(psmTotalData);
+    }
+
+    @Override
+    public BaseContract copySelf() {
+        try {
+            rlock.lock();
+            PSMData psmData = getPsmData();
+            PSMTotalData psmTotalData = this.psmTotalData.copySelf();
+            PSM psm = new PSM(
+                    type,
+                    psmData,
+                    psmTotalData,
+                    iChainHelper,
+                    iContractsHelper,
+                    sigMap
+            );
+            psm.setReady(this.isReady);
+            psm.setAddExchangeContracts(this.isAddExchangeContracts);
+            psm.setUsing(this.isUsing);
+            psm.setDirty(this.isDirty);
+            return psm;
+        } finally {
+            rlock.unlock();
+        }
+    }
+
     private PSMData getVarPsmData() {
         if (ObjectUtil.isNull(psmData)) {
             psmData = new PSMData();

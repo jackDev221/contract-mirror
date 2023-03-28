@@ -171,7 +171,7 @@ public class RouterServer {
             BigInteger inputAmount = swapResult.amount;
             swapToken(fromToken, toToken, swapResult, pathCacheContract.getContract(info.getContract()), pathCacheContract);
             if (swapResult.amount.compareTo(BigInteger.ZERO) == 0) {
-                log.error("Calc :from {}, to: {},  contract:{}, input : {}, path:{} return amount is zero", fromToken, toToken, info.getContract(), inputAmount, path);
+                log.warn("Calc :from {}, to: {},  contract:{}, input : {}, path:{}  at index :{} return amount is zero", fromToken, toToken, info.getContract(), inputAmount, path, i);
                 return null;
             }
             fromToken = toToken;

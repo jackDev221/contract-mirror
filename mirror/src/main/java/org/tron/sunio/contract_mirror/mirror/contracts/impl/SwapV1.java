@@ -57,6 +57,11 @@ public class SwapV1 extends BaseContract {
         this.factory = factory;
     }
 
+    public SwapV1(SwapV1Data data, IChainHelper iChainHelper, IContractsHelper iContractsHelper, final Map<String, String> sigMap) {
+        this(data.getFactory(), data.getAddress(), iChainHelper, iContractsHelper, data.getTokenAddress(), sigMap);
+        this.setSwapV1Data(data);
+    }
+
     private SwapV1Data getVarSwapV1Data() {
         if (ObjectUtil.isNull(swapV1Data)) {
             swapV1Data = new SwapV1Data();
@@ -71,6 +76,22 @@ public class SwapV1 extends BaseContract {
 
     public SwapV1Data getSwapV1Data() {
         return getVarSwapV1Data().copySelf();
+    }
+
+    @Override
+    public BaseContract copySelf() {
+        try {
+            rlock.lock();
+            SwapV1Data data = this.getSwapV1Data();
+            SwapV1 v1 = new SwapV1(data, iChainHelper, iContractsHelper, sigMap);
+            v1.setReady(this.isReady);
+            v1.setAddExchangeContracts(this.isAddExchangeContracts);
+            v1.setUsing(this.isUsing);
+            v1.setDirty(this.isDirty);
+            return v1;
+        } finally {
+            rlock.unlock();
+        }
     }
 
     @Override
@@ -160,7 +181,7 @@ public class SwapV1 extends BaseContract {
 
     @Override
     public String getVersion() {
-        return  V1_VERSION;
+        return V1_VERSION;
     }
 
     /*

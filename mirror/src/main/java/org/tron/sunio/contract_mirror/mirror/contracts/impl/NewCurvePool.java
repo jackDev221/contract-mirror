@@ -10,6 +10,7 @@ import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
+import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.ContractInfo;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.NewCurvePoolData;
@@ -273,33 +274,37 @@ public class NewCurvePool extends AbstractCurve {
         return dy;
     }
 
-
     @Override
-    public AbstractCurve copySelf() {
-        NewCurvePoolData data = this.getCurveBasePoolData();
-        NewCurvePool pool = new NewCurvePool(
-                data.getAddress(),
-                type,
-                baseCoinsCount,
-                coinsCount,
-                copyBigIntegerArray(rates),
-                copyBigIntegerArray(precisionMul),
-                poolName,
-                iChainHelper,
-                iContractsHelper,
-                sigMap
-        );
-        pool.setNewCurvePoolData(data);
-        pool.setReady(this.isReady);
-        pool.setAddExchangeContracts(this.isAddExchangeContracts);
-        pool.setDirty(this.isDirty);
-        pool.setUsing(this.isUsing);
-        if (ObjectUtil.isNotNull(preSwapPoolData)) {
-            pool.setPreSwapPoolData(preSwapPoolData.copySelf());
-            pool.setCurrentTx(currentTx);
-            pool.setCurrentIndex(currentIndex);
+    public BaseContract copySelf() {
+        try {
+            rlock.lock();
+            NewCurvePoolData data = this.getCurveBasePoolData();
+            NewCurvePool pool = new NewCurvePool(
+                    data.getAddress(),
+                    type,
+                    baseCoinsCount,
+                    coinsCount,
+                    copyBigIntegerArray(rates),
+                    copyBigIntegerArray(precisionMul),
+                    poolName,
+                    iChainHelper,
+                    iContractsHelper,
+                    sigMap
+            );
+            pool.setNewCurvePoolData(data);
+            pool.setReady(this.isReady);
+            pool.setAddExchangeContracts(this.isAddExchangeContracts);
+            pool.setDirty(this.isDirty);
+            pool.setUsing(this.isUsing);
+            if (ObjectUtil.isNotNull(preSwapPoolData)) {
+                pool.setPreSwapPoolData(preSwapPoolData.copySelf());
+                pool.setCurrentTx(currentTx);
+                pool.setCurrentIndex(currentIndex);
+            }
+            return pool;
+        } finally {
+            rlock.unlock();
         }
-        return pool;
     }
 
     /**

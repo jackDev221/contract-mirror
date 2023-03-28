@@ -53,8 +53,6 @@ public abstract class AbstractCurve extends BaseContract {
 
     public abstract BigInteger exchangeUnderlying(String uniqueId, int i, int j, BigInteger _dx, BigInteger mindy, long timestamp, IContractsHelper iContractsHelper) throws Exception;
 
-    public abstract AbstractCurve copySelf();
-
     public abstract double calcFee(String uniqueId, long timestamp, int j, IContractsHelper iContractsHelper);
 
     public abstract double calcBasePoolFee(String uniqueId, long timestamp, int j, IContractsHelper iContractsHelper);

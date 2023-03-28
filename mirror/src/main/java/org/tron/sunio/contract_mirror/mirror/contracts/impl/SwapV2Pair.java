@@ -63,6 +63,13 @@ public class SwapV2Pair extends BaseContract {
         this.factory = factory;
     }
 
+    public SwapV2Pair(SwapV2PairData data, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
+                      Map<String, String> sigMap) {
+        this(data.getAddress(), data.getFactory(), iChainHelper, iContractsHelper, sigMap);
+        this.setSwapV2PairData(data);
+    }
+
+
     public SwapV2PairData getSwapV2PairData() {
         return getVarSwapV2PairData().copySelf();
     }
@@ -159,6 +166,22 @@ public class SwapV2Pair extends BaseContract {
     @Override
     public String getVersion() {
         return V2_VERSION;
+    }
+
+    @Override
+    public BaseContract copySelf() {
+        try {
+            rlock.lock();
+            SwapV2PairData swapV2PairData = this.getSwapV2PairData();
+            SwapV2Pair v2 = new SwapV2Pair(swapV2PairData, iChainHelper, iContractsHelper, sigMap);
+            v2.setReady(this.isReady);
+            v2.setAddExchangeContracts(this.isAddExchangeContracts);
+            v2.setUsing(this.isUsing);
+            v2.setDirty(this.isDirty);
+            return v2;
+        } finally {
+            rlock.unlock();
+        }
     }
 
     @Override
@@ -331,30 +354,6 @@ public class SwapV2Pair extends BaseContract {
 
     private HandleResult handleSync(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         log.info("SwapV1:{}, handleSync, topics:{} data:{} ", address, topics, data);
-//        EventValues eventValues = getEventValue(EVENT_NAME_NEW_SYNC, EVENT_NAME_NEW_SYNC_BODY, topics, data,
-//                handleEventExtraData.getUniqueId());
-//        if (ObjectUtil.isNull(eventValues)) {
-//            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleSync fail!, unique id :%s",
-//                    address, type, handleEventExtraData.getUniqueId()));
-//        }
-//        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
-//        BigInteger reserve0 = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
-//        BigInteger reserve1 = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-//        //4294967296L = 2**32
-//        long blockTimestampLast = handleEventExtraData.getTimeStamp() % 4294967296L;
-//        long timeElapsed = blockTimestampLast - swapV2PairData.getBlockTimestampLast();
-//        BigInteger reserve0Origin = swapV2PairData.getReserve0();
-//        BigInteger reserve1Origin = swapV2PairData.getReserve1();
-//        if (timeElapsed > 0 && reserve0Origin.compareTo(BigInteger.ZERO) != 0 && reserve1Origin.compareTo(BigInteger.ZERO) != 0) {
-//            BigInteger price0Add = priceCumulativeLastAdd(reserve0Origin, reserve1Origin, timeElapsed);
-//            BigInteger price1Add = priceCumulativeLastAdd(reserve1Origin, reserve0Origin, timeElapsed);
-//            swapV2PairData.setPrice0CumulativeLast(swapV2PairData.getPrice0CumulativeLast().add(price0Add));
-//            swapV2PairData.setPrice1CumulativeLast(swapV2PairData.getPrice1CumulativeLast().add(price1Add));
-//        }
-//        swapV2PairData.setReserve0(reserve0);
-//        swapV2PairData.setReserve1(reserve1);
-//        swapV2PairData.setBlockTimestampLast(blockTimestampLast);
-//        isDirty = true;
         return HandleResult.genHandleSuccess();
     }
 

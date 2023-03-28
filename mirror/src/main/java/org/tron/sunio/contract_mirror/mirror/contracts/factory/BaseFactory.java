@@ -61,6 +61,11 @@ public class BaseFactory extends BaseContract implements IContractFactory {
     }
 
     @Override
+    public BaseContract copySelf() {
+        return this;
+    }
+
+    @Override
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         return null;
     }

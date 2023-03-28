@@ -28,15 +28,10 @@ public class PathCacheContract implements IContractsHelper {
             return pathCached.get(address);
         } else {
             BaseContract baseContract = contractMaps.get(address);
-            if (ObjectUtil.isNull(baseContract)){
+            if (ObjectUtil.isNull(baseContract)) {
                 return null;
             }
-            if (baseContract.getType() == ContractType.CONTRACT_CURVE_2POOL
-                    || baseContract.getType() == ContractType.CONTRACT_CURVE_3POOL
-                    || baseContract.getType() == ContractType.STABLE_SWAP_POOL
-            ) {
-                baseContract = ((AbstractCurve) baseContract).copySelf();
-            }
+            baseContract = baseContract.copySelf();
             pathCached.put(address, baseContract);
             return baseContract;
         }
@@ -59,7 +54,7 @@ public class PathCacheContract implements IContractsHelper {
             return baseContract.isReady();
         }
         BaseContract baseContract = getContract(address);
-        if (ObjectUtil.isNull(baseContract)){
+        if (ObjectUtil.isNull(baseContract)) {
             return false;
         }
         return baseContract.isReady();

@@ -56,8 +56,11 @@ public abstract class BaseContract extends ContractObj {
 
     public abstract String getVersion();
 
+    public abstract BaseContract copySelf();
+
     public abstract <T> T handleSpecialRequest(String method, String params) throws Exception;
 
+    @SuppressWarnings("unchecked")
     public <T> T handRequest(String method, String params) throws Exception {
         if (method.equalsIgnoreCase(METHOD_STATUS)) {
             return getStatus();
@@ -169,7 +172,12 @@ public abstract class BaseContract extends ContractObj {
         String[] topics = iContractEventWrap.getTopics();
         String data = iContractEventWrap.getData();
         HandleEventExtraData handleEventExtraData = genEventExtraData(iContractEventWrap);
-        return handleEvent1(eventName, topics, data, handleEventExtraData);
+        try {
+            wlock.lock();
+            return handleEvent1(eventName, topics, data, handleEventExtraData);
+        } finally {
+            wlock.unlock();
+        }
     }
 
     // 处理完后统一更新数据到存储。

@@ -10,6 +10,7 @@ import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
 import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
+import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.contracts.ContractInfo;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.dao.OldCurvePoolData;
@@ -263,6 +264,7 @@ public class OldCurvePool extends AbstractCurve {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getStatus() {
         return (T) getVarOldCurvePoolData();
     }
@@ -273,6 +275,7 @@ public class OldCurvePool extends AbstractCurve {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_TOKEN:
@@ -366,7 +369,7 @@ public class OldCurvePool extends AbstractCurve {
         }
     }
 
-
+    @SuppressWarnings("unchecked")
     protected HandleResult handleEventAddLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         log.info("{}:{} handleEventAddLiquidity:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
 
@@ -423,7 +426,7 @@ public class OldCurvePool extends AbstractCurve {
             return HandleResult.genHandleFailMessage(e.getMessage());
         }
     }
-
+    @SuppressWarnings("unchecked")
     protected HandleResult handleEventRemoveLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         log.info("{}:{} handleEventRemoveLiquidity:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
         String body = Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_BODY;
@@ -482,6 +485,7 @@ public class OldCurvePool extends AbstractCurve {
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected HandleResult handleEventRemoveLiquidityImbalance(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         log.info("{}:{} handleEventRemoveLiquidityImbalance:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
         String body = Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE_BODY;
@@ -1001,29 +1005,34 @@ public class OldCurvePool extends AbstractCurve {
     }
 
     @Override
-    public AbstractCurve copySelf() {
-        OldCurvePoolData poolData = this.getOldCurvePoolData();
-        OldCurvePool pool = new OldCurvePool(
-                address,
-                type,
-                iChainHelper,
-                iContractsHelper,
-                coinsCount,
-                feeIndex,
-                poolName,
-                sigMap
-        );
-        pool.setOldCurvePoolData(poolData);
-        pool.setReady(this.isReady);
-        pool.setAddExchangeContracts(this.isAddExchangeContracts);
-        pool.setDirty(this.isDirty);
-        pool.setUsing(this.isUsing);
-        if (ObjectUtil.isNotNull(preCurveBaseData)) {
-            pool.setPreCurveBaseData(preCurveBaseData.copySelf());
-            pool.setCurrentTx(currentTx);
-            pool.setCurrentIndex(currentIndex);
+    public BaseContract copySelf() {
+        try {
+            rlock.lock();
+            OldCurvePoolData poolData = this.getOldCurvePoolData();
+            OldCurvePool pool = new OldCurvePool(
+                    address,
+                    type,
+                    iChainHelper,
+                    iContractsHelper,
+                    coinsCount,
+                    feeIndex,
+                    poolName,
+                    sigMap
+            );
+            pool.setOldCurvePoolData(poolData);
+            pool.setReady(this.isReady);
+            pool.setAddExchangeContracts(this.isAddExchangeContracts);
+            pool.setDirty(this.isDirty);
+            pool.setUsing(this.isUsing);
+            if (ObjectUtil.isNotNull(preCurveBaseData)) {
+                pool.setPreCurveBaseData(preCurveBaseData.copySelf());
+                pool.setCurrentTx(currentTx);
+                pool.setCurrentIndex(currentIndex);
+            }
+            return pool;
+        } finally {
+            rlock.unlock();
         }
-        return pool;
     }
 
     @Override

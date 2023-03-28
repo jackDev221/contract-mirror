@@ -9,10 +9,16 @@ import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Data
 @Slf4j
-public class ContractObj implements IContract{
+public class ContractObj implements IContract {
+    protected final ReadWriteLock rwlock = new ReentrantReadWriteLock();
+    protected final Lock rlock = rwlock.readLock();
+    protected final Lock wlock = rwlock.writeLock();
     protected String address;
     protected ContractType type;
     protected boolean isReady;
@@ -26,7 +32,7 @@ public class ContractObj implements IContract{
     protected IContractsHelper iContractsHelper;
 
     public ContractObj(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
-                        final Map<String, String> sigMap) {
+                       final Map<String, String> sigMap) {
         this.type = type;
         this.address = address;
         this.iChainHelper = iChainHelper;
