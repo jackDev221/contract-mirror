@@ -3,6 +3,9 @@ package org.tron.defi.contract_mirror.service;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.cache.GuavaCacheMetrics;
+import io.prometheus.client.Summary;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,12 +24,15 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 public class PriceService {
+    private final RestClient priceCenter = new RestClient(null);
     @Autowired
     private TokenConfigList tokenConfigList;
     @Autowired
     private PriceCenterConfig priceCenterConfig;
-    private RestClient priceCenter = new RestClient(null);
+    @Autowired
+    private MeterRegistry registry;
     private Cache<String, BigDecimal> priceCache;
+    private Summary priceCenterDuration;
 
     public BigDecimal getPrice(String symbolOrAddress) {
         symbolOrAddress = tokenConfigList.getWrapTokens()
@@ -45,7 +51,9 @@ public class PriceService {
         }
         uriBuilder.queryParam("symbol", symbolOrAddress);
         try {
+            Summary.Timer timer = priceCenterDuration.startTimer();
             String json = priceCenter.get(uriBuilder.build().toString());
+            timer.observeDuration();
             log.debug("http response {}", json);
             PriceResponse response = JSONObject.parseObject(json, PriceResponse.class);
             log.debug("PriceResponse {}", response);
@@ -53,19 +61,20 @@ public class PriceService {
                 throw new RuntimeException("CANT GET TOKEN PRICE");
             }
             if (!response.getData().containsKey(symbolOrAddress)) {
-                return BigDecimal.ZERO;
+                price = BigDecimal.ZERO;
+            } else {
+                price = new BigDecimal(response.getData()
+                                               .get(symbolOrAddress)
+                                               .getQuote()
+                                               .getUsd()
+                                               .getPrice());
             }
-            price = new BigDecimal(response.getData()
-                                           .get(symbolOrAddress)
-                                           .getQuote()
-                                           .getUsd()
-                                           .getPrice());
             updateCache(symbolOrAddress, price);
             return price;
         } catch (RuntimeException e) {
             e.printStackTrace();
-            log.error(e.getMessage());
-            throw new RuntimeException("CANT GET TOKEN PRICE");
+            log.error("CANT GET TOKEN PRICE, error {}", e.getMessage());
+            return null;
         }
     }
 
@@ -82,12 +91,18 @@ public class PriceService {
         if (null == cacheConfig) {
             return;
         }
-        priceCache = CacheBuilder.newBuilder()
-                                 .concurrencyLevel(cacheConfig.getConcurrencyLevel())
-                                 .initialCapacity(30000)
-                                 .maximumSize(cacheConfig.getMaxCacheSize())
-                                 .expireAfterWrite(cacheConfig.getExpireTime(), TimeUnit.SECONDS)
-                                 .build();
+        priceCache = GuavaCacheMetrics.monitor(registry,
+                                               CacheBuilder.newBuilder()
+                                                           .recordStats()
+                                                           .concurrencyLevel(cacheConfig.getConcurrencyLevel())
+                                                           .initialCapacity(30000)
+                                                           .maximumSize(cacheConfig.getMaxCacheSize())
+                                                           .expireAfterWrite(cacheConfig.getExpireTime(),
+                                                                             TimeUnit.SECONDS)
+                                                           .build(),
+                                               "priceCache");
+        priceCenterDuration = Summary.build("http_price_center_duration",
+                                            "Time token to call price center").register();
     }
 
     public void updateCache(String symbolOrAddress, BigDecimal price) {

@@ -7,6 +7,7 @@ import org.tron.defi.contract_mirror.core.graph.Edge;
 import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.graph.Node;
 import org.tron.defi.contract_mirror.core.token.IToken;
+import org.tron.defi.contract_mirror.dao.RouterInfo;
 import org.tron.defi.contract_mirror.dao.RouterPath;
 
 import java.math.BigInteger;
@@ -19,7 +20,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
     }
 
     @Override
-    public List<RouterPath> getPath(String from, String to, BigInteger amountIn) {
+    public RouterInfo getPath(String from, String to, BigInteger amountIn) {
         Node nodeFrom = graph.getNode(from);
         Node nodeTo = graph.getNode(to);
         if (null == nodeFrom || null == nodeTo) {
@@ -145,10 +146,13 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                 }
             }
         }
+        RouterInfo routerInfo = new RouterInfo();
+        routerInfo.setTotalCandidates(candidateNum);
         // to get result in order
         int n = minHeap.size();
         if (0 == n) {
-            return Collections.emptyList();
+            routerInfo.setPaths(Collections.emptyList());
+            return routerInfo;
         }
         RouterPath[] path = new RouterPath[n];
         while (n-- > 0) {
@@ -156,6 +160,8 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
         }
         long time1 = System.currentTimeMillis();
         log.info("Get top {} of {} paths in {}ms", path.length, candidateNum, time1 - time0);
-        return List.of(path);
+
+        routerInfo.setPaths(List.of(path));
+        return routerInfo;
     }
 }

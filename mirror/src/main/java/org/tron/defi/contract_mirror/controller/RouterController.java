@@ -1,12 +1,14 @@
 package org.tron.defi.contract_mirror.controller;
 
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.tron.defi.contract_mirror.config.RouterConfig;
 import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.dao.RouterPath;
 import org.tron.defi.contract_mirror.dto.Response;
@@ -20,17 +22,38 @@ import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNullElse;
+
 @Slf4j
 @RestController
 @RequestMapping("/swap/")
 public class RouterController {
+    private final Counter routerFailCounter;
+    private final Counter routerCounter;
+    private final Counter routingV2FailCounter;
+    private final Counter routingV2Counter;
     @Autowired
-    RouterConfig routerConfig;
+    private RouterService routerService;
     @Autowired
-    RouterService routerService;
-    @Autowired
-    PriceService priceService;
+    private PriceService priceService;
 
+    @Autowired
+    public RouterController(MeterRegistry registry) {
+        routerFailCounter = Counter.builder("http_router_fail")
+                                   .description("Number of failed requests for router")
+                                   .register(registry);
+        routerCounter = Counter.builder("http_router_request")
+                               .description("Number of requests for router")
+                               .register(registry);
+        routingV2FailCounter = Counter.builder("http_routingV2_fail")
+                                      .description("Number of failed requests for routingInV2")
+                                      .register(registry);
+        routingV2Counter = Counter.builder("http_routingV2_request")
+                                  .description("Number of requests for routingInV2")
+                                  .register(registry);
+    }
+
+    @Timed(value = "http_router_duration", description = "Time taken to get router path")
     @GetMapping("/router")
     public Response router(@RequestParam(name = "fromToken") String from,
                            @RequestParam(name = "toToken") String to,
@@ -53,6 +76,7 @@ public class RouterController {
                   topN,
                   whitelist,
                   blacklist);
+        routerCounter.increment();
         long timeIn = System.currentTimeMillis();
         Response response = new Response<>();
         BigInteger amountIn = new BigInteger(amount);
@@ -68,8 +92,9 @@ public class RouterController {
                                            .collect(Collectors.toSet());
         try {
             long time0 = System.currentTimeMillis();
-            BigDecimal inUsdPrice = priceService.getPrice(from);
-            BigDecimal outUsdPrice = priceService.getPrice(to);
+            BigDecimal inUsdPrice = requireNonNullElse(priceService.getPrice(from),
+                                                       BigDecimal.ZERO);
+            BigDecimal outUsdPrice = requireNonNullElse(priceService.getPrice(to), BigDecimal.ZERO);
             log.debug("inUsdPrice={} outUsdPrice={}", inUsdPrice, outUsdPrice);
             long time1 = System.currentTimeMillis();
             List<RouterPath> paths = routerService.getPath(from,
@@ -85,17 +110,21 @@ public class RouterController {
             BigDecimal inUsd = null;
             if (!paths.isEmpty()) {
                 IToken inToken = (IToken) paths.get(0).getFrom().getToken();
-                inUsd = new BigDecimal(amount).divide(BigDecimal.valueOf(10)
-                                                                .pow(inToken.getDecimals()),
-                                                      inToken.getDecimals(),
-                                                      RoundingMode.HALF_UP).multiply(inUsdPrice);
+                inUsd = 0 == inUsdPrice.compareTo(BigDecimal.ZERO)
+                        ? BigDecimal.ZERO
+                        : new BigDecimal(amount).divide(BigDecimal.valueOf(10)
+                                                                  .pow(inToken.getDecimals()),
+                                                        inToken.getDecimals(),
+                                                        RoundingMode.HALF_UP).multiply(inUsdPrice);
             }
             for (int i = 0; i < paths.size(); i++) {
                 RouterPath path = paths.get(i);
                 RouterResultV2 resultV2 = RouterResultV2.fromRouterPath(path);
                 resultV2.setInUsd(inUsd.toString());
-                resultV2.setOutUsd(new BigDecimal(resultV2.getAmount()).multiply(outUsdPrice)
-                                                                       .toString());
+                BigDecimal outUsd = 0 == outUsdPrice.compareTo(BigDecimal.ZERO)
+                                    ? BigDecimal.ZERO
+                                    : new BigDecimal(resultV2.getAmount()).multiply(outUsdPrice);
+                resultV2.setOutUsd(outUsd.toString());
                 resultV2s.add(resultV2);
             }
             response.setCode(Response.Code.SUCCESS);
@@ -111,10 +140,12 @@ public class RouterController {
             response.setCode(Response.Code.ERROR);
             response.setMessage(e.getMessage());
             log.trace("Failed {}", response);
+            routerFailCounter.increment();
         }
         return response;
     }
 
+    @Timed(value = "http_routingInV2_duration", description = "Time taken to get router path")
     @GetMapping("/routingInV2")
     public Response routerV2(@RequestParam(name = "fromToken", required = true) String fromToken,
                              @RequestParam(name = "toToken", required = true) String toToken,
@@ -132,13 +163,16 @@ public class RouterController {
                   amount,
                   fromDecimal,
                   toDecimal);
+        routingV2Counter.increment();
         long timeIn = System.currentTimeMillis();
         Response response = new Response<>();
         BigInteger amountIn = new BigInteger(amount);
         try {
             long time0 = System.currentTimeMillis();
-            BigDecimal inUsdPrice = priceService.getPrice(fromToken);
-            BigDecimal outUsdPrice = priceService.getPrice(toToken);
+            BigDecimal inUsdPrice = requireNonNullElse(priceService.getPrice(fromToken),
+                                                       BigDecimal.ZERO);
+            BigDecimal outUsdPrice = requireNonNullElse(priceService.getPrice(toToken),
+                                                        BigDecimal.ZERO);
             log.debug("inUsdPrice={} outUsdPrice={}", inUsdPrice, outUsdPrice);
             long time1 = System.currentTimeMillis();
             List<RouterPath> paths = routerService.getPath(from, to, amountIn);
@@ -147,17 +181,21 @@ public class RouterController {
             BigDecimal inUsd = null;
             if (!paths.isEmpty()) {
                 IToken inToken = (IToken) paths.get(0).getFrom().getToken();
-                inUsd = new BigDecimal(amount).divide(BigDecimal.valueOf(10)
-                                                                .pow(inToken.getDecimals()),
-                                                      inToken.getDecimals(),
-                                                      RoundingMode.HALF_UP).multiply(inUsdPrice);
+                inUsd = 0 == inUsdPrice.compareTo(BigDecimal.ZERO)
+                        ? BigDecimal.ZERO
+                        : new BigDecimal(amount).divide(BigDecimal.valueOf(10)
+                                                                  .pow(inToken.getDecimals()),
+                                                        inToken.getDecimals(),
+                                                        RoundingMode.HALF_UP).multiply(inUsdPrice);
             }
             for (int i = 0; i < paths.size(); i++) {
                 RouterPath path = paths.get(i);
                 RouterResultV2 resultV2 = RouterResultV2.fromRouterPath(path);
                 resultV2.setInUsd(inUsd.toString());
-                resultV2.setOutUsd(new BigDecimal(resultV2.getAmount()).multiply(outUsdPrice)
-                                                                       .toString());
+                BigDecimal outUsd = 0 == outUsdPrice.compareTo(BigDecimal.ZERO)
+                                    ? BigDecimal.ZERO
+                                    : new BigDecimal(resultV2.getAmount()).multiply(outUsdPrice);
+                resultV2.setOutUsd(outUsd.toString());
                 resultV2s.add(resultV2);
             }
             response.setCode(Response.Code.SUCCESS);
@@ -173,6 +211,7 @@ public class RouterController {
             response.setCode(Response.Code.ERROR);
             response.setMessage(e.getMessage());
             log.trace("Failed {}", response);
+            routingV2FailCounter.increment();
         }
         return response;
     }

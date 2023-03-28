@@ -1,5 +1,6 @@
 package org.tron.defi.contract_mirror.service;
 
+import io.prometheus.client.Summary;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -8,22 +9,40 @@ import org.tron.defi.contract_mirror.core.graph.Edge;
 import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.pool.Pool;
 import org.tron.defi.contract_mirror.core.token.IToken;
+import org.tron.defi.contract_mirror.dao.RouterInfo;
 import org.tron.defi.contract_mirror.dao.RouterPath;
 import org.tron.defi.contract_mirror.strategy.StrategyFactory;
 import org.tron.defi.contract_mirror.utils.TokenMath;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class RouterService {
+    private final Summary candidateNum = Summary.build("num_router_candidates",
+                                                       "Number of path candidates").register();
+    private final Map<String, Summary> strategyDuration = new HashMap<>();
     @Autowired
     private Graph graph;
     @Autowired
     private RouterConfig routerConfig;
+
+    public RouterService() {
+        StrategyFactory.getInstance()
+                       .getStrategyNames()
+                       .forEach(strategy -> strategyDuration.put(strategy,
+                                                                 Summary.build(
+                                                                            "process_strategy_duration_" +
+                                                                            strategy,
+                                                                            "Time token of " +
+                                                                            "strategy process")
+                                                                        .register()));
+    }
 
     private static RouterPath calculateFee(RouterPath path) {
         path.setFee(BigInteger.ZERO);
@@ -76,13 +95,19 @@ public class RouterService {
     }
 
     public List<RouterPath> getPath(String from, String to, BigInteger amountIn) {
-        return StrategyFactory.getInstance()
-                              .getStrategy(graph, routerConfig)
-                              .getPath(from, to, amountIn)
-                              .stream()
-                              .map(RouterService::calculateFee)
-                              .map(RouterService::calculateImpact)
-                              .collect(Collectors.toList());
+        Summary duration = strategyDuration.getOrDefault(routerConfig.getStrategy(),
+                                                         strategyDuration.get("DEFAULT"));
+        Summary.Timer timer = duration.startTimer();
+        RouterInfo routerInfo = StrategyFactory.getInstance()
+                                               .getStrategy(graph, routerConfig)
+                                               .getPath(from, to, amountIn);
+        timer.observeDuration();
+        candidateNum.observe(routerInfo.getTotalCandidates());
+        return routerInfo.getPaths()
+                         .stream()
+                         .map(RouterService::calculateFee)
+                         .map(RouterService::calculateImpact)
+                         .collect(Collectors.toList());
     }
 
     public List<RouterPath> getPath(String from,
@@ -99,12 +124,18 @@ public class RouterService {
         config.setTopN(topN);
         config.setTokenWhiteList(tokenWhiteList);
         config.setPoolBlackList(poolBlackList);
-        return StrategyFactory.getInstance()
-                              .getStrategy(graph, config)
-                              .getPath(from, to, amountIn)
-                              .stream()
-                              .map(RouterService::calculateFee)
-                              .map(RouterService::calculateImpact)
-                              .collect(Collectors.toList());
+        Summary duration = strategyDuration.getOrDefault(routerConfig.getStrategy(),
+                                                         strategyDuration.get("DEFAULT"));
+        Summary.Timer timer = duration.startTimer();
+        RouterInfo routerInfo = StrategyFactory.getInstance()
+                                               .getStrategy(graph, config)
+                                               .getPath(from, to, amountIn);
+        timer.observeDuration();
+        candidateNum.observe(routerInfo.getTotalCandidates());
+        return routerInfo.getPaths()
+                         .stream()
+                         .map(RouterService::calculateFee)
+                         .map(RouterService::calculateImpact)
+                         .collect(Collectors.toList());
     }
 }

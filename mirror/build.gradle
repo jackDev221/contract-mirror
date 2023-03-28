@@ -30,11 +30,14 @@ dependencies {
     implementation fileTree(dir: "../lib", includes: ["*.jar"])
     implementation project(':contract-abi')
 
+    implementation "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
     implementation "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
     implementation "org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}"
 
     implementation "org.apache.kafka:kafka-clients:${kafkaVersion}"
     implementation "org.web3j:abi:${web3jVersion}"
+
+    implementation "io.micrometer:micrometer-registry-prometheus:${prometheusVersion}"
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
     testImplementation "org.apache.commons:commons-lang3:${apacheCommonsVersion}"

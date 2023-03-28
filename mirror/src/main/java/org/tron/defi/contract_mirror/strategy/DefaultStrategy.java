@@ -7,6 +7,7 @@ import org.tron.defi.contract_mirror.core.graph.Edge;
 import org.tron.defi.contract_mirror.core.graph.Graph;
 import org.tron.defi.contract_mirror.core.graph.Node;
 import org.tron.defi.contract_mirror.core.pool.PoolType;
+import org.tron.defi.contract_mirror.dao.RouterInfo;
 import org.tron.defi.contract_mirror.dao.RouterPath;
 
 import java.math.BigInteger;
@@ -23,7 +24,7 @@ public class DefaultStrategy implements IStrategy {
     }
 
     @Override
-    public List<RouterPath> getPath(String from, String to, BigInteger amountIn) {
+    public RouterInfo getPath(String from, String to, BigInteger amountIn) {
         Node nodeFrom = graph.getNode(from);
         Node nodeTo = graph.getNode(to);
         if (null == nodeFrom || null == nodeTo) {
@@ -70,7 +71,10 @@ public class DefaultStrategy implements IStrategy {
         }
         long time1 = System.currentTimeMillis();
         log.info("Get {} paths in {}ms, maxStep {}", candidates.size(), time1 - time0, maxStep);
-        return getTopN(candidates, routerConfig.getTopN(), maxStep);
+        RouterInfo routerInfo = new RouterInfo();
+        routerInfo.setTotalCandidates(candidates.size());
+        routerInfo.setPaths(getTopN(candidates, routerConfig.getTopN(), maxStep));
+        return routerInfo;
     }
 
     private static List<RouterPath> getTopN(List<RouterPath> candidates, int topN, int maxStep) {
