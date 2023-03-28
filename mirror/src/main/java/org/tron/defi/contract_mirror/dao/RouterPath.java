@@ -62,6 +62,7 @@ public class RouterPath {
         object.put("impact", impact);
         object.put("cost", cost);
         object.put("pools", getPools());
+        object.put("amountsOut", getAmountsOut());
         object.put("tokenPath", getTokenPath());
         return object.toJSONString();
     }
@@ -76,6 +77,15 @@ public class RouterPath {
 
     public Step getCurrentStep() {
         return steps.isEmpty() ? null : steps.get(steps.size() - 1);
+    }
+
+    public String getAmountsOut() {
+        List<String> amountsOut = new ArrayList<>(steps.size() + 1);
+        amountsOut.add(amountIn.toString());
+        steps.forEach(step -> amountsOut.add(null == step.getAmountOut()
+                                             ? "0"
+                                             : step.getAmountOut().toString()));
+        return String.join(" -> ", amountsOut);
     }
 
     public String getPools() {

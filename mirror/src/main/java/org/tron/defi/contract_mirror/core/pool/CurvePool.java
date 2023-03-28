@@ -296,9 +296,9 @@ public class CurvePool extends Pool {
             BigInteger D1 = getD(getXP(newBalance), A);
             BigInteger tokenAmount = D1;
             if (!zeroTokenSupply) {
-                BigInteger feeRate = fee.multiply(N)
-                                        .divide(N.subtract(BigInteger.ONE)
-                                                 .multiply(BigInteger.valueOf(4)));
+                final BigInteger feeRate = fee.multiply(N)
+                                              .divide(N.subtract(BigInteger.ONE)
+                                                       .multiply(BigInteger.valueOf(4)));
                 for (int i = 0; i < N.intValue(); i++) {
                     BigInteger idealBalance = balances.get(i).multiply(D1).divide(D0);
                     BigInteger imbalanceFee = idealBalance.subtract(newBalance.get(i))

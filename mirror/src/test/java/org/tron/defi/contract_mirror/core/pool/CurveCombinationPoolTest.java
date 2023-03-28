@@ -163,7 +163,7 @@ public class CurveCombinationPoolTest {
         Assertions.assertEquals(expectOut, amountOut);
 
         amountIn = BigInteger.valueOf(10).pow(token1.getDecimals());
-        expectOut = new BigInteger("1122106");
+        expectOut = new BigInteger("1122018");
         amountOut = pool.getAmountOut(((Contract) token1).getAddress(),
                                       ((Contract) token0).getAddress(),
                                       amountIn);

@@ -62,6 +62,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         log.trace("Prune {} |-> {}",
                                   currentPath.getPools(),
                                   edge.getPool().getName());
+                        log.trace("amounts {}", currentPath.getAmountsOut());
                         continue;
                     }
                     BigInteger amountOutStep;
@@ -75,6 +76,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         log.debug("Prune {} |-> {}",
                                   currentPath.getPools(),
                                   edge.getPool().getName());
+                        log.debug("amounts {}", currentPath.getAmountsOut());
                         continue;
                     }
                     if (amountOutStep.compareTo(BigInteger.ZERO) <= 0) {
@@ -87,6 +89,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         log.debug("Prune {} |-> {}",
                                   currentPath.getPools(),
                                   edge.getPool().getName());
+                        log.debug("amounts {}", currentPath.getAmountsOut());
                         continue;
                     }
                     if (found) {
@@ -97,11 +100,13 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                             minHeap.offer(candidate);
                             candidateNum++;
                             log.debug("NEW CANDIDATE {} {}", amountOutStep, candidate.getPools());
+                            log.debug("amounts {}", candidate.getAmountsOut());
                             if (minHeap.size() > routerConfig.getTopN()) {
                                 candidate = minHeap.poll();
                                 log.debug("OBSOLETE CANDIDATE {} {}",
                                           candidate.getAmountOut(),
                                           candidate.getPools());
+                                log.debug("amounts {}", candidate.getAmountsOut());
                             }
                             continue;
                         }
@@ -120,6 +125,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         log.debug("Prune {} |-> {}",
                                   currentPath.getPools(),
                                   edge.getPool().getName());
+                        log.debug("amounts {}", currentPath.getAmountsOut());
                         continue;
                     }
                     RouterPath path = new RouterPath(currentPath);
@@ -133,6 +139,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         log.debug("Prune {} |-> {}",
                                   currentPath.getPools(),
                                   edge.getPool().getName());
+                        log.debug("amounts {}", currentPath.getAmountsOut());
                     }
                 }
             }
