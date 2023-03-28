@@ -96,6 +96,7 @@ public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
                         RouterPath candidate = new RouterPath(currentPath);
                         candidate.addStep(edge);
                         if (checkWTRXPath(candidate, null)) {
+                            candidate.getCurrentStep().setAmountOut(amountOutStep);
                             candidate.setAmountOut(amountOutStep);
                             minHeap.offer(candidate);
                             candidateNum++;

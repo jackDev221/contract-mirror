@@ -114,6 +114,7 @@ public class DefaultStrategy implements IStrategy {
                     continue;
                 }
                 if (i == steps.size() - 1) {
+                    candidate.getCurrentStep().setAmountOut(amountOut);
                     candidate.setAmountOut(amountOut);
                     minHeap.offer(candidate);
                     log.debug("NEW CANDIDATE {} {}", amountOut, candidate.getPools());
