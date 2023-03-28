@@ -4,10 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.util.Assert;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.BaseStableSwapPool;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.CurveBasePool;
-import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
-import org.tron.sunio.contract_mirror.mirror.dao.StableSwapPoolData;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.NewCurvePool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.OldCurvePool;
+import org.tron.sunio.contract_mirror.mirror.dao.OldCurvePoolData;
+import org.tron.sunio.contract_mirror.mirror.dao.NewCurvePoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.utils.ContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.utils.EventLogUtils;
@@ -20,7 +20,7 @@ public class TestStableSwap {
         // tx: da9214802ef340ef7d8c081588fda8d4a5199c65db0ed12160cc6576833da15e
         long timestamp = 1677048099;
         ContractsHelper contractsHelper = new ContractsHelper();
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -30,7 +30,7 @@ public class TestStableSwap {
                 "",
                 Curve2PoolEvent.getSigMap()
         );
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -44,28 +44,28 @@ public class TestStableSwap {
         data.setFutureATime(new BigInteger("0"));
         data.setTotalSupply(new BigInteger("934127471967327020478908"));
 
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
 
         contractsHelper.getContractMaps().put("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E", curve3Pool);
         contractsHelper.setBlockTime(timestamp);
 
-        StableSwapPoolData stableSwapPoolData = new StableSwapPoolData(2, 3);
-        stableSwapPoolData.setReady(true);
-        stableSwapPoolData.setAdminFee(BigInteger.valueOf(5000000000L));
-        stableSwapPoolData.setFee(BigInteger.valueOf(4000000));
-        stableSwapPoolData.updateBalances(0, new BigInteger("1856057139"));
-        stableSwapPoolData.updateBalances(1, new BigInteger("214336452273731588955638"));
-        stableSwapPoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
-        stableSwapPoolData.setBaseCacheUpdated(new BigInteger("1678175934"));
-        stableSwapPoolData.setInitialA(new BigInteger("150000"));
-        stableSwapPoolData.setInitialATime(new BigInteger("1627548462"));
-        stableSwapPoolData.setFutureA(new BigInteger("15000"));
-        stableSwapPoolData.setFutureATime(new BigInteger("1627641643"));
-        stableSwapPoolData.setBaseVirtualPrice(new BigInteger("1033463465560439641"));
-        stableSwapPoolData.setLpTotalSupply(new BigInteger("89037695813561108584431"));
+        NewCurvePoolData newCurvePoolData = new NewCurvePoolData(2, 3);
+        newCurvePoolData.setReady(true);
+        newCurvePoolData.setAdminFee(BigInteger.valueOf(5000000000L));
+        newCurvePoolData.setFee(BigInteger.valueOf(4000000));
+        newCurvePoolData.updateBalances(0, new BigInteger("1856057139"));
+        newCurvePoolData.updateBalances(1, new BigInteger("214336452273731588955638"));
+        newCurvePoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
+        newCurvePoolData.setBaseCacheUpdated(new BigInteger("1678175934"));
+        newCurvePoolData.setInitialA(new BigInteger("150000"));
+        newCurvePoolData.setInitialATime(new BigInteger("1627548462"));
+        newCurvePoolData.setFutureA(new BigInteger("15000"));
+        newCurvePoolData.setFutureATime(new BigInteger("1627641643"));
+        newCurvePoolData.setBaseVirtualPrice(new BigInteger("1033463465560439641"));
+        newCurvePoolData.setLpTotalSupply(new BigInteger("89037695813561108584431"));
 
-        BaseStableSwapPool baseStableSwapPool = new BaseStableSwapPool(
+        NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
                 3,
@@ -78,8 +78,8 @@ public class TestStableSwap {
                 Curve2PoolEvent.getSigMap()
         );
 
-        baseStableSwapPool.setStableSwapPoolData(stableSwapPoolData);
-        baseStableSwapPool.setReady(true);
+        newCurvePool.setNewCurvePoolData(newCurvePoolData);
+        newCurvePool.setReady(true);
 
         IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
                 "txid0",
@@ -91,21 +91,21 @@ public class TestStableSwap {
                 1678177164000L
         );
 
-        baseStableSwapPool.handleEvent(ic1);
+        newCurvePool.handleEvent(ic1);
         BigInteger balance0 = new BigInteger("1956057139");
         BigInteger balance1 = new BigInteger("213429387371073320501560");
         BigInteger desTimestamp = new BigInteger("1678177164");
-//        System.out.println(stableSwapPoolData);
-        Assert.isTrue(balance0.compareTo(stableSwapPoolData.getBalances()[0]) == 0, "balance0 not equal");
-        Assert.isTrue(balance1.compareTo(stableSwapPoolData.getBalances()[1]) == 0, "balance1 not equal");
-        Assert.isTrue(desTimestamp.compareTo(stableSwapPoolData.getBaseCacheUpdated()) == 0, "baseCacheUpdated not equal");
+//        System.out.println(newCurvePoolData);
+        Assert.isTrue(balance0.compareTo(newCurvePoolData.getBalances()[0]) == 0, "balance0 not equal");
+        Assert.isTrue(balance1.compareTo(newCurvePoolData.getBalances()[1]) == 0, "balance1 not equal");
+        Assert.isTrue(desTimestamp.compareTo(newCurvePoolData.getBaseCacheUpdated()) == 0, "baseCacheUpdated not equal");
     }
     @Test
     public void testExchangeUnderlying0() {
         // tx: 22eacfd1bf2a4d813e2f78f95b69a1b66a72c59a61a777604778807c726bfd05
         long timestamp = 1677048099;
         ContractsHelper contractsHelper = new ContractsHelper();
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -115,7 +115,7 @@ public class TestStableSwap {
                 "",
                 Curve2PoolEvent.getSigMap()
         );
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -129,28 +129,28 @@ public class TestStableSwap {
         data.setFutureATime(new BigInteger("0"));
         data.setTotalSupply(new BigInteger("932270912927836276013541"));
 
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
 
         contractsHelper.getContractMaps().put("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E", curve3Pool);
         contractsHelper.setBlockTime(timestamp);
 
-        StableSwapPoolData stableSwapPoolData = new StableSwapPoolData(2, 3);
-        stableSwapPoolData.setReady(true);
-        stableSwapPoolData.setAdminFee(BigInteger.valueOf(5000000000L));
-        stableSwapPoolData.setFee(BigInteger.valueOf(4000000));
-        stableSwapPoolData.updateBalances(0, new BigInteger("2163825490"));
-        stableSwapPoolData.updateBalances(1, new BigInteger("211936010834469288372862"));
-        stableSwapPoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
-        stableSwapPoolData.setBaseCacheUpdated(new BigInteger("1678279164"));
-        stableSwapPoolData.setInitialA(new BigInteger("150000"));
-        stableSwapPoolData.setInitialATime(new BigInteger("1627548462"));
-        stableSwapPoolData.setFutureA(new BigInteger("15000"));
-        stableSwapPoolData.setFutureATime(new BigInteger("1627641643"));
-        stableSwapPoolData.setBaseVirtualPrice(new BigInteger("1033466048108359893"));
-        stableSwapPoolData.setLpTotalSupply(new BigInteger("89102587689556911341467"));
+        NewCurvePoolData newCurvePoolData = new NewCurvePoolData(2, 3);
+        newCurvePoolData.setReady(true);
+        newCurvePoolData.setAdminFee(BigInteger.valueOf(5000000000L));
+        newCurvePoolData.setFee(BigInteger.valueOf(4000000));
+        newCurvePoolData.updateBalances(0, new BigInteger("2163825490"));
+        newCurvePoolData.updateBalances(1, new BigInteger("211936010834469288372862"));
+        newCurvePoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
+        newCurvePoolData.setBaseCacheUpdated(new BigInteger("1678279164"));
+        newCurvePoolData.setInitialA(new BigInteger("150000"));
+        newCurvePoolData.setInitialATime(new BigInteger("1627548462"));
+        newCurvePoolData.setFutureA(new BigInteger("15000"));
+        newCurvePoolData.setFutureATime(new BigInteger("1627641643"));
+        newCurvePoolData.setBaseVirtualPrice(new BigInteger("1033466048108359893"));
+        newCurvePoolData.setLpTotalSupply(new BigInteger("89102587689556911341467"));
 
-        BaseStableSwapPool baseStableSwapPool = new BaseStableSwapPool(
+        NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
                 3,
@@ -163,8 +163,8 @@ public class TestStableSwap {
                 Curve2PoolEvent.getSigMap()
         );
 
-        baseStableSwapPool.setStableSwapPoolData(stableSwapPoolData);
-        baseStableSwapPool.setReady(true);
+        newCurvePool.setNewCurvePoolData(newCurvePoolData);
+        newCurvePool.setReady(true);
 
         IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
                 "txid0",
@@ -178,14 +178,14 @@ public class TestStableSwap {
                 1678279791000L
         );
 
-        baseStableSwapPool.handleEvent(ic1);
+        newCurvePool.handleEvent(ic1);
         BigInteger balance0 = new BigInteger("1244470455");
         BigInteger balance1 = new BigInteger("222633556332422963885279");
         BigInteger desTimestamp = new BigInteger("1678279791");
-        System.out.println(stableSwapPoolData);
-        Assert.isTrue(balance0.compareTo(stableSwapPoolData.getBalances()[0]) == 0, "balance0 not equal");
-        Assert.isTrue(balance1.compareTo(stableSwapPoolData.getBalances()[1]) == 0, "balance1 not equal");
-        Assert.isTrue(desTimestamp.compareTo(stableSwapPoolData.getBaseCacheUpdated()) == 0, "baseCacheUpdated not equal");
+        System.out.println(newCurvePoolData);
+        Assert.isTrue(balance0.compareTo(newCurvePoolData.getBalances()[0]) == 0, "balance0 not equal");
+        Assert.isTrue(balance1.compareTo(newCurvePoolData.getBalances()[1]) == 0, "balance1 not equal");
+        Assert.isTrue(desTimestamp.compareTo(newCurvePoolData.getBaseCacheUpdated()) == 0, "baseCacheUpdated not equal");
     }
 
     @Test
@@ -193,7 +193,7 @@ public class TestStableSwap {
         // tx: fe70f9ae62a57647f51e201ee20743ee062edcad1bae54b6981fa7a0f7403614
         long timestamp = 1678177164L;
         ContractsHelper contractsHelper = new ContractsHelper();
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -203,7 +203,7 @@ public class TestStableSwap {
                 "",
                 Curve2PoolEvent.getSigMap()
         );
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -217,28 +217,28 @@ public class TestStableSwap {
         data.setFutureATime(new BigInteger("0"));
         data.setTotalSupply(new BigInteger("933220588513939137755666"));
 
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
 
         contractsHelper.getContractMaps().put("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E", curve3Pool);
         contractsHelper.setBlockTime(timestamp);
 
-        StableSwapPoolData stableSwapPoolData = new StableSwapPoolData(2, 3);
-        stableSwapPoolData.setReady(true);
-        stableSwapPoolData.setAdminFee(BigInteger.valueOf(5000000000L));
-        stableSwapPoolData.setFee(BigInteger.valueOf(4000000));
-        stableSwapPoolData.updateBalances(0, new BigInteger("1956057139"));
-        stableSwapPoolData.updateBalances(1, new BigInteger("213429387371073320501560"));
-        stableSwapPoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
-        stableSwapPoolData.setBaseCacheUpdated(new BigInteger("1678177164"));
-        stableSwapPoolData.setInitialA(new BigInteger("150000"));
-        stableSwapPoolData.setInitialATime(new BigInteger("1627548462"));
-        stableSwapPoolData.setFutureA(new BigInteger("15000"));
-        stableSwapPoolData.setFutureATime(new BigInteger("1627641643"));
-        stableSwapPoolData.setBaseVirtualPrice(new BigInteger("1033463465560439641"));
-        stableSwapPoolData.setLpTotalSupply(new BigInteger("89037695813561108584431"));
+        NewCurvePoolData newCurvePoolData = new NewCurvePoolData(2, 3);
+        newCurvePoolData.setReady(true);
+        newCurvePoolData.setAdminFee(BigInteger.valueOf(5000000000L));
+        newCurvePoolData.setFee(BigInteger.valueOf(4000000));
+        newCurvePoolData.updateBalances(0, new BigInteger("1956057139"));
+        newCurvePoolData.updateBalances(1, new BigInteger("213429387371073320501560"));
+        newCurvePoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
+        newCurvePoolData.setBaseCacheUpdated(new BigInteger("1678177164"));
+        newCurvePoolData.setInitialA(new BigInteger("150000"));
+        newCurvePoolData.setInitialATime(new BigInteger("1627548462"));
+        newCurvePoolData.setFutureA(new BigInteger("15000"));
+        newCurvePoolData.setFutureATime(new BigInteger("1627641643"));
+        newCurvePoolData.setBaseVirtualPrice(new BigInteger("1033463465560439641"));
+        newCurvePoolData.setLpTotalSupply(new BigInteger("89037695813561108584431"));
 
-        BaseStableSwapPool baseStableSwapPool = new BaseStableSwapPool(
+        NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
                 3,
@@ -251,8 +251,8 @@ public class TestStableSwap {
                 Curve2PoolEvent.getSigMap()
         );
 
-        baseStableSwapPool.setStableSwapPoolData(stableSwapPoolData);
-        baseStableSwapPool.setReady(true);
+        newCurvePool.setNewCurvePoolData(newCurvePoolData);
+        newCurvePool.setReady(true);
 
         IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
                 "txid0",
@@ -264,14 +264,14 @@ public class TestStableSwap {
                 1678178694000L
         );
 
-        baseStableSwapPool.handleEvent(ic1);
+        newCurvePool.handleEvent(ic1);
         BigInteger balance0 = new BigInteger("1956057139");
         BigInteger balance1 = new BigInteger("213429387371073320501560");
         BigInteger desTimestamp = new BigInteger("1678178694");
-        System.out.println(stableSwapPoolData);
-        Assert.isTrue(balance0.compareTo(stableSwapPoolData.getBalances()[0]) == 0, "balance0 not equal");
-        Assert.isTrue(balance1.compareTo(stableSwapPoolData.getBalances()[1]) == 0, "balance1 not equal");
-        Assert.isTrue(desTimestamp.compareTo(stableSwapPoolData.getBaseCacheUpdated()) == 0, "baseCacheUpdated not equal");
+        System.out.println(newCurvePoolData);
+        Assert.isTrue(balance0.compareTo(newCurvePoolData.getBalances()[0]) == 0, "balance0 not equal");
+        Assert.isTrue(balance1.compareTo(newCurvePoolData.getBalances()[1]) == 0, "balance1 not equal");
+        Assert.isTrue(desTimestamp.compareTo(newCurvePoolData.getBaseCacheUpdated()) == 0, "baseCacheUpdated not equal");
       }
 
     @Test
@@ -279,7 +279,7 @@ public class TestStableSwap {
         // tx: 5d21ea255a74205bc714a825a10a9f234670201c9a1b82099c391f8042fd4310
         long timestamp = 1678178694L;
         ContractsHelper contractsHelper = new ContractsHelper();
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -289,7 +289,7 @@ public class TestStableSwap {
                 "",
                 Curve2PoolEvent.getSigMap()
         );
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -303,28 +303,28 @@ public class TestStableSwap {
         data.setFutureATime(new BigInteger("0"));
         data.setTotalSupply(new BigInteger("933220588513939137755666"));
 
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
 
         contractsHelper.getContractMaps().put("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E", curve3Pool);
         contractsHelper.setBlockTime(timestamp);
 
-        StableSwapPoolData stableSwapPoolData = new StableSwapPoolData(2, 3);
-        stableSwapPoolData.setReady(true);
-        stableSwapPoolData.setAdminFee(BigInteger.valueOf(5000000000L));
-        stableSwapPoolData.setFee(BigInteger.valueOf(4000000));
-        stableSwapPoolData.updateBalances(0, new BigInteger("2033050167"));
-        stableSwapPoolData.updateBalances(1, new BigInteger("213619328521827776258634"));
-        stableSwapPoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
-        stableSwapPoolData.setBaseCacheUpdated(new BigInteger("1678180476"));
-        stableSwapPoolData.setInitialA(new BigInteger("150000"));
-        stableSwapPoolData.setInitialATime(new BigInteger("1627548462"));
-        stableSwapPoolData.setFutureA(new BigInteger("15000"));
-        stableSwapPoolData.setFutureATime(new BigInteger("1627641643"));
-        stableSwapPoolData.setBaseVirtualPrice(new BigInteger("1033466048108359893"));
-        stableSwapPoolData.setLpTotalSupply(new BigInteger("89362732367941936322532"));
+        NewCurvePoolData newCurvePoolData = new NewCurvePoolData(2, 3);
+        newCurvePoolData.setReady(true);
+        newCurvePoolData.setAdminFee(BigInteger.valueOf(5000000000L));
+        newCurvePoolData.setFee(BigInteger.valueOf(4000000));
+        newCurvePoolData.updateBalances(0, new BigInteger("2033050167"));
+        newCurvePoolData.updateBalances(1, new BigInteger("213619328521827776258634"));
+        newCurvePoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
+        newCurvePoolData.setBaseCacheUpdated(new BigInteger("1678180476"));
+        newCurvePoolData.setInitialA(new BigInteger("150000"));
+        newCurvePoolData.setInitialATime(new BigInteger("1627548462"));
+        newCurvePoolData.setFutureA(new BigInteger("15000"));
+        newCurvePoolData.setFutureATime(new BigInteger("1627641643"));
+        newCurvePoolData.setBaseVirtualPrice(new BigInteger("1033466048108359893"));
+        newCurvePoolData.setLpTotalSupply(new BigInteger("89362732367941936322532"));
 
-        BaseStableSwapPool baseStableSwapPool = new BaseStableSwapPool(
+        NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
                 3,
@@ -337,8 +337,8 @@ public class TestStableSwap {
                 Curve2PoolEvent.getSigMap()
         );
 
-        baseStableSwapPool.setStableSwapPoolData(stableSwapPoolData);
-        baseStableSwapPool.setReady(true);
+        newCurvePool.setNewCurvePoolData(newCurvePoolData);
+        newCurvePool.setReady(true);
 
         IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
                 "txid0",
@@ -350,14 +350,14 @@ public class TestStableSwap {
                 1678178694000L
         );
 
-        baseStableSwapPool.handleEvent(ic1);
+        newCurvePool.handleEvent(ic1);
         BigInteger balance0 = new BigInteger("2051048543");
         BigInteger balance1 = new BigInteger("213671315293473382602360");
         BigInteger totalSupply = new BigInteger("89439802664637349505208");
-        System.out.println(stableSwapPoolData);
-        Assert.isTrue(balance0.compareTo(stableSwapPoolData.getBalances()[0]) == 0, "balance0 not equal");
-        Assert.isTrue(balance1.compareTo(stableSwapPoolData.getBalances()[1]) == 0, "balance1 not equal");
-        Assert.isTrue(totalSupply.compareTo(stableSwapPoolData.getLpTotalSupply()) == 0, "totalSupply not equal");
+        System.out.println(newCurvePoolData);
+        Assert.isTrue(balance0.compareTo(newCurvePoolData.getBalances()[0]) == 0, "balance0 not equal");
+        Assert.isTrue(balance1.compareTo(newCurvePoolData.getBalances()[1]) == 0, "balance1 not equal");
+        Assert.isTrue(totalSupply.compareTo(newCurvePoolData.getLpTotalSupply()) == 0, "totalSupply not equal");
     }
 
 
@@ -366,7 +366,7 @@ public class TestStableSwap {
         // tx:18c0e2ecc50d259f23556d5b82b160b02dd93c77ceb36c0772ca5d3a7765f9eb
         long timestamp = 1678178694L;
         ContractsHelper contractsHelper = new ContractsHelper();
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -376,7 +376,7 @@ public class TestStableSwap {
                 "",
                 Curve2PoolEvent.getSigMap()
         );
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -390,28 +390,28 @@ public class TestStableSwap {
         data.setFutureATime(new BigInteger("0"));
         data.setTotalSupply(new BigInteger("933220588513939137755666"));
 
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
 
         contractsHelper.getContractMaps().put("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E", curve3Pool);
         contractsHelper.setBlockTime(timestamp);
 
-        StableSwapPoolData stableSwapPoolData = new StableSwapPoolData(2, 3);
-        stableSwapPoolData.setReady(true);
-        stableSwapPoolData.setAdminFee(BigInteger.valueOf(5000000000L));
-        stableSwapPoolData.setFee(BigInteger.valueOf(4000000));
-        stableSwapPoolData.updateBalances(0, new BigInteger("2051048543"));
-        stableSwapPoolData.updateBalances(1, new BigInteger("213671315293473382602360"));
-        stableSwapPoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
-        stableSwapPoolData.setBaseCacheUpdated(new BigInteger("1678180476"));
-        stableSwapPoolData.setInitialA(new BigInteger("150000"));
-        stableSwapPoolData.setInitialATime(new BigInteger("1627548462"));
-        stableSwapPoolData.setFutureA(new BigInteger("15000"));
-        stableSwapPoolData.setFutureATime(new BigInteger("1627641643"));
-        stableSwapPoolData.setBaseVirtualPrice(new BigInteger("1033466048108359893"));
-        stableSwapPoolData.setLpTotalSupply(new BigInteger("89439802664637349505208"));
+        NewCurvePoolData newCurvePoolData = new NewCurvePoolData(2, 3);
+        newCurvePoolData.setReady(true);
+        newCurvePoolData.setAdminFee(BigInteger.valueOf(5000000000L));
+        newCurvePoolData.setFee(BigInteger.valueOf(4000000));
+        newCurvePoolData.updateBalances(0, new BigInteger("2051048543"));
+        newCurvePoolData.updateBalances(1, new BigInteger("213671315293473382602360"));
+        newCurvePoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
+        newCurvePoolData.setBaseCacheUpdated(new BigInteger("1678180476"));
+        newCurvePoolData.setInitialA(new BigInteger("150000"));
+        newCurvePoolData.setInitialATime(new BigInteger("1627548462"));
+        newCurvePoolData.setFutureA(new BigInteger("15000"));
+        newCurvePoolData.setFutureATime(new BigInteger("1627641643"));
+        newCurvePoolData.setBaseVirtualPrice(new BigInteger("1033466048108359893"));
+        newCurvePoolData.setLpTotalSupply(new BigInteger("89439802664637349505208"));
 
-        BaseStableSwapPool baseStableSwapPool = new BaseStableSwapPool(
+        NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
                 3,
@@ -424,8 +424,8 @@ public class TestStableSwap {
                 Curve2PoolEvent.getSigMap()
         );
 
-        baseStableSwapPool.setStableSwapPoolData(stableSwapPoolData);
-        baseStableSwapPool.setReady(true);
+        newCurvePool.setNewCurvePoolData(newCurvePoolData);
+        newCurvePool.setReady(true);
 
         IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
                 "txid0",
@@ -438,14 +438,14 @@ public class TestStableSwap {
                 1678181640000L
         );
 
-        baseStableSwapPool.handleEvent(ic1);
+        newCurvePool.handleEvent(ic1);
         BigInteger balance0 = new BigInteger("2048048294");
         BigInteger balance1 = new BigInteger("213639313270253951600052");
         BigInteger totalSupply = new BigInteger("89417935861552186690719");
-        System.out.println(stableSwapPoolData);
-        Assert.isTrue(balance0.compareTo(stableSwapPoolData.getBalances()[0]) == 0, "balance0 not equal");
-        Assert.isTrue(balance1.compareTo(stableSwapPoolData.getBalances()[1]) == 0, "balance1 not equal");
-        Assert.isTrue(totalSupply.compareTo(stableSwapPoolData.getLpTotalSupply()) == 0, "totalSupply not equal");
+        System.out.println(newCurvePoolData);
+        Assert.isTrue(balance0.compareTo(newCurvePoolData.getBalances()[0]) == 0, "balance0 not equal");
+        Assert.isTrue(balance1.compareTo(newCurvePoolData.getBalances()[1]) == 0, "balance1 not equal");
+        Assert.isTrue(totalSupply.compareTo(newCurvePoolData.getLpTotalSupply()) == 0, "totalSupply not equal");
     }
 
     @Test
@@ -453,7 +453,7 @@ public class TestStableSwap {
         // tx: d6a865e66207cdafe6eab847a5b99babfaa25b5ef1a23a3ea381f53ffa0970b9
         long timestamp = 1678178694L;
         ContractsHelper contractsHelper = new ContractsHelper();
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -463,7 +463,7 @@ public class TestStableSwap {
                 "",
                 Curve2PoolEvent.getSigMap()
         );
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -477,28 +477,28 @@ public class TestStableSwap {
         data.setFutureATime(new BigInteger("0"));
         data.setTotalSupply(new BigInteger("933220588513939137755666"));
 
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
 
         contractsHelper.getContractMaps().put("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E", curve3Pool);
         contractsHelper.setBlockTime(timestamp);
 
-        StableSwapPoolData stableSwapPoolData = new StableSwapPoolData(2, 3);
-        stableSwapPoolData.setReady(true);
-        stableSwapPoolData.setAdminFee(BigInteger.valueOf(5000000000L));
-        stableSwapPoolData.setFee(BigInteger.valueOf(4000000));
-        stableSwapPoolData.updateBalances(0, new BigInteger("2048048294"));
-        stableSwapPoolData.updateBalances(1, new BigInteger("213639313270253951600052"));
-        stableSwapPoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
-        stableSwapPoolData.setBaseCacheUpdated(new BigInteger("1678181640"));
-        stableSwapPoolData.setInitialA(new BigInteger("150000"));
-        stableSwapPoolData.setInitialATime(new BigInteger("1627548462"));
-        stableSwapPoolData.setFutureA(new BigInteger("15000"));
-        stableSwapPoolData.setFutureATime(new BigInteger("1627641643"));
-        stableSwapPoolData.setBaseVirtualPrice(new BigInteger("1033466048108359893"));
-        stableSwapPoolData.setLpTotalSupply(new BigInteger("89417935861552186690719"));
+        NewCurvePoolData newCurvePoolData = new NewCurvePoolData(2, 3);
+        newCurvePoolData.setReady(true);
+        newCurvePoolData.setAdminFee(BigInteger.valueOf(5000000000L));
+        newCurvePoolData.setFee(BigInteger.valueOf(4000000));
+        newCurvePoolData.updateBalances(0, new BigInteger("2048048294"));
+        newCurvePoolData.updateBalances(1, new BigInteger("213639313270253951600052"));
+        newCurvePoolData.setBasePool("TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E");
+        newCurvePoolData.setBaseCacheUpdated(new BigInteger("1678181640"));
+        newCurvePoolData.setInitialA(new BigInteger("150000"));
+        newCurvePoolData.setInitialATime(new BigInteger("1627548462"));
+        newCurvePoolData.setFutureA(new BigInteger("15000"));
+        newCurvePoolData.setFutureATime(new BigInteger("1627641643"));
+        newCurvePoolData.setBaseVirtualPrice(new BigInteger("1033466048108359893"));
+        newCurvePoolData.setLpTotalSupply(new BigInteger("89417935861552186690719"));
 
-        BaseStableSwapPool baseStableSwapPool = new BaseStableSwapPool(
+        NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
                 3,
@@ -511,8 +511,8 @@ public class TestStableSwap {
                 Curve2PoolEvent.getSigMap()
         );
 
-        baseStableSwapPool.setStableSwapPoolData(stableSwapPoolData);
-        baseStableSwapPool.setReady(true);
+        newCurvePool.setNewCurvePoolData(newCurvePoolData);
+        newCurvePool.setReady(true);
 
         IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
                 "txid0",
@@ -524,13 +524,13 @@ public class TestStableSwap {
                 1678178694000L
         );
 
-        baseStableSwapPool.handleEvent(ic1);
+        newCurvePool.handleEvent(ic1);
         BigInteger balance0 = new BigInteger("2040825490");
         BigInteger balance1 = new BigInteger("212885876431693819355030");
         BigInteger totalSupply = new BigInteger("89102587689556911341467");
-        System.out.println(stableSwapPoolData);
-        Assert.isTrue(balance0.compareTo(stableSwapPoolData.getBalances()[0]) == 0, "balance0 not equal");
-        Assert.isTrue(balance1.compareTo(stableSwapPoolData.getBalances()[1]) == 0, "balance1 not equal");
-        Assert.isTrue(totalSupply.compareTo(stableSwapPoolData.getLpTotalSupply()) == 0, "totalSupply not equal");
+        System.out.println(newCurvePoolData);
+        Assert.isTrue(balance0.compareTo(newCurvePoolData.getBalances()[0]) == 0, "balance0 not equal");
+        Assert.isTrue(balance1.compareTo(newCurvePoolData.getBalances()[1]) == 0, "balance1 not equal");
+        Assert.isTrue(totalSupply.compareTo(newCurvePoolData.getLpTotalSupply()) == 0, "totalSupply not equal");
     }
 }

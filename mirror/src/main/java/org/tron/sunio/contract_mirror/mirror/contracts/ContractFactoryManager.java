@@ -15,10 +15,8 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.BaseFactory;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.Assemble3Pool;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.Assemble4Pool;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.BaseStableSwapPool;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.CurveBasePool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.NewCurvePool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.OldCurvePool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMTotalData;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
@@ -88,7 +86,7 @@ public class ContractFactoryManager {
                     break;
                 case CONTRACT_CURVE_2POOL:
                 case CONTRACT_CURVE_3POOL:
-                    CurveBasePool curveBase = CurveBasePool.genInstance(
+                    OldCurvePool curveBase = OldCurvePool.genInstance(
                             contractInfo, tronChainHelper, iContractsHelper, null
                     );
                     if (ObjectUtil.isNotNull(curveBase)) {
@@ -103,24 +101,6 @@ public class ContractFactoryManager {
                                 contractInfo.getType(), contractInfo.getExtra());
                     }
                     break;
-                case CONTRACT_ASSEMBLE_3POOL:
-                    iContractsHelper.addContract(new Assemble3Pool(
-                            contractInfo.getAddress(),
-                            tronChainHelper,
-                            iContractsHelper,
-                            new HashMap<>()
-                    ));
-                    break;
-
-                case CONTRACT_ASSEMBLE_4POOL:
-                    iContractsHelper.addContract(new Assemble4Pool(
-                            contractInfo.getAddress(),
-                            tronChainHelper,
-                            iContractsHelper,
-                            new HashMap<>()
-                    ));
-                    break;
-
                 case CONTRACT_PSM:
                     PSM psm = PSM.genInstance(contractInfo, tronChainHelper, iContractsHelper, psmTotalData, psmSigMap);
                     if (ObjectUtil.isNotNull(psm)) {
@@ -132,7 +112,7 @@ public class ContractFactoryManager {
                     }
                     break;
                 case STABLE_SWAP_POOL:
-                    BaseStableSwapPool instance = BaseStableSwapPool.genInstance(contractInfo, tronChainHelper,
+                    NewCurvePool instance = NewCurvePool.genInstance(contractInfo, tronChainHelper,
                             iContractsHelper, null);
                     if (ObjectUtil.isNotNull(instance)) {
                         if (instance.getBaseCoinsCount() == 2) {

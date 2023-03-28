@@ -12,7 +12,7 @@ import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst;
 import org.tron.sunio.contract_mirror.mirror.contracts.ContractInfo;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
-import org.tron.sunio.contract_mirror.mirror.dao.StableSwapPoolData;
+import org.tron.sunio.contract_mirror.mirror.dao.NewCurvePoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.tools.CallContractUtil;
 import org.tron.sunio.tronsdk.WalletUtil;
@@ -46,7 +46,7 @@ import static org.tron.sunio.contract_mirror.event_decode.events.Curve2PoolEvent
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 
 @Slf4j
-public class BaseStableSwapPool extends AbstractCurve {
+public class NewCurvePool extends AbstractCurve {
     private static final BigInteger FEE_DENOMINATOR = BigInteger.TEN.pow(10);
     private static final BigInteger PRECISION = BigInteger.TEN.pow(18);
     private static final BigInteger A_PRECISION = new BigInteger("100");
@@ -60,23 +60,23 @@ public class BaseStableSwapPool extends AbstractCurve {
     @Getter
     private BigInteger[] precisionMul;
     @Setter
-    private StableSwapPoolData stableSwapPoolData;
+    private NewCurvePoolData newCurvePoolData;
     @Setter
-    private StableSwapPoolData preSwapPoolData;
+    private NewCurvePoolData preSwapPoolData;
 
-    public static BaseStableSwapPool genInstance(ContractInfo contractInfo, IChainHelper iChainHelper,
-                                                 IContractsHelper iContractsHelper, Map<String, String> sigMap) {
-        ContractExtraData extraData = BaseStableSwapPool.parseToExtraData(contractInfo.getExtra());
+    public static NewCurvePool genInstance(ContractInfo contractInfo, IChainHelper iChainHelper,
+                                           IContractsHelper iContractsHelper, Map<String, String> sigMap) {
+        ContractExtraData extraData = NewCurvePool.parseToExtraData(contractInfo.getExtra());
         if (ObjectUtil.isNull(extraData)) {
             return null;
         }
-        return new BaseStableSwapPool(contractInfo.getAddress(), contractInfo.getType(), extraData.getBaseCoinsCount(),
+        return new NewCurvePool(contractInfo.getAddress(), contractInfo.getType(), extraData.getBaseCoinsCount(),
                 extraData.getCoinsCount(), extraData.getRates(), extraData.getPrecisionMul(), extraData.getPoolName(), iChainHelper, iContractsHelper, sigMap);
     }
 
-    public BaseStableSwapPool(String address, ContractType type, int baseCoinsCount, int coinsCount, BigInteger[] rates,
-                              BigInteger[] precisionMul, String poolName, IChainHelper iChainHelper,
-                              IContractsHelper iContractsHelper, Map<String, String> sigMap) {
+    public NewCurvePool(String address, ContractType type, int baseCoinsCount, int coinsCount, BigInteger[] rates,
+                        BigInteger[] precisionMul, String poolName, IChainHelper iChainHelper,
+                        IContractsHelper iContractsHelper, Map<String, String> sigMap) {
         super(address, type, iChainHelper, iContractsHelper, sigMap);
         this.baseCoinsCount = baseCoinsCount;
         this.coinsCount = coinsCount;
@@ -85,8 +85,8 @@ public class BaseStableSwapPool extends AbstractCurve {
         this.poolName = poolName;
     }
 
-    public StableSwapPoolData getVarStableSwapBasePoolData(String uniqueId) {
-        StableSwapPoolData data = getVarStableSwapBasePoolData();
+    public NewCurvePoolData getVarNewCurvePoolData(String uniqueId) {
+        NewCurvePoolData data = getVarNewCurvePoolData();
         if (Strings.isEmpty(uniqueId) || ObjectUtil.isNull(preSwapPoolData)) {
             return data;
         }
@@ -100,21 +100,21 @@ public class BaseStableSwapPool extends AbstractCurve {
         return data;
     }
 
-    public StableSwapPoolData getVarStableSwapBasePoolData() {
-        if (ObjectUtil.isNull(stableSwapPoolData)) {
-            stableSwapPoolData = new StableSwapPoolData(coinsCount, baseCoinsCount);
-            stableSwapPoolData.setAddress(address);
-            stableSwapPoolData.setPoolName(poolName);
-            stableSwapPoolData.setType(type);
-            stableSwapPoolData.setUsing(true);
-            stableSwapPoolData.setReady(false);
-            stableSwapPoolData.setAddExchangeContracts(false);
+    public NewCurvePoolData getVarNewCurvePoolData() {
+        if (ObjectUtil.isNull(newCurvePoolData)) {
+            newCurvePoolData = new NewCurvePoolData(coinsCount, baseCoinsCount);
+            newCurvePoolData.setAddress(address);
+            newCurvePoolData.setPoolName(poolName);
+            newCurvePoolData.setType(type);
+            newCurvePoolData.setUsing(true);
+            newCurvePoolData.setReady(false);
+            newCurvePoolData.setAddExchangeContracts(false);
         }
-        return stableSwapPoolData;
+        return newCurvePoolData;
     }
 
-    public StableSwapPoolData getCurveBasePoolData() {
-        return getVarStableSwapBasePoolData().copySelf();
+    public NewCurvePoolData getCurveBasePoolData() {
+        return getVarNewCurvePoolData().copySelf();
     }
 
     private void updateCoinsInfo(int count, String method, String[] coins, String[] names, String[] symbols, long[] decimals) {
@@ -143,18 +143,18 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     @Override
     public String coins(int i) {
-        return this.getVarStableSwapBasePoolData().getCoins()[i];
+        return this.getVarNewCurvePoolData().getCoins()[i];
     }
 
 
     @Override
     public BigInteger fee() {
-        return this.getVarStableSwapBasePoolData().getFee();
+        return this.getVarNewCurvePoolData().getFee();
     }
 
     @Override
     public BigInteger adminFee() {
-        return this.getVarStableSwapBasePoolData().getAdminFee();
+        return this.getVarNewCurvePoolData().getAdminFee();
     }
 
     @Override
@@ -168,7 +168,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     @Override
     public BigInteger addLiquidity(String uniqueId, BigInteger[] amounts, BigInteger minMintAmount, long timestamp, IContractsHelper iContractsHelper) throws Exception {
 
-        StableSwapPoolData poolData = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData poolData = this.getVarNewCurvePoolData(uniqueId);
         BigInteger amp = a(uniqueId, timestamp);
         BigInteger vpRate = vpRate(uniqueId, timestamp, iContractsHelper);
         BigInteger[] oldBalances = copyBigIntegerArray(poolData.getBalances());
@@ -234,7 +234,7 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     @Override
     public BigInteger removeLiquidityOneCoin(String uniqueId, BigInteger _token_amount, int i, BigInteger min_amount, long timestamp, IContractsHelper iContractsHelper) throws Exception {
-        StableSwapPoolData poolData = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData poolData = this.getVarNewCurvePoolData(uniqueId);
         BigInteger vpRate = vpRate(uniqueId, timestamp, iContractsHelper);
         BigInteger[] calRes = localCalcWithdrawOneCoin(uniqueId, _token_amount, i, vpRate, timestamp, poolData);
         if (calRes[0].compareTo(min_amount) < 0) {
@@ -248,7 +248,7 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     @Override
     public BigInteger exchange(String uniqueId, int i, int j, BigInteger dx, BigInteger min_dy, long timestamp, IContractsHelper iContractsHelper) throws Exception {
-        StableSwapPoolData poolData = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData poolData = this.getVarNewCurvePoolData(uniqueId);
         int maxCoin = coinsCount - 1;
         BigInteger[] rates = getRates();
         rates[maxCoin] = vpRate(uniqueId, timestamp, iContractsHelper);
@@ -276,8 +276,8 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     @Override
     public AbstractCurve copySelf() {
-        StableSwapPoolData data = this.getCurveBasePoolData();
-        BaseStableSwapPool pool = new BaseStableSwapPool(
+        NewCurvePoolData data = this.getCurveBasePoolData();
+        NewCurvePool pool = new NewCurvePool(
                 data.getAddress(),
                 type,
                 baseCoinsCount,
@@ -289,7 +289,7 @@ public class BaseStableSwapPool extends AbstractCurve {
                 iContractsHelper,
                 sigMap
         );
-        pool.setStableSwapPoolData(data);
+        pool.setNewCurvePoolData(data);
         pool.setReady(this.isReady);
         pool.setAddExchangeContracts(this.isAddExchangeContracts);
         pool.setDirty(this.isDirty);
@@ -331,7 +331,7 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     @Override
     public boolean initDataFromChain1() {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData();
+        NewCurvePoolData data = this.getVarNewCurvePoolData();
         updateBalance(coinsCount, "balances", data.getBalances());
         updateCoinsInfo(coinsCount, "coins", data.getCoins(), data.getCoinNames(), data.getCoinSymbols(), data.getCoinDecimals());
         updateCoinsInfo(baseCoinsCount, "base_coins", data.getBaseCoins(), data.getBaseCoinNames(), data.getBaseCoinSymbols(), data.getBaseCoinDecimals());
@@ -381,7 +381,7 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     @Override
     public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData();
+        NewCurvePoolData data = this.getVarNewCurvePoolData();
         data.setUsing(isUsing);
         data.setReady(isReady);
         data.setAddExchangeContracts(isAddExchangeContracts);
@@ -403,13 +403,13 @@ public class BaseStableSwapPool extends AbstractCurve {
         }
         currentTx = infos[0];
         currentIndex = infos[1];
-        preSwapPoolData = this.getVarStableSwapBasePoolData().copySelf();
+        preSwapPoolData = this.getVarNewCurvePoolData().copySelf();
     }
 
     @Override
     protected HandleResult handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         HandleResult result;
-        if (!iContractsHelper.isContractReady(this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId()).getBasePool())) {
+        if (!iContractsHelper.isContractReady(this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId()).getBasePool())) {
             this.isDirty = true;
             updateBaseInfo(isUsing, false, isAddExchangeContracts);
             this.isReady = false;
@@ -468,7 +468,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getStatus() {
-        return (T) this.getVarStableSwapBasePoolData();
+        return (T) this.getVarNewCurvePoolData();
     }
 
     @Override
@@ -503,8 +503,8 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     protected HandleResult handleEventTokenExchange(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         String uniqueId = handleEventExtraData.getUniqueId();
-        log.info("handleEventTokenExchange: {}, info: {} , {}, {}", address, type, uniqueId, this.getVarStableSwapBasePoolData(uniqueId));
-        StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(uniqueId);
+        log.info("handleEventTokenExchange: {}, info: {} , {}, {}", address, type, uniqueId, this.getVarNewCurvePoolData(uniqueId));
+        NewCurvePoolData curveData = this.getVarNewCurvePoolData(uniqueId);
         String body = Curve2PoolEvent.EVENT_NAME_TOKEN_EXCHANGE_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_TOKEN_EXCHANGE_BODY;
@@ -552,7 +552,7 @@ public class BaseStableSwapPool extends AbstractCurve {
                     address, type, handleEventExtraData.getUniqueId()));
         }
         try {
-            StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId());
+            NewCurvePoolData curveData = this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId());
             StaticArray<Uint256> amounts = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(0);
             StaticArray<Uint256> fees = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(1);
             vpRate(handleEventExtraData.getUniqueId(), handleEventExtraData.getTimeStamp(), this.iContractsHelper);
@@ -606,7 +606,7 @@ public class BaseStableSwapPool extends AbstractCurve {
                     address, type, handleEventExtraData.getUniqueId()));
         }
         try {
-            StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId());
+            NewCurvePoolData curveData = this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId());
             StaticArray<Uint256> amounts = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(0);
             vpRate(handleEventExtraData.getUniqueId(), handleEventExtraData.getTimeStamp(), this.iContractsHelper);
             List<Uint256> amountsNew = new ArrayList<>();
@@ -659,7 +659,7 @@ public class BaseStableSwapPool extends AbstractCurve {
                     address, type, handleEventExtraData.getUniqueId()));
         }
         try {
-            StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId());
+            NewCurvePoolData curveData = this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId());
             StaticArray<Uint256> amounts = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(0);
             StaticArray<Uint256> fees = (StaticArray<Uint256>) eventValues.getNonIndexedValues().get(1);
             vpRate(handleEventExtraData.getUniqueId(), handleEventExtraData.getTimeStamp(), this.iContractsHelper);
@@ -708,7 +708,7 @@ public class BaseStableSwapPool extends AbstractCurve {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventCommitNewAdmin fail!, unique id :%s",
                     address, type, handleEventExtraData.getUniqueId()));
         }
-        StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId());
+        NewCurvePoolData curveData = this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId());
         BigInteger deadline = (BigInteger) eventValues.getIndexedValues().get(0).getValue();
         String admin = WalletUtil.hexStringToTron((String) eventValues.getIndexedValues().get(1).getValue());
         curveData.setOwner(admin);
@@ -730,7 +730,7 @@ public class BaseStableSwapPool extends AbstractCurve {
                     address, type, handleEventExtraData.getUniqueId()));
         }
         String admin = WalletUtil.hexStringToTron((String) eventValues.getIndexedValues().get(0).getValue());
-        StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId());
+        NewCurvePoolData curveData = this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId());
         curveData.setOwner(admin);
         curveData.setTransferOwnershipDeadline(BigInteger.ZERO);
         isDirty = true;
@@ -750,7 +750,7 @@ public class BaseStableSwapPool extends AbstractCurve {
                     address, type, handleEventExtraData.getUniqueId()));
         }
         String feeConverter = WalletUtil.hexStringToTron((String) eventValues.getIndexedValues().get(0).getValue());
-        StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId());
+        NewCurvePoolData curveData = this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId());
         curveData.setFeeConverter(feeConverter);
         isDirty = true;
         return HandleResult.genHandleSuccess();
@@ -768,7 +768,7 @@ public class BaseStableSwapPool extends AbstractCurve {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventCommitNewFee fail!, unique id :%s",
                     address, type, handleEventExtraData.getUniqueId()));
         }
-        StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId());
+        NewCurvePoolData curveData = this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId());
         BigInteger deadLine = (BigInteger) eventValues.getIndexedValues().get(0).getValue();
         BigInteger fee = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         BigInteger adminFee = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
@@ -791,7 +791,7 @@ public class BaseStableSwapPool extends AbstractCurve {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventNewFee fail!, unique id :%s",
                     address, type, handleEventExtraData.getUniqueId()));
         }
-        StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId());
+        NewCurvePoolData curveData = this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId());
         BigInteger fee = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         BigInteger adminFee = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         curveData.setFee(fee);
@@ -813,7 +813,7 @@ public class BaseStableSwapPool extends AbstractCurve {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventRampA fail!, unique id :%s",
                     address, type, handleEventExtraData.getUniqueId()));
         }
-        StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId());
+        NewCurvePoolData curveData = this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId());
         BigInteger a = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         BigInteger af = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         BigInteger aT = (BigInteger) eventValues.getNonIndexedValues().get(2).getValue();
@@ -838,7 +838,7 @@ public class BaseStableSwapPool extends AbstractCurve {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handleEventStopRampA fail!, unique id :%s",
                     address, type, handleEventExtraData.getUniqueId()));
         }
-        StableSwapPoolData curveData = this.getVarStableSwapBasePoolData(handleEventExtraData.getUniqueId());
+        NewCurvePoolData curveData = this.getVarNewCurvePoolData(handleEventExtraData.getUniqueId());
         BigInteger a = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         BigInteger aTime = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         curveData.setFutureA(a);
@@ -850,7 +850,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     public BigInteger[] removeLiquidity(String uniqueId, BigInteger _amount, BigInteger[] _minAmounts, long timestamp, IContractsHelper iContractsHelper) throws Exception {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueId);
         BigInteger lpTotalSupply = data.getLpTotalSupply();
         BigInteger[] amounts = empty(coinsCount);
         for (int i = 0; i < coinsCount; i++) {
@@ -867,7 +867,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     public BigInteger removeLiquidityImBalance(String uniqueId, BigInteger[] _amounts, BigInteger _minBurnAmount, long timestamp, IContractsHelper iContractsHelper) throws Exception {
-        StableSwapPoolData poolData = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData poolData = this.getVarNewCurvePoolData(uniqueId);
         BigInteger tokenSupply = poolData.getLpTotalSupply();
         if (tokenSupply.compareTo(BigInteger.ZERO) == 0) {
             throw new Exception("zero total supply");
@@ -918,7 +918,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     public BigInteger exchangeUnderlying(String uniqueId, int i, int j, BigInteger _dx, BigInteger mindy, long timestamp, IContractsHelper iContractsHelper) throws Exception {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueId);
         BigInteger[] rates = this.copyBigIntegerArray(this.rates);
         String basePool = data.getBasePool();
         int maxCoin = coinsCount - 1;
@@ -993,7 +993,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     public BigInteger a(String uniqueId, long timestamp) {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueId);
         BigInteger t1 = data.getFutureATime();
         BigInteger a1 = data.getFutureA();
         if (timestamp < t1.longValue()) {
@@ -1013,7 +1013,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     private BigInteger[] xp(String uniqueId, BigInteger vpRate) {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueId);
         BigInteger[] result = copyBigIntegerArray(this.rates);
         result[coinsCount - 1] = vpRate;
         BigInteger[] balances = data.getBalances();
@@ -1033,7 +1033,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     private BigInteger vpRate(String uniqueID, long timeStamp, IContractsHelper iContractsHelper) {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData(uniqueID);
+        NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueID);
         try {
             if (timeStamp > data.getBaseCacheUpdated().longValue() + BASE_CACHE_EXPIRES) {
                 AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(data.getBasePool()));
@@ -1049,7 +1049,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     private BigInteger vpRateRo(String uniqueID, long timeStamp, IContractsHelper iContractsHelper) {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData(uniqueID);
+        NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueID);
         try {
             if (timeStamp > data.getBaseCacheUpdated().longValue() + BASE_CACHE_EXPIRES) {
                 AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(data.getBasePool());
@@ -1103,7 +1103,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     public BigInteger getVirtualPrice(String uniqueId, long timestamp, IContractsHelper iContractsHelper) throws Exception {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueId);
         BigInteger amp = a(uniqueId, timestamp);
         BigInteger vpRate = vpRateRo(uniqueId, timestamp, iContractsHelper);
         BigInteger[] xp = xp(uniqueId, vpRate);
@@ -1113,7 +1113,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     public BigInteger calcTokenAmount(String uniqueId, long timestamp, BigInteger[] amounts, boolean deposit, IContractsHelper iContractsHelper) throws Exception {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueId);
         BigInteger[] balances = data.getCopyBalances();
         BigInteger amp = a(uniqueId, timestamp);
         BigInteger vpRate = vpRateRo(uniqueId, timestamp, iContractsHelper);
@@ -1186,7 +1186,7 @@ public class BaseStableSwapPool extends AbstractCurve {
     }
 
     public BigInteger getDy(String uniqueId, int i, int j, BigInteger dx, long timestamp, IContractsHelper iContractsHelper) throws Exception {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueId);
         BigInteger[] rates = copyBigIntegerArray(this.rates);
         rates[coinsCount - 1] = vpRateRo(uniqueId, timestamp, iContractsHelper);
         BigInteger[] xp = xp(uniqueId, rates[coinsCount - 1]);
@@ -1215,7 +1215,7 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     @Override
     public BigInteger getDyUnderlying(String uniqueId, int i, int j, BigInteger _dx, long timestamp, IContractsHelper iContractsHelper) throws Exception {
-        StableSwapPoolData data = this.getVarStableSwapBasePoolData(uniqueId);
+        NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueId);
         int maxCoin = coinsCount - 1;
         BigInteger vpRate = vpRateRo(uniqueId, timestamp, iContractsHelper);
         BigInteger[] xp = xp(uniqueId, vpRate);
@@ -1300,7 +1300,7 @@ public class BaseStableSwapPool extends AbstractCurve {
         return y;
     }
 
-    private BigInteger[] localCalcWithdrawOneCoin(String uniqueId, BigInteger _token_amount, int i, BigInteger vpRate, long timestamp, StableSwapPoolData data) throws Exception {
+    private BigInteger[] localCalcWithdrawOneCoin(String uniqueId, BigInteger _token_amount, int i, BigInteger vpRate, long timestamp, NewCurvePoolData data) throws Exception {
         BigInteger nCoins = BigInteger.valueOf(coinsCount);
         BigInteger amp = a(uniqueId, timestamp);
         BigInteger[] xp = xp(uniqueId, vpRate);
@@ -1332,7 +1332,7 @@ public class BaseStableSwapPool extends AbstractCurve {
 
     public BigInteger calcWithdrawOneCoin(String uniqueId, long timestamp, BigInteger _token_amount, int i, IContractsHelper iContractsHelper) throws Exception {
         BigInteger vpRate = vpRateRo(uniqueId, timestamp, iContractsHelper);
-        BigInteger[] res = localCalcWithdrawOneCoin(uniqueId, _token_amount, i, vpRate, timestamp, this.getVarStableSwapBasePoolData(uniqueId));
+        BigInteger[] res = localCalcWithdrawOneCoin(uniqueId, _token_amount, i, vpRate, timestamp, this.getVarNewCurvePoolData(uniqueId));
         return res[0];
     }
 

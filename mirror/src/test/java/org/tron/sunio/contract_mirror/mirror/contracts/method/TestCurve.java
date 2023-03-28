@@ -3,8 +3,8 @@ package org.tron.sunio.contract_mirror.mirror.contracts.method;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.Assert;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.CurveBasePool;
-import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.OldCurvePool;
+import org.tron.sunio.contract_mirror.mirror.dao.OldCurvePoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.utils.ContractsHelper;
 
@@ -19,7 +19,7 @@ public class TestCurve {
         // dest: {"message":"success","code":"success","result":{"address":"TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz","type":"CONTRACT_CURVE_3POOL","coins":["TGjgvdTWWrybVLaVeFqSyVqJQWjxqRYbaK","TRz7J6dD2QWxBoumfYt4b3FaiRG23pXfop","TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf"],"balance":[329521497006893004798,290662722776550821549,6012709393],"token":"TPbhEF5YDBfKAra7PkcQeJemE55zDTHAyU","fee":4000000,"futureFee":0,"adminFee":5000000000,"futureAdminFee":0,"adminActionsDeadline":0,"feeConverter":"T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb","initialA":400,"initialATime":0,"futureA":400,"futureATime":0,"owner":"TKGRE6oiU3rEzasue4MsB6sCXXSTx9BAe3","futureOwner":"T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb","transferOwnershipDeadline":0,"totalSupply":6178218730983441802126,"ready":true,"addExchangeContracts":false,"using":true}}
         ContractsHelper contractsHelper = new ContractsHelper();
         contractsHelper.setBlockTime(1675854858);
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -29,7 +29,7 @@ public class TestCurve {
                 "",
                 Curve3PoolEvent.getSigMap()
         );
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -42,9 +42,9 @@ public class TestCurve {
         data.setInitialATime(new BigInteger("0"));
         data.setFutureA(new BigInteger("400"));
         data.setFutureATime(new BigInteger("0"));
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
-        CurveBasePoolData poolData = curve3Pool.getCurveBasePoolData();
+        OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         try {
 
             curve3Pool.addLiquidity(
@@ -72,7 +72,7 @@ public class TestCurve {
         // dest: {"message":"success","code":"success","result":{"address":"TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz","type":"CONTRACT_CURVE_3POOL","coins":["TGjgvdTWWrybVLaVeFqSyVqJQWjxqRYbaK","TRz7J6dD2QWxBoumfYt4b3FaiRG23pXfop","TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf"],"balance":[320183004797908118178,290662722776550821549,6024709393],"token":"TPbhEF5YDBfKAra7PkcQeJemE55zDTHAyU","fee":4000000,"futureFee":0,"adminFee":5000000000,"futureAdminFee":0,"adminActionsDeadline":0,"feeConverter":"T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb","initialA":400,"initialATime":0,"futureA":400,"futureATime":0,"owner":"TKGRE6oiU3rEzasue4MsB6sCXXSTx9BAe3","futureOwner":"T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb","transferOwnershipDeadline":0,"totalSupply":6178218730983441802126,"ready":true,"addExchangeContracts":false,"using":true}}%
         ContractsHelper contractsHelper = new ContractsHelper();
         contractsHelper.setBlockTime(1675826787);
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -82,7 +82,7 @@ public class TestCurve {
                 "",
                 Curve3PoolEvent.getSigMap()
         );
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -95,9 +95,9 @@ public class TestCurve {
         data.setInitialATime(new BigInteger("0"));
         data.setFutureA(new BigInteger("400"));
         data.setFutureATime(new BigInteger("0"));
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
-        CurveBasePoolData poolData = curve3Pool.getCurveBasePoolData();
+        OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         BigInteger dy = BigInteger.ZERO;
         try {
             dy = curve3Pool.exchange("tx0_0", 2, 0, new BigInteger("12000000"), new BigInteger("9289941016244035010"), 1675826787, poolData);
@@ -127,7 +127,7 @@ public class TestCurve {
         // dest: {"message":"success","code":"success","result":{"address":"TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz","type":"CONTRACT_CURVE_3POOL","coins":["TGjgvdTWWrybVLaVeFqSyVqJQWjxqRYbaK","TRz7J6dD2QWxBoumfYt4b3FaiRG23pXfop","TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf"],"balance":[272544332444876501468,247416248078957405333,5128318416],"token":"TPbhEF5YDBfKAra7PkcQeJemE55zDTHAyU","fee":4000000,"futureFee":0,"adminFee":5000000000,"futureAdminFee":0,"adminActionsDeadline":0,"feeConverter":"T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb","initialA":400,"initialATime":0,"futureA":400,"futureATime":0,"owner":"TKGRE6oiU3rEzasue4MsB6sCXXSTx9BAe3","futureOwner":null,"transferOwnershipDeadline":null,"totalSupply":5258987749200220399191,"ready":false,"using":true,"addExchangeContracts":false}}
         ContractsHelper contractsHelper = new ContractsHelper();
         contractsHelper.setBlockTime(1675827405);
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -137,7 +137,7 @@ public class TestCurve {
                 "",
                 Curve3PoolEvent.getSigMap()
         );
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -150,9 +150,9 @@ public class TestCurve {
         data.setInitialATime(new BigInteger("0"));
         data.setFutureA(new BigInteger("400"));
         data.setFutureATime(new BigInteger("0"));
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
-        CurveBasePoolData poolData = curve3Pool.getCurveBasePoolData();
+        OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         try {
             curve3Pool.removeLiquidity(
                     new BigInteger("919230981783221402935"),
@@ -179,7 +179,7 @@ public class TestCurve {
         // dest: {"message":"success","code":"success","result":{"address":"TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz","type":"CONTRACT_CURVE_3POOL","coins":["TGjgvdTWWrybVLaVeFqSyVqJQWjxqRYbaK","TRz7J6dD2QWxBoumfYt4b3FaiRG23pXfop","TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf"],"balance":[272458429497381821503,247334698938961818280,5127855248],"token":"TPbhEF5YDBfKAra7PkcQeJemE55zDTHAyU","fee":4000000,"futureFee":0,"adminFee":5000000000,"futureAdminFee":0,"adminActionsDeadline":0,"feeConverter":"T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb","initialA":400,"initialATime":0,"futureA":400,"futureATime":0,"owner":"TKGRE6oiU3rEzasue4MsB6sCXXSTx9BAe3","futureOwner":"T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb","transferOwnershipDeadline":0,"totalSupply":5258370013366233062506,"ready":true,"addExchangeContracts":false,"using":true}}
         ContractsHelper contractsHelper = new ContractsHelper();
         contractsHelper.setBlockTime(1675828071);
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -190,7 +190,7 @@ public class TestCurve {
                 Curve3PoolEvent.getSigMap()
         );
 
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -203,9 +203,9 @@ public class TestCurve {
         data.setInitialATime(new BigInteger("0"));
         data.setFutureA(new BigInteger("400"));
         data.setFutureATime(new BigInteger("0"));
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
-        CurveBasePoolData poolData = curve3Pool.getCurveBasePoolData();
+        OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
 
         try {
             curve3Pool.removeLiquidityImbalance(
@@ -234,7 +234,7 @@ public class TestCurve {
         // dest: {"message":"success","code":"success","result":{"address":"TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz","type":"CONTRACT_CURVE_3POOL","coins":["TGjgvdTWWrybVLaVeFqSyVqJQWjxqRYbaK","TRz7J6dD2QWxBoumfYt4b3FaiRG23pXfop","TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf"],"coinNames":["Decentralized USD","TrueUSD","Tether USD"],"coinSymbols":["USDD","TUSD","USDT"],"balances":[141326499152419653539,270333247145981810421,5171852884],"token":"TPbhEF5YDBfKAra7PkcQeJemE55zDTHAyU","fee":4000000,"futureFee":0,"adminFee":5000000000,"futureAdminFee":0,"adminActionsDeadline":0,"feeConverter":"T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb","initialA":400,"initialATime":0,"futureA":400,"futureATime":0,"owner":"TKGRE6oiU3rEzasue4MsB6sCXXSTx9BAe3","futureOwner":"T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb","transferOwnershipDeadline":0,"totalSupply":5148471747139268255556,"copyBalances":[141326499152419653539,270333247145981810421,5171852884],"ready":true,"using":true,"addExchangeContracts":false}}
         ContractsHelper contractsHelper = new ContractsHelper();
         contractsHelper.setBlockTime(1675828071);
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -245,7 +245,7 @@ public class TestCurve {
                 Curve3PoolEvent.getSigMap()
         );
 
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -258,9 +258,9 @@ public class TestCurve {
         data.setInitialATime(new BigInteger("0"));
         data.setFutureA(new BigInteger("400"));
         data.setFutureATime(new BigInteger("0"));
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
-        CurveBasePoolData poolData = curve3Pool.getCurveBasePoolData();
+        OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         try {
             curve3Pool.removeLiquidityOneCoin(
                     "tx0_0",

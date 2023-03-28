@@ -10,14 +10,14 @@ import org.springframework.stereotype.Service;
 import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 import org.tron.sunio.contract_mirror.mirror.config.RouterConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.BaseStableSwapPool;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.CurveBasePool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.NewCurvePool;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.OldCurvePool;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.PSM;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV2Pair;
-import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
+import org.tron.sunio.contract_mirror.mirror.dao.OldCurvePoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.PSMData;
-import org.tron.sunio.contract_mirror.mirror.dao.StableSwapPoolData;
+import org.tron.sunio.contract_mirror.mirror.dao.NewCurvePoolData;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 import org.tron.sunio.contract_mirror.mirror.price.TokenPrice;
@@ -223,32 +223,32 @@ public class RouterServer {
 
     private SwapResult stableSwapPoolSwap(String fromAddress, String toAddress, SwapResult swapResult, BaseContract baseContract, PathCacheContract pathCacheContract) {
         try {
-            BaseStableSwapPool baseStableSwapPool = (BaseStableSwapPool) baseContract;
-            StableSwapPoolData data = baseStableSwapPool.getVarStableSwapBasePoolData();
+            NewCurvePool newCurvePool = (NewCurvePool) baseContract;
+            NewCurvePoolData data = newCurvePool.getVarNewCurvePoolData();
 //            AbstractCurve curve = baseStableSwapPool.copySelf();
             int i = data.getTokenIndex(fromAddress);
             int j = data.getTokenIndex(toAddress);
             if (i == -2 || j == -2) {
                 swapResult.amount = BigInteger.ZERO;
             } else {
-                int maxCoin = baseStableSwapPool.getCoinsCount() - 1;
+                int maxCoin = newCurvePool.getCoinsCount() - 1;
                 int metaJ = j - maxCoin < 0 ? j : maxCoin;
                 long timestamp = System.currentTimeMillis() / 1000;
                 swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(0.9996));
                 if (i + j == -1) {
                     i = i == -1 ? 1 : 0;
                     j = j == -1 ? 1 : 0;
-                    swapResult.fee = swapResult.fee + (1 - swapResult.fee) * baseStableSwapPool.calcFee(CALL_FOR_ROUTER, timestamp, j, pathCacheContract);
+                    swapResult.fee = swapResult.fee + (1 - swapResult.fee) * newCurvePool.calcFee(CALL_FOR_ROUTER, timestamp, j, pathCacheContract);
                     int dxDecimals = (int) data.getCoinDecimals()[i];
                     BigInteger dx = BigInteger.TEN.pow(dxDecimals);
-                    BigInteger dy = baseStableSwapPool.getDy(CALL_FOR_ROUTER, i, j, dx, timestamp, pathCacheContract);
+                    BigInteger dy = newCurvePool.getDy(CALL_FOR_ROUTER, i, j, dx, timestamp, pathCacheContract);
                     swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 36, RoundingMode.UP));
-                    swapResult.amount = baseStableSwapPool.exchange(CALL_FOR_ROUTER, i, j, swapResult.amount, BigInteger.ZERO, timestamp, pathCacheContract);
+                    swapResult.amount = newCurvePool.exchange(CALL_FOR_ROUTER, i, j, swapResult.amount, BigInteger.ZERO, timestamp, pathCacheContract);
                 } else {
                     if (i - maxCoin < 0 || j - maxCoin < 0) {
-                        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * baseStableSwapPool.calcFee(CALL_FOR_ROUTER, timestamp, metaJ, pathCacheContract);
+                        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * newCurvePool.calcFee(CALL_FOR_ROUTER, timestamp, metaJ, pathCacheContract);
                     } else {
-                        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * baseStableSwapPool.calcBasePoolFee(CALL_FOR_ROUTER, timestamp, metaJ, pathCacheContract);
+                        swapResult.fee = swapResult.fee + (1 - swapResult.fee) * newCurvePool.calcBasePoolFee(CALL_FOR_ROUTER, timestamp, metaJ, pathCacheContract);
                     }
 
                     swapResult.impactItem0 = swapResult.impactItem0.multiply(BigDecimal.valueOf(0.9996));
@@ -259,9 +259,9 @@ public class RouterServer {
                         dxDecimals = (int) data.getBaseCoinDecimals()[i - maxCoin];
                     }
                     BigInteger dx = BigInteger.TEN.pow(dxDecimals);
-                    BigInteger dy = baseStableSwapPool.getDyUnderlying(CALL_FOR_ROUTER, i, j, dx, timestamp, pathCacheContract);
+                    BigInteger dy = newCurvePool.getDyUnderlying(CALL_FOR_ROUTER, i, j, dx, timestamp, pathCacheContract);
                     swapResult.impactItem1 = swapResult.impactItem1.multiply(new BigDecimal(dx).divide(new BigDecimal(dy), 36, RoundingMode.UP));
-                    swapResult.amount = baseStableSwapPool.exchangeUnderlying(CALL_FOR_ROUTER, i, j, swapResult.amount, BigInteger.ZERO, timestamp, pathCacheContract);
+                    swapResult.amount = newCurvePool.exchangeUnderlying(CALL_FOR_ROUTER, i, j, swapResult.amount, BigInteger.ZERO, timestamp, pathCacheContract);
                 }
             }
         } catch (Exception e) {
@@ -300,8 +300,8 @@ public class RouterServer {
     private void curveSwap(String fromAddress, String toAddress, SwapResult swapResult, BaseContract baseContract,
                            PathCacheContract pathCacheContract) {
         try {
-            CurveBasePool curve = (CurveBasePool) baseContract;
-            CurveBasePoolData data = curve.getVarCurveBasePoolData();
+            OldCurvePool curve = (OldCurvePool) baseContract;
+            OldCurvePoolData data = curve.getVarOldCurvePoolData();
             long timestamp = System.currentTimeMillis() / 1000;
             int[] indexes = data.getTokensIndex(fromAddress, toAddress);
             if (indexes[0] < 0 || indexes[1] < 0) {
@@ -472,13 +472,13 @@ public class RouterServer {
                     break;
                 case CONTRACT_CURVE_2POOL:
                 case CONTRACT_CURVE_3POOL:
-                    initCurves((CurveBasePool) baseContract);
+                    initCurves((OldCurvePool) baseContract);
                     break;
                 case CONTRACT_PSM:
                     initPSM((PSM) baseContract);
                     break;
                 case STABLE_SWAP_POOL:
-                    initStableSwapPool((BaseStableSwapPool) baseContract);
+                    initStableSwapPool((NewCurvePool) baseContract);
                     break;
             }
         }
@@ -501,13 +501,13 @@ public class RouterServer {
                     break;
                 case CONTRACT_CURVE_2POOL:
                 case CONTRACT_CURVE_3POOL:
-                    initCurves((CurveBasePool) baseContract);
+                    initCurves((OldCurvePool) baseContract);
                     break;
                 case CONTRACT_PSM:
                     initPSM((PSM) baseContract);
                     break;
                 case STABLE_SWAP_POOL:
-                    initStableSwapPool((BaseStableSwapPool) baseContract);
+                    initStableSwapPool((NewCurvePool) baseContract);
                     break;
             }
         }
@@ -532,8 +532,8 @@ public class RouterServer {
         }
     }
 
-    private void initStableSwapPool(BaseStableSwapPool baseStableSwapPool) {
-        StableSwapPoolData data = baseStableSwapPool.getCurveBasePoolData();
+    private void initStableSwapPool(NewCurvePool newCurvePool) {
+        NewCurvePoolData data = newCurvePool.getCurveBasePoolData();
         List<String> tokens = new ArrayList<>();
         List<String> symbols = new ArrayList<>();
         tokens.addAll(Arrays.asList(data.getCoins()));
@@ -558,8 +558,8 @@ public class RouterServer {
         updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, data.getPoolName(), contract);
     }
 
-    private void initCurves(CurveBasePool curve) {
-        CurveBasePoolData data = curve.getCurveBasePoolData();
+    private void initCurves(OldCurvePool curve) {
+        OldCurvePoolData data = curve.getOldCurvePoolData();
         int count = data.getCoins().length;
         String contract = data.getAddress();
         for (int i = 0; i < count; i++) {

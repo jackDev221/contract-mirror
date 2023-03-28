@@ -12,7 +12,7 @@ import java.math.BigInteger;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class CurveBasePoolData extends BaseContractData {
+public class OldCurvePoolData extends BaseContractData {
     private String[] coins;
     private String[] coinNames;
     private String[] coinSymbols;
@@ -35,7 +35,7 @@ public class CurveBasePoolData extends BaseContractData {
     private BigInteger totalSupply;
     private String poolName;
 
-    public CurveBasePoolData(int count) {
+    public OldCurvePoolData(int count) {
         coins = new String[count];
         coinNames = new String[count];
         coinSymbols = new String[count];
@@ -87,8 +87,8 @@ public class CurveBasePoolData extends BaseContractData {
         return result;
     }
 
-    public CurveBasePoolData copySelf() {
-        return DeepCopyUtils.deepCopy(this, CurveBasePoolData.class);
+    public OldCurvePoolData copySelf() {
+        return DeepCopyUtils.deepCopy(this, OldCurvePoolData.class);
     }
 
     public BigInteger[] copyBalances() {

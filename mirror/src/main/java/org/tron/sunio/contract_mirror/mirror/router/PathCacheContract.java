@@ -33,7 +33,6 @@ public class PathCacheContract implements IContractsHelper {
             }
             if (baseContract.getType() == ContractType.CONTRACT_CURVE_2POOL
                     || baseContract.getType() == ContractType.CONTRACT_CURVE_3POOL
-                    || baseContract.getType() == ContractType.CONTRACT_CURVE_4POOL
                     || baseContract.getType() == ContractType.STABLE_SWAP_POOL
             ) {
                 baseContract = ((AbstractCurve) baseContract).copySelf();

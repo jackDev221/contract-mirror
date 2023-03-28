@@ -37,7 +37,7 @@ import java.math.BigInteger;
  */
 
 @Data
-public class StableSwapPoolData extends BaseContractData {
+public class NewCurvePoolData extends BaseContractData {
     private String[] coins;
     private String[] coinNames;
     private String[] coinSymbols;
@@ -69,7 +69,7 @@ public class StableSwapPoolData extends BaseContractData {
     private BigInteger baseLpTotalSupply;
     private String poolName;
 
-    public StableSwapPoolData(int coinsCount, int baseCoinsCount) {
+    public NewCurvePoolData(int coinsCount, int baseCoinsCount) {
         coins = new String[coinsCount];
         coinNames = new String[coinsCount];
         coinDecimals = new long[coinsCount];
@@ -96,8 +96,8 @@ public class StableSwapPoolData extends BaseContractData {
         balances[index] = value;
     }
 
-    public StableSwapPoolData copySelf() {
-        return DeepCopyUtils.deepCopy(this, StableSwapPoolData.class);
+    public NewCurvePoolData copySelf() {
+        return DeepCopyUtils.deepCopy(this, NewCurvePoolData.class);
     }
 
     public int getTokenIndex(String address) {

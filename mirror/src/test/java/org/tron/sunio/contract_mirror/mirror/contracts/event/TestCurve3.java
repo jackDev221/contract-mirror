@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.util.Assert;
 import org.tron.sunio.contract_mirror.event_decode.events.Curve3PoolEvent;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.CurveBasePool;
-import org.tron.sunio.contract_mirror.mirror.dao.CurveBasePoolData;
+import org.tron.sunio.contract_mirror.mirror.contracts.impl.OldCurvePool;
+import org.tron.sunio.contract_mirror.mirror.dao.OldCurvePoolData;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.utils.EventLogUtils;
 
@@ -14,7 +14,7 @@ import java.math.BigInteger;
 public class TestCurve3 {
     @Test
     public void testAddLiquidity() {
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -24,7 +24,7 @@ public class TestCurve3 {
                 "",
                 Curve3PoolEvent.getSigMap()
         );
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -33,7 +33,7 @@ public class TestCurve3 {
         data.updateBalances(1, new BigInteger("171670818514848090683"));
         data.updateBalances(2, new BigInteger("5912730454"));
         data.setTotalSupply(new BigInteger("5804442149820345213230"));
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
 
         IContractEventWrap iContractEventWrap1 = EventLogUtils.generateContractEvent("txId1", new String[]{
@@ -51,7 +51,7 @@ public class TestCurve3 {
         BigInteger balance1 = new BigInteger("290662722776550821549");
         BigInteger balance2 = new BigInteger("6012709393");
         BigInteger totalSupply = new BigInteger("6178218730983441802126");
-        CurveBasePoolData poolData = curve3Pool.getCurveBasePoolData();
+        OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         Assert.isTrue(poolData.getBalances()[0].compareTo(balance0) == 0, "balance0 not equal");
         Assert.isTrue(poolData.getBalances()[1].compareTo(balance1) == 0, "balance1 not equal");
         Assert.isTrue(poolData.getBalances()[2].compareTo(balance2) == 0, "balance2 not equal");
@@ -60,7 +60,7 @@ public class TestCurve3 {
 
     @Test
     public void testTokenExchange() {
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -71,7 +71,7 @@ public class TestCurve3 {
                 Curve3PoolEvent.getSigMap()
         );
 
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -80,7 +80,7 @@ public class TestCurve3 {
         data.updateBalances(1, new BigInteger("290662722776550821549"));
         data.updateBalances(2, new BigInteger("6012709393"));
         data.setTotalSupply(new BigInteger("6178218730983441802126"));
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
 
         IContractEventWrap iContractEventWrap1 = EventLogUtils.generateContractEvent("txId1", new String[]{
@@ -94,7 +94,7 @@ public class TestCurve3 {
         BigInteger balance0 = new BigInteger("320183004797908118178");
         BigInteger balance1 = new BigInteger("290662722776550821549");
         BigInteger balance2 = new BigInteger("6024709393");
-        CurveBasePoolData poolData = curve3Pool.getCurveBasePoolData();
+        OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         System.out.println(poolData);
         BigInteger totalSupply = new BigInteger("6178218730983441802126");
         Assert.isTrue(poolData.getBalances()[0].compareTo(balance0) == 0, "balance0 not equal");
@@ -105,7 +105,7 @@ public class TestCurve3 {
 
     @Test
     public void testRemoveLiquidity() {
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -116,7 +116,7 @@ public class TestCurve3 {
                 Curve3PoolEvent.getSigMap()
         );
 
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -125,7 +125,7 @@ public class TestCurve3 {
         data.updateBalances(1, new BigInteger("290662722776550821549"));
         data.updateBalances(2, new BigInteger("6024709393"));
         data.setTotalSupply(new BigInteger("6178218730983441802126"));
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
 
         IContractEventWrap iContractEventWrap1 = EventLogUtils.generateContractEvent("txId1", new String[]{
@@ -142,7 +142,7 @@ public class TestCurve3 {
         BigInteger balance1 = new BigInteger("247416248078957405333");
         BigInteger balance2 = new BigInteger("5128318416");
         BigInteger totalSupply = new BigInteger("5258987749200220399191");
-        CurveBasePoolData poolData = curve3Pool.getCurveBasePoolData();
+        OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         Assert.isTrue(poolData.getBalances()[0].compareTo(balance0) == 0, "balance0 not equal");
         Assert.isTrue(poolData.getBalances()[1].compareTo(balance1) == 0, "balance1 not equal");
         Assert.isTrue(poolData.getBalances()[2].compareTo(balance2) == 0, "balance2 not equal");
@@ -151,7 +151,7 @@ public class TestCurve3 {
 
     @Test
     public void TestRemoveLiquidityInBalance() {
-        CurveBasePool curve3Pool = new CurveBasePool(
+        OldCurvePool curve3Pool = new OldCurvePool(
                 "TAd2UK2c5J4VfMQYxuKL7qqwJsZBocyCfz",
                 ContractType.CONTRACT_CURVE_2POOL,
                 null,
@@ -162,7 +162,7 @@ public class TestCurve3 {
                 Curve3PoolEvent.getSigMap()
         );
 
-        CurveBasePoolData data = new CurveBasePoolData();
+        OldCurvePoolData data = new OldCurvePoolData();
         data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
@@ -171,7 +171,7 @@ public class TestCurve3 {
         data.updateBalances(1, new BigInteger("247416248078957405333"));
         data.updateBalances(2, new BigInteger("5128318416"));
         data.setTotalSupply(new BigInteger("5258987749200220399191"));
-        curve3Pool.setCurveBasePoolData(data);
+        curve3Pool.setOldCurvePoolData(data);
         curve3Pool.setReady(true);
 
         IContractEventWrap iContractEventWrap1 = EventLogUtils.generateContractEvent("txId1", new String[]{
@@ -189,7 +189,7 @@ public class TestCurve3 {
         BigInteger balance1 = new BigInteger("247334698938961818280");
         BigInteger balance2 = new BigInteger("5127855248");
         BigInteger totalSupply = new BigInteger("5258370013366233062506");
-        CurveBasePoolData poolData = curve3Pool.getCurveBasePoolData();
+        OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         Assert.isTrue(poolData.getBalances()[0].compareTo(balance0) == 0, "balance0 not equal");
         Assert.isTrue(poolData.getBalances()[1].compareTo(balance1) == 0, "balance1 not equal");
         Assert.isTrue(poolData.getBalances()[2].compareTo(balance2) == 0, "balance2 not equal");
