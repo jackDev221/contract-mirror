@@ -73,7 +73,7 @@ public class RouterServer {
         convertTrxInRouterInput(routerInput);
         RoutNode routNode = routNodeMap.get(routerInput.getFromToken());
         List<RoutItem> res = new ArrayList<>();
-        if (!ObjectUtil.isNull(routNode)) {
+        if (!ObjectUtil.isNull(routNode) && routerInput.getIn().compareTo(BigInteger.ZERO) > 0) {
             List<List<StepInfo>> paths = null;
 //            String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
 //            paths = cachedPaths.get(key);
