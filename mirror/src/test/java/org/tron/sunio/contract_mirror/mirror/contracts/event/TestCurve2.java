@@ -17,11 +17,11 @@ public class TestCurve2 {
         OldCurvePool curve2Pool = new OldCurvePool(
                 "TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c",
                 ContractType.CONTRACT_CURVE_2POOL,
+                "",
                 null,
                 null,
                 2,
                 1,
-                "",
                 Curve2PoolEvent.getSigMap()
         );
 
@@ -75,11 +75,11 @@ public class TestCurve2 {
         OldCurvePool curve2Pool = new OldCurvePool(
                 "TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c",
                 ContractType.CONTRACT_CURVE_2POOL,
+                "",
                 null,
                 null,
                 2,
                 1,
-                "",
                 Curve2PoolEvent.getSigMap()
         );
 
@@ -119,11 +119,11 @@ public class TestCurve2 {
         OldCurvePool curve2Pool = new OldCurvePool(
                 "TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c",
                 ContractType.CONTRACT_CURVE_2POOL,
+                "",
                 null,
                 null,
                 2,
                 1,
-                "",
                 Curve2PoolEvent.getSigMap()
         );
 
@@ -158,11 +158,11 @@ public class TestCurve2 {
         OldCurvePool curve2Pool = new OldCurvePool(
                 "TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c",
                 ContractType.CONTRACT_CURVE_2POOL,
+                "",
                 null,
                 null,
                 2,
                 1,
-                "",
                 Curve2PoolEvent.getSigMap()
         );
 

@@ -55,7 +55,6 @@ public class PSM extends BaseContract {
     @Setter
     private PSMData psmData;
     private String polyAddress;
-    private String poolName;
     private String token;
     @Setter
     private PSMTotalData psmTotalData;
@@ -67,23 +66,22 @@ public class PSM extends BaseContract {
         if (ObjectUtil.isNull(extraData)) {
             return null;
         }
-        PSM psm = new PSM(contractInfo.getType(), contractInfo.getAddress(), extraData.getPoly(), extraData.getPoolName(),
+        PSM psm = new PSM(contractInfo.getAddress(), contractInfo.getType(), extraData.getVersion(), extraData.getPoly(),
                 iChainHelper, iContractsHelper, psmTotalData, sigMap);
         psm.token = extraData.token;
         return psm;
     }
 
-    public PSM(ContractType type, String address, String polyAddress, String poolName, IChainHelper iChainHelper, IContractsHelper
+    public PSM(String address, ContractType type, String version, String polyAddress, IChainHelper iChainHelper, IContractsHelper
             iContractsHelper, PSMTotalData psmTotalData, Map<String, String> sigMap) {
-        super(address, type, iChainHelper, iContractsHelper, sigMap);
+        super(address, type, version, iChainHelper, iContractsHelper, sigMap);
         this.polyAddress = polyAddress;
         this.psmTotalData = psmTotalData;
-        this.poolName = poolName;
     }
 
     public PSM(ContractType type, PSMData psmData, PSMTotalData psmTotalData, IChainHelper iChainHelper, IContractsHelper
             iContractsHelper, Map<String, String> sigMap) {
-        this(type, psmData.getAddress(), psmData.getPolyAddress(), psmData.getPoolName(), iChainHelper, iContractsHelper, psmTotalData, sigMap);
+        this( psmData.getAddress(), type, psmData.getVersion(), psmData.getPolyAddress(), iChainHelper, iContractsHelper, psmTotalData, sigMap);
         this.setPsmData(psmData);
         this.setPsmTotalData(psmTotalData);
     }
@@ -116,7 +114,7 @@ public class PSM extends BaseContract {
         if (ObjectUtil.isNull(psmData)) {
             psmData = new PSMData();
             psmData.setPolyAddress(polyAddress);
-            psmData.setPoolName(poolName);
+            psmData.setVersion(version);
             psmData.setAddress(address);
             psmData.setToken(token);
             psmData.setType(type);
@@ -235,7 +233,7 @@ public class PSM extends BaseContract {
 
     @Override
     public String getVersion() {
-        return this.poolName;
+        return this.version;
     }
 
     @Override
@@ -431,7 +429,7 @@ public class PSM extends BaseContract {
     @Data
     public static class ContractExtraData {
         private String poly;
-        private String poolName;
+        private String version;
         private String token;
     }
 

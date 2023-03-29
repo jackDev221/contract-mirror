@@ -21,6 +21,7 @@ public class ContractObj implements IContract {
     protected final Lock wlock = rwlock.writeLock();
     protected String address;
     protected ContractType type;
+    protected String version;
     protected boolean isReady;
     protected boolean isUsing;
     protected boolean isAddExchangeContracts;
@@ -31,10 +32,11 @@ public class ContractObj implements IContract {
     @Setter
     protected IContractsHelper iContractsHelper;
 
-    public ContractObj(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
+    public ContractObj(String address, ContractType type, String version, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
                        final Map<String, String> sigMap) {
         this.type = type;
         this.address = address;
+        this.version = version;
         this.iChainHelper = iChainHelper;
         this.sigMap = sigMap;
         this.isUsing = true;

@@ -11,6 +11,7 @@ import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 public class BaseContractData {
     protected String address;
     protected ContractType type;
+    protected String version;
     protected boolean isReady;
     protected boolean isUsing;
     protected boolean isAddExchangeContracts;

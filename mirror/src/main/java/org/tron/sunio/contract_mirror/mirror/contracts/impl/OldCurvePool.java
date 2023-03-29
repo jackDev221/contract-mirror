@@ -81,17 +81,16 @@ public class OldCurvePool extends AbstractCurve {
         if (ObjectUtil.isNull(extraData)) {
             return null;
         }
-        return new OldCurvePool(contractInfo.getAddress(), contractInfo.getType(), iChainHelper,
-                iContractsHelper, extraData.getCoinsCount(), extraData.getFeeIndex(), extraData.getPoolName(), sigMap);
+        return new OldCurvePool(contractInfo.getAddress(), contractInfo.getType(), extraData.getVersion(), iChainHelper,
+                iContractsHelper, extraData.getCoinsCount(), extraData.getFeeIndex(), sigMap);
     }
 
-
-    public OldCurvePool(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
-                        int coinsCount, int feeIndex, String poolName, Map<String, String> sigMap) {
-        super(address, type, iChainHelper, iContractsHelper, sigMap);
+    public OldCurvePool(String address, ContractType type, String version, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
+                        int coinsCount, int feeIndex, Map<String, String> sigMap) {
+        super(address, type, version, iChainHelper, iContractsHelper, sigMap);
         this.coinsCount = coinsCount;
         this.feeIndex = feeIndex;
-        this.poolName = poolName;
+        this.version = version;
     }
 
     public OldCurvePoolData getVarOldCurvePoolData(String uniqueId) {
@@ -113,7 +112,7 @@ public class OldCurvePool extends AbstractCurve {
         if (ObjectUtil.isNull(oldCurvePoolData)) {
             oldCurvePoolData = new OldCurvePoolData(coinsCount);
             oldCurvePoolData.setAddress(address);
-            oldCurvePoolData.setPoolName(poolName);
+            oldCurvePoolData.setVersion(version);
             oldCurvePoolData.setType(type);
             oldCurvePoolData.setUsing(true);
             oldCurvePoolData.setReady(false);
@@ -271,7 +270,7 @@ public class OldCurvePool extends AbstractCurve {
 
     @Override
     public String getVersion() {
-        return this.poolName;
+        return this.version;
     }
 
     @Override
@@ -426,6 +425,7 @@ public class OldCurvePool extends AbstractCurve {
             return HandleResult.genHandleFailMessage(e.getMessage());
         }
     }
+
     @SuppressWarnings("unchecked")
     protected HandleResult handleEventRemoveLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
         log.info("{}:{} handleEventRemoveLiquidity:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
@@ -1012,11 +1012,11 @@ public class OldCurvePool extends AbstractCurve {
             OldCurvePool pool = new OldCurvePool(
                     address,
                     type,
+                    version,
                     iChainHelper,
                     iContractsHelper,
                     coinsCount,
                     feeIndex,
-                    poolName,
                     sigMap
             );
             pool.setOldCurvePoolData(poolData);
@@ -1269,7 +1269,7 @@ public class OldCurvePool extends AbstractCurve {
     public static class ContractExtraData {
         private int coinsCount;
         private int feeIndex;
-        private String poolName;
+        private String version;
     }
 
     public static OldCurvePool.ContractExtraData parseToExtraData(String input) {

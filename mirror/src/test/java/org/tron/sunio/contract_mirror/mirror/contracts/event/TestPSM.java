@@ -17,8 +17,8 @@ public class TestPSM {
 
     @Test
     public void testBuyGem() {
-        PSM psm = new PSM(ContractType.CONTRACT_PSM, "TFDUZ6FAtXptkY3dKHk2oRarCckyDYRkEL",
-                "TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r", "", null, null, new PSMTotalData(), PSMEvent.getSigMap());
+        PSM psm = new PSM("TFDUZ6FAtXptkY3dKHk2oRarCckyDYRkEL", ContractType.CONTRACT_PSM, "",
+                "TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r", null, null, new PSMTotalData(), PSMEvent.getSigMap());
         PSMData psmData = psm.getPsmData();
         psmData.setTokenDecimal(6);
         psmData.setReady(true);

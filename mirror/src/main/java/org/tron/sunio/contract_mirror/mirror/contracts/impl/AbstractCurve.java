@@ -11,16 +11,14 @@ import java.math.BigInteger;
 import java.util.Map;
 
 public abstract class AbstractCurve extends BaseContract {
-    protected String poolName;
-
     @Setter
     protected String currentTx;
     @Setter
     protected String currentIndex;
 
-    public AbstractCurve(String address, ContractType type, IChainHelper iChainHelper,
+    public AbstractCurve(String address, ContractType type, String version, IChainHelper iChainHelper,
                          IContractsHelper iContractsHelper, Map<String, String> sigMap) {
-        super(address, type, iChainHelper, iContractsHelper, sigMap);
+        super(address, type, version, iChainHelper, iContractsHelper, sigMap);
     }
 
     public abstract String coins(int i);

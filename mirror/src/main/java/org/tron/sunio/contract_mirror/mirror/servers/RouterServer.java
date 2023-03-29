@@ -225,7 +225,6 @@ public class RouterServer {
         try {
             NewCurvePool newCurvePool = (NewCurvePool) baseContract;
             NewCurvePoolData data = newCurvePool.getVarNewCurvePoolData();
-//            AbstractCurve curve = baseStableSwapPool.copySelf();
             int i = data.getTokenIndex(fromAddress);
             int j = data.getTokenIndex(toAddress);
             if (i == -2 || j == -2) {
@@ -542,8 +541,8 @@ public class RouterServer {
         symbols.addAll(Arrays.asList(data.getBaseCoinSymbols()));
         String contract = data.getAddress();
         for (int j = 1; j < tokens.size(); j++) {
-            updateRoutNodeMap(tokens.get(0), symbols.get(0), tokens.get(j), symbols.get(j), data.getPoolName(), contract);
-            updateRoutNodeMap(tokens.get(j), symbols.get(j), tokens.get(0), symbols.get(0), data.getPoolName(), contract);
+            updateRoutNodeMap(tokens.get(0), symbols.get(0), tokens.get(j), symbols.get(j), data.getVersion(), contract);
+            updateRoutNodeMap(tokens.get(j), symbols.get(j), tokens.get(0), symbols.get(0), data.getVersion(), contract);
         }
     }
 
@@ -554,8 +553,8 @@ public class RouterServer {
         String token0Symbol = USDD;
         String token1Symbol = data.getTokenSymbol();
         String contract = data.getAddress();
-        updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, data.getPoolName(), contract);
-        updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, data.getPoolName(), contract);
+        updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, data.getVersion(), contract);
+        updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, data.getVersion(), contract);
     }
 
     private void initCurves(OldCurvePool curve) {
@@ -568,8 +567,8 @@ public class RouterServer {
                 String token1 = data.getCoins()[j];
                 String token0Symbol = data.getCoinSymbols()[i];
                 String token1Symbol = data.getCoinSymbols()[j];
-                updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, data.getPoolName(), contract);
-                updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, data.getPoolName(), contract);
+                updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, data.getVersion(), contract);
+                updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, data.getVersion(), contract);
             }
         }
     }
@@ -587,9 +586,9 @@ public class RouterServer {
         String token0Symbol = TRX_SYMBOL;
         String token1Symbol = data.getTokenSymbol();
         String contract = data.getAddress();
-        String poolType = swapV1.getVersion();
-        updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, poolType, contract);
-        updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, poolType, contract);
+        String version = data.getVersion();
+        updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, version, contract);
+        updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, version, contract);
     }
 
     private void initV2(SwapV2Pair swapV2Pair, boolean isInit) {
@@ -605,9 +604,9 @@ public class RouterServer {
         String token0Symbol = data.getToken0Symbol();
         String token1Symbol = data.getToken1Symbol();
         String contract = data.getAddress();
-        String poolType = swapV2Pair.getVersion();
-        updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, poolType, contract);
-        updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, poolType, contract);
+        String version = data.getVersion();
+        updateRoutNodeMap(token0, token0Symbol, token1, token1Symbol, version, contract);
+        updateRoutNodeMap(token1, token1Symbol, token0, token0Symbol, version, contract);
     }
 
     private void updateRoutNodeMap(String token0, String token0Symbol, String token1, String token1Symbol, String poolType,

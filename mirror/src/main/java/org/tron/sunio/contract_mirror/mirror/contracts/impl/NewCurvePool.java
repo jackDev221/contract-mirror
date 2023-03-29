@@ -71,19 +71,18 @@ public class NewCurvePool extends AbstractCurve {
         if (ObjectUtil.isNull(extraData)) {
             return null;
         }
-        return new NewCurvePool(contractInfo.getAddress(), contractInfo.getType(), extraData.getBaseCoinsCount(),
-                extraData.getCoinsCount(), extraData.getRates(), extraData.getPrecisionMul(), extraData.getPoolName(), iChainHelper, iContractsHelper, sigMap);
+        return new NewCurvePool(contractInfo.getAddress(), contractInfo.getType(), extraData.getVersion(), extraData.getBaseCoinsCount(),
+                extraData.getCoinsCount(), extraData.getRates(), extraData.getPrecisionMul(), iChainHelper, iContractsHelper, sigMap);
     }
 
-    public NewCurvePool(String address, ContractType type, int baseCoinsCount, int coinsCount, BigInteger[] rates,
-                        BigInteger[] precisionMul, String poolName, IChainHelper iChainHelper,
-                        IContractsHelper iContractsHelper, Map<String, String> sigMap) {
-        super(address, type, iChainHelper, iContractsHelper, sigMap);
+    public NewCurvePool(String address, ContractType type, String version, int baseCoinsCount, int coinsCount, BigInteger[] rates,
+                        BigInteger[] precisionMul, IChainHelper iChainHelper, IContractsHelper iContractsHelper, Map<String, String> sigMap) {
+        super(address, type, version, iChainHelper, iContractsHelper, sigMap);
         this.baseCoinsCount = baseCoinsCount;
         this.coinsCount = coinsCount;
         this.rates = rates;
         this.precisionMul = precisionMul;
-        this.poolName = poolName;
+        this.version = version;
     }
 
     public NewCurvePoolData getVarNewCurvePoolData(String uniqueId) {
@@ -105,7 +104,7 @@ public class NewCurvePool extends AbstractCurve {
         if (ObjectUtil.isNull(newCurvePoolData)) {
             newCurvePoolData = new NewCurvePoolData(coinsCount, baseCoinsCount);
             newCurvePoolData.setAddress(address);
-            newCurvePoolData.setPoolName(poolName);
+            newCurvePoolData.setVersion(version);
             newCurvePoolData.setType(type);
             newCurvePoolData.setUsing(true);
             newCurvePoolData.setReady(false);
@@ -279,18 +278,8 @@ public class NewCurvePool extends AbstractCurve {
         try {
             rlock.lock();
             NewCurvePoolData data = this.getCurveBasePoolData();
-            NewCurvePool pool = new NewCurvePool(
-                    data.getAddress(),
-                    type,
-                    baseCoinsCount,
-                    coinsCount,
-                    copyBigIntegerArray(rates),
-                    copyBigIntegerArray(precisionMul),
-                    poolName,
-                    iChainHelper,
-                    iContractsHelper,
-                    sigMap
-            );
+            NewCurvePool pool = new NewCurvePool(data.getAddress(), type, version, baseCoinsCount, coinsCount,
+                    copyBigIntegerArray(rates), copyBigIntegerArray(precisionMul), iChainHelper, iContractsHelper, sigMap);
             pool.setNewCurvePoolData(data);
             pool.setReady(this.isReady);
             pool.setAddExchangeContracts(this.isAddExchangeContracts);
@@ -478,7 +467,7 @@ public class NewCurvePool extends AbstractCurve {
 
     @Override
     public String getVersion() {
-        return this.poolName;
+        return this.version;
     }
 
     @Override
@@ -1347,7 +1336,7 @@ public class NewCurvePool extends AbstractCurve {
         private int baseCoinsCount;
         private BigInteger[] rates;
         private BigInteger[] precisionMul;
-        private String poolName;
+        private String version;
     }
 
     public static ContractExtraData parseToExtraData(String input) {

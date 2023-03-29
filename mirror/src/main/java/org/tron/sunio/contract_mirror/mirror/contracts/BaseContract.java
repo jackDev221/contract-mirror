@@ -34,9 +34,9 @@ public abstract class BaseContract extends ContractObj {
     @Getter
     private CountDownLatch latch;
 
-    public BaseContract(String address, ContractType type, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
+    public BaseContract(String address, ContractType type, String version, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
                         final Map<String, String> sigMap) {
-        super(address, type, iChainHelper, iContractsHelper, sigMap);
+        super(address, type, version, iChainHelper, iContractsHelper, sigMap);
         this.initFlag = INIT_FLAG_INIT;
     }
 

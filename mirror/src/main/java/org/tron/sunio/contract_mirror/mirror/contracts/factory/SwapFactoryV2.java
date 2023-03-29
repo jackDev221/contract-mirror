@@ -46,7 +46,7 @@ public class SwapFactoryV2 extends BaseFactory {
 
     public SwapFactoryV2(String address, IChainHelper iChainHelper, IContractsHelper iContractsHelper,
                          Map<String, String> sigMap) {
-        super(address, ContractType.SWAP_FACTORY_V2, iChainHelper, iContractsHelper, sigMap);
+        super(address, ContractType.SWAP_FACTORY_V2, V2_FACTORY, iChainHelper, iContractsHelper, sigMap);
         v2PairSigMap = SwapV2PairEvent.getSigMap();
     }
 
@@ -57,6 +57,7 @@ public class SwapFactoryV2 extends BaseFactory {
             swapFactoryV2Data.setUsing(true);
             swapFactoryV2Data.setAddress(this.address);
             swapFactoryV2Data.setType(this.type);
+            swapFactoryV2Data.setVersion(version);
         }
         return swapFactoryV2Data;
     }
@@ -87,7 +88,7 @@ public class SwapFactoryV2 extends BaseFactory {
 
     @Override
     public String getVersion() {
-        return V2_FACTORY;
+        return version;
     }
 
     @Override

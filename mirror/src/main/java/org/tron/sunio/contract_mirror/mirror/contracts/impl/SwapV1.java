@@ -52,7 +52,7 @@ public class SwapV1 extends BaseContract {
 
     public SwapV1(String factory, String address, IChainHelper iChainHelper, IContractsHelper iContractsHelper, String tokenAddress,
                   final Map<String, String> sigMap) {
-        super(address, ContractType.SWAP_V1, iChainHelper, iContractsHelper, sigMap);
+        super(address, ContractType.SWAP_V1, V1_VERSION, iChainHelper, iContractsHelper, sigMap);
         this.tokenAddress = tokenAddress;
         this.factory = factory;
     }
@@ -68,6 +68,7 @@ public class SwapV1 extends BaseContract {
             swapV1Data.setFactory(factory);
             swapV1Data.setType(this.type);
             swapV1Data.setAddress(this.address);
+            swapV1Data.setVersion(version);
             swapV1Data.setTokenAddress(this.tokenAddress);
             swapV1Data.setUsing(true);
         }
@@ -181,7 +182,7 @@ public class SwapV1 extends BaseContract {
 
     @Override
     public String getVersion() {
-        return V1_VERSION;
+        return version;
     }
 
     /*

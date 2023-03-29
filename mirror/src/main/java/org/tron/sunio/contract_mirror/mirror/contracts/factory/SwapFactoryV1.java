@@ -45,7 +45,7 @@ public class SwapFactoryV1 extends BaseFactory {
     private SwapFactoryV1Data swapFactoryV1Data;
 
     public SwapFactoryV1(String address, IChainHelper iChainHelper, IContractsHelper iContractsHelper, final Map<String, String> sigMap) {
-        super(address, ContractType.SWAP_FACTORY_V1, iChainHelper, iContractsHelper, sigMap);
+        super(address, ContractType.SWAP_FACTORY_V1, V1_FACTORY, iChainHelper, iContractsHelper, sigMap);
         v1SigMap = SwapV1Event.getSigMap();
     }
 
@@ -56,6 +56,7 @@ public class SwapFactoryV1 extends BaseFactory {
             swapFactoryV1Data.setUsing(true);
             swapFactoryV1Data.setAddress(this.address);
             swapFactoryV1Data.setType(this.type);
+            swapFactoryV1Data.setVersion(version);
         }
         return swapFactoryV1Data;
     }
@@ -116,7 +117,7 @@ public class SwapFactoryV1 extends BaseFactory {
 
     @Override
     public String getVersion() {
-        return V1_FACTORY;
+        return version;
     }
 
     @Override
@@ -261,8 +262,8 @@ public class SwapFactoryV1 extends BaseFactory {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s decode handEventNewExchange fail!, unique id :%s",
                     address, type, handleEventExtraData.getUniqueId()));
         }
-        String token =  WalletUtil.hexStringToTron((String) eventValues.getIndexedValues().get(0).getValue());
-        String exchange =WalletUtil.hexStringToTron( (String) eventValues.getIndexedValues().get(1).getValue());
+        String token = WalletUtil.hexStringToTron((String) eventValues.getIndexedValues().get(0).getValue());
+        String exchange = WalletUtil.hexStringToTron((String) eventValues.getIndexedValues().get(1).getValue());
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         factoryV1Data.getTokenToExchangeMap().put(token, exchange);
         factoryV1Data.getExchangeToTokenMap().put(exchange, token);

@@ -11,7 +11,7 @@ import java.math.BigInteger;
 public class TestPSM {
     @Test
     public void testCalcUSDDToUSDX() {
-        PSM psm = new PSM(ContractType.CONTRACT_PSM, "", "", "", null,
+        PSM psm = new PSM("", ContractType.CONTRACT_PSM, "", "", null,
                 null, null, null);
         BigInteger[] res = psm.calcUSDDToUSDX(new BigInteger("100000000000000000000"), 6, new BigInteger("11234567890123456"));
         Assert.isTrue(res[0].compareTo(new BigInteger("98889024")) == 0, "Value not equal");
@@ -20,7 +20,7 @@ public class TestPSM {
 
     @Test
     public void testCalcUSDXToUSDD() {
-        PSM psm = new PSM(ContractType.CONTRACT_PSM, "", "", "", null,
+        PSM psm = new PSM("", ContractType.CONTRACT_PSM, "", "", null,
                 null, null, null);
 
         BigInteger[] res = psm.calcUSDXToUSDD(new BigInteger("1101359"), 6, new BigInteger("1234567890123456"));

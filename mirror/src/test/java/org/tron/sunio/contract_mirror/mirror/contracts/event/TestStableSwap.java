@@ -23,11 +23,11 @@ public class TestStableSwap {
         OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
+                "",
                 null,
                 null,
                 3,
                 2,
-                "",
                 Curve2PoolEvent.getSigMap()
         );
         OldCurvePoolData data = new OldCurvePoolData();
@@ -68,11 +68,11 @@ public class TestStableSwap {
         NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
+                "stablepool",
                 3,
                 2,
                 new BigInteger[]{new BigInteger("1000000000000000000000000000000"), new BigInteger("1000000000000000000")},
                 new BigInteger[]{new BigInteger("1000000000000"), new BigInteger("1")},
-                "",
                 null,
                 contractsHelper,
                 Curve2PoolEvent.getSigMap()
@@ -108,11 +108,11 @@ public class TestStableSwap {
         OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
+                "",
                 null,
                 null,
                 3,
                 2,
-                "",
                 Curve2PoolEvent.getSigMap()
         );
         OldCurvePoolData data = new OldCurvePoolData();
@@ -153,11 +153,11 @@ public class TestStableSwap {
         NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
+                "stablepool",
                 3,
                 2,
                 new BigInteger[]{new BigInteger("1000000000000000000000000000000"), new BigInteger("1000000000000000000")},
                 new BigInteger[]{new BigInteger("1000000000000"), new BigInteger("1")},
-                "",
                 null,
                 contractsHelper,
                 Curve2PoolEvent.getSigMap()
@@ -196,11 +196,11 @@ public class TestStableSwap {
         OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
+                "",
                 null,
                 null,
                 3,
                 2,
-                "",
                 Curve2PoolEvent.getSigMap()
         );
         OldCurvePoolData data = new OldCurvePoolData();
@@ -241,11 +241,11 @@ public class TestStableSwap {
         NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
+                "stablepool",
                 3,
                 2,
                 new BigInteger[]{new BigInteger("1000000000000000000000000000000"), new BigInteger("1000000000000000000")},
                 new BigInteger[]{new BigInteger("1000000000000"), new BigInteger("1")},
-                "",
                 null,
                 contractsHelper,
                 Curve2PoolEvent.getSigMap()
@@ -282,11 +282,11 @@ public class TestStableSwap {
         OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
+                "",
                 null,
                 null,
                 3,
                 2,
-                "",
                 Curve2PoolEvent.getSigMap()
         );
         OldCurvePoolData data = new OldCurvePoolData();
@@ -327,11 +327,11 @@ public class TestStableSwap {
         NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
+                "stablepool",
                 3,
                 2,
                 new BigInteger[]{new BigInteger("1000000000000000000000000000000"), new BigInteger("1000000000000000000")},
                 new BigInteger[]{new BigInteger("1000000000000"), new BigInteger("1")},
-                "",
                 null,
                 contractsHelper,
                 Curve2PoolEvent.getSigMap()
@@ -369,11 +369,11 @@ public class TestStableSwap {
         OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
+                "",
                 null,
                 null,
                 3,
                 2,
-                "",
                 Curve2PoolEvent.getSigMap()
         );
         OldCurvePoolData data = new OldCurvePoolData();
@@ -414,11 +414,11 @@ public class TestStableSwap {
         NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
+                "stablepool",
                 3,
                 2,
                 new BigInteger[]{new BigInteger("1000000000000000000000000000000"), new BigInteger("1000000000000000000")},
                 new BigInteger[]{new BigInteger("1000000000000"), new BigInteger("1")},
-                "",
                 null,
                 contractsHelper,
                 Curve2PoolEvent.getSigMap()
@@ -456,11 +456,11 @@ public class TestStableSwap {
         OldCurvePool curve3Pool = new OldCurvePool(
                 "TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E",
                 ContractType.CONTRACT_CURVE_2POOL,
+                "",
                 null,
                 null,
                 3,
                 2,
-                "",
                 Curve2PoolEvent.getSigMap()
         );
         OldCurvePoolData data = new OldCurvePoolData();
@@ -501,11 +501,11 @@ public class TestStableSwap {
         NewCurvePool newCurvePool = new NewCurvePool(
                 "TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr",
                 ContractType.STABLE_SWAP_POOL,
+                "stablepool",
                 3,
                 2,
                 new BigInteger[]{new BigInteger("1000000000000000000000000000000"), new BigInteger("1000000000000000000")},
                 new BigInteger[]{new BigInteger("1000000000000"), new BigInteger("1")},
-                "",
                 null,
                 contractsHelper,
                 Curve2PoolEvent.getSigMap()

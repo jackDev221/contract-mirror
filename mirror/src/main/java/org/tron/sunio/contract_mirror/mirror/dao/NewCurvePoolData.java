@@ -67,7 +67,6 @@ public class NewCurvePoolData extends BaseContractData {
     private String futureOwner;
     private BigInteger lpTotalSupply;
     private BigInteger baseLpTotalSupply;
-    private String poolName;
 
     public NewCurvePoolData(int coinsCount, int baseCoinsCount) {
         coins = new String[coinsCount];

@@ -41,16 +41,17 @@ public class ContractStatusController {
     ResultResponse<Object> queryContractConstMethod(
             @ApiParam(name = "address", value = "合约地址") @PathVariable("address") String address,
             @ApiParam(name = "method", value = "合约方法") @PathVariable("method") String method) {
-        BaseContract baseContract = contractMirror.getContract(address);
-        if (ObjectUtil.isNull(baseContract)) {
-            return RestResultGenerator.genErrorResult(ResponseEnum.SERVER_ERROR);
-        }
+
         try {
+            BaseContract baseContract = contractMirror.getContract(address);
+            if (ObjectUtil.isNull(baseContract)) {
+                return RestResultGenerator.genErrorWithMessage(String.format("Not find contract:%s", address));
+            }
             var res = baseContract.handRequest(method, "");
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
             log.error("Fail to response request: address:{}, method:{}, error:{}", address, method, e.toString());
-            return RestResultGenerator.genErrorWithMessage(e.getMessage());
+            return RestResultGenerator.genErrorWithMessage(String.format("Not find contract:%s method:%s", address, method));
         }
     }
 
@@ -59,16 +60,16 @@ public class ContractStatusController {
             @ApiParam(name = "address", value = "合约地址") @PathVariable("address") String address,
             @ApiParam(name = "method", value = "合约方法") @PathVariable("method") String method,
             @RequestBody ContractCallParams param) {
-        BaseContract baseContract = contractMirror.getContract(address);
-        if (ObjectUtil.isNull(baseContract)) {
-            return RestResultGenerator.genErrorResult(ResponseEnum.SERVER_ERROR);
-        }
         try {
+            BaseContract baseContract = contractMirror.getContract(address);
+            if (ObjectUtil.isNull(baseContract)) {
+                return RestResultGenerator.genErrorWithMessage(String.format("Not find contract:%s", address));
+            }
             var res = baseContract.handRequest(method, param.getParams());
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
             log.error("Fail to response request: address:{}, method:{}, error:{}", address, method, e.toString());
-            return RestResultGenerator.genErrorWithMessage(e.getMessage());
+            return RestResultGenerator.genErrorWithMessage(String.format("Not find contract:%s method:%s", address, method));
         }
     }
 
@@ -103,16 +104,16 @@ public class ContractStatusController {
     @GetMapping(value = CONTRACT_VERSION)
     public ResultResponse<Object> queryContractVersion(
             @ApiParam(name = "address", value = "合约地址") @PathVariable("address") String address) {
-        BaseContract baseContract = contractMirror.getContract(address);
-        if (ObjectUtil.isNull(baseContract)) {
-            return RestResultGenerator.genErrorResult(ResponseEnum.SERVER_ERROR);
-        }
         try {
+            BaseContract baseContract = contractMirror.getContract(address);
+            if (ObjectUtil.isNull(baseContract)) {
+                return RestResultGenerator.genErrorWithMessage(String.format("Not find contract:%s", address));
+            }
             var res = baseContract.handRequest(METHOD_VERSION, "");
             return RestResultGenerator.genResult(res);
         } catch (Exception e) {
             log.error("Fail to response request: contract:{} version, error:{}", address, e.toString());
-            return RestResultGenerator.genErrorWithMessage(e.getMessage());
+            return RestResultGenerator.genErrorWithMessage(String.format("Not find contract:%s", address));
         }
     }
 }

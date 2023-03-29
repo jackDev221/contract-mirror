@@ -30,7 +30,6 @@ public class PSMData extends BaseContractData {
     private BigInteger maxSwapUSDD; // info[3]
     private BigInteger usddBalance; // info[5]
     private BigInteger usdBalance; //   info[4]
-    private String poolName;
     private String tokenSymbol;
     private String token;
     private int tokenDecimal;
