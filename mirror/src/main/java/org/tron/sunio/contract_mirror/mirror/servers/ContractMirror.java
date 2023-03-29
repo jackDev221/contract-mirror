@@ -290,7 +290,9 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
     @Override
     public BaseContract getContract(String address) {
         BaseContract baseContract = this.contractHashMap.get(address);
-        baseContract = baseContract.copySelf();
+        if (ObjectUtil.isNotNull(baseContract)) {
+            baseContract = baseContract.copySelf();
+        }
         return baseContract;
     }
 

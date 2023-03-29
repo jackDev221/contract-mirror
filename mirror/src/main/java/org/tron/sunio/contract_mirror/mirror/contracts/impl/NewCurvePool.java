@@ -318,7 +318,7 @@ public class NewCurvePool extends AbstractCurve {
 
     @Override
     public double calcBasePoolFee(String uniqueId, long timestamp, int j, IContractsHelper iContractsHelper) {
-//        AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(this.getVarStableSwapBasePoolData(uniqueId).getBasePool());
+//        AbstractCurve curve =  AbstractCurve curve = getAbstractCurve(this.getVarStableSwapBasePoolData(uniqueId).getBasePool(), iContractsHelper);
 //        return curve.calcFee(uniqueId, timestamp, j, iContractsHelper);
         return 0.0004;
     }
@@ -950,7 +950,7 @@ public class NewCurvePool extends AbstractCurve {
             } else {
                 BigInteger[] baseIputs = empty(baseCoinsCount);
                 baseIputs[baseI] = dxWFee;
-                AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(basePool);
+                AbstractCurve curve = getAbstractCurve(basePool, iContractsHelper);
                 dxWFee = curve.addLiquidity(uniqueId, baseIputs, BigInteger.ZERO, timestamp, iContractsHelper);
                 x = dxWFee.multiply(rates[maxCoin]).divide(PRECISION);
                 x = x.add(xp[maxCoin]);
@@ -967,7 +967,7 @@ public class NewCurvePool extends AbstractCurve {
             data.updateBalances(metaJ, balanceJ);
 
             if (baseJ >= 0) {
-                AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(basePool);
+                AbstractCurve curve = getAbstractCurve(basePool, iContractsHelper);
                 dy = curve.removeLiquidityOneCoin(uniqueId, dy, baseJ, BigInteger.ZERO, timestamp, iContractsHelper);
             }
 
@@ -975,7 +975,7 @@ public class NewCurvePool extends AbstractCurve {
                 throw new Exception("Too few coins in result");
             }
         } else {
-            AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(basePool);
+            AbstractCurve curve = getAbstractCurve(basePool, iContractsHelper);
             dy = curve.exchange(uniqueId, baseI, baseJ, dxWFee, mindy, timestamp, iContractsHelper);
         }
         return dy;
@@ -1030,7 +1030,7 @@ public class NewCurvePool extends AbstractCurve {
         NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueID);
         try {
             if (timeStamp > data.getBaseCacheUpdated().longValue() + BASE_CACHE_EXPIRES) {
-                AbstractCurve curve = ((AbstractCurve) iContractsHelper.getContract(data.getBasePool()));
+                AbstractCurve curve = getAbstractCurve(data.getBasePool(), iContractsHelper);
                 BigInteger price = curve.getVirtualPrice(uniqueID, 0, iContractsHelper);
 
                 data.setBaseVirtualPrice(price);
@@ -1046,7 +1046,7 @@ public class NewCurvePool extends AbstractCurve {
         NewCurvePoolData data = this.getVarNewCurvePoolData(uniqueID);
         try {
             if (timeStamp > data.getBaseCacheUpdated().longValue() + BASE_CACHE_EXPIRES) {
-                AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(data.getBasePool());
+                AbstractCurve curve = getAbstractCurve(data.getBasePool(), iContractsHelper);
                 return curve.getVirtualPrice(uniqueID, 0, iContractsHelper);
             }
         } catch (Exception e) {
@@ -1231,12 +1231,12 @@ public class NewCurvePool extends AbstractCurve {
             if (baseJ < 0) {
                 BigInteger[] baseInput = empty(baseCoinsCount);
                 baseInput[baseI] = _dx;
-                AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(data.getBasePool());
+                AbstractCurve curve = getAbstractCurve(data.getBasePool(), iContractsHelper);
                 x = (curve).calcTokenAmount(uniqueId, timestamp, baseInput, true, iContractsHelper).multiply(vpRate).divide(PRECISION);
                 x = x.subtract(x.multiply(curve.fee()).divide(BigInteger.TWO.multiply(FEE_DENOMINATOR)));
                 x = x.add(xp[maxCoin]);
             } else {
-                AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(data.getBasePool());
+                AbstractCurve curve = getAbstractCurve(data.getBasePool(), iContractsHelper);
                 return curve.getDy(uniqueId, baseI, baseJ, _dx, timestamp, iContractsHelper);
             }
         }
@@ -1247,7 +1247,7 @@ public class NewCurvePool extends AbstractCurve {
         if (baseJ < 0) {
             dy = dy.divide(precisions[metaJ]);
         } else {
-            AbstractCurve curve = (AbstractCurve) iContractsHelper.getContract(data.getBasePool());
+            AbstractCurve curve = getAbstractCurve(data.getBasePool(), iContractsHelper);
             dy = curve.calcWithdrawOneCoin(uniqueId, timestamp, dy.multiply(PRECISION).divide(vpRate), baseJ, iContractsHelper);
         }
 

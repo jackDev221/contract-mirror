@@ -1,5 +1,6 @@
 package org.tron.sunio.contract_mirror.mirror.contracts.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import lombok.Setter;
 import org.tron.sunio.contract_mirror.mirror.chainHelper.IChainHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
@@ -85,4 +86,14 @@ public abstract class AbstractCurve extends BaseContract {
         return null;
     }
 
+    protected AbstractCurve getAbstractCurve(String address, IContractsHelper iContractsHelper) throws Exception {
+        BaseContract baseContract = iContractsHelper.getContract(address);
+        if (ObjectUtil.isNull(baseContract)) {
+            throw new Exception(String.format("Contract %s not found", address));
+        }
+        if (!(baseContract instanceof AbstractCurve)) {
+            throw new Exception(String.format("Contract %s not instanceof AbstractCurve", address));
+        }
+        return (AbstractCurve) baseContract;
+    }
 }
