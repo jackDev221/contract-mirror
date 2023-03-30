@@ -16,6 +16,7 @@ import org.tron.defi.contract_mirror.strategy.StrategyFactory;
 import org.tron.defi.contract_mirror.utils.TokenMath;
 
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,18 +37,19 @@ public class RouterService {
     public RouterService(MeterRegistry meterRegistry) {
         candidateNum = DistributionSummary.builder("num_router_candidates")
                                           .description("Number of path candidates")
-                                          .publishPercentileHistogram()
                                           .publishPercentiles(0.5, 0.8, 0.99)
-                                          .percentilePrecision(3)
+                                          .minimumExpectedValue(0L)
                                           .register(meterRegistry);
         for (String strategy : StrategyFactory.getInstance().getStrategyNames()) {
             strategyDuration.put(strategy,
                                  DistributionSummary.builder("strategy_duration_" + strategy)
                                                     .description("Time token for strategy")
                                                     .baseUnit("ms")
-                                                    .publishPercentileHistogram()
                                                     .publishPercentiles(0.5, 0.95, 0.99, 0.9999)
-                                                    .percentilePrecision(5)
+                                                    .percentilePrecision(2)
+                                                    .minimumExpectedValue(0L)
+                                                    .maximumExpectedValue(Duration.ofSeconds(10)
+                                                                                  .toMillis())
                                                     .register(meterRegistry));
         }
     }

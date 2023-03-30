@@ -16,6 +16,7 @@ import org.tron.defi.contract_mirror.dto.legacy.PriceResponse;
 import org.tron.defi.contract_mirror.utils.RestClient;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -49,9 +50,10 @@ public class PriceService {
         priceCenterDuration = DistributionSummary.builder("http_price_center_duration")
                                                  .description("Time token to call price center")
                                                  .baseUnit("ms")
-                                                 .publishPercentileHistogram()
                                                  .publishPercentiles(0.5, 0.95, 0.99, 0.9999)
-                                                 .percentilePrecision(5)
+                                                 .minimumExpectedValue(0L)
+                                                 .maximumExpectedValue(Duration.ofSeconds(10)
+                                                                               .toMillis())
                                                  .register(meterRegistry);
     }
 
