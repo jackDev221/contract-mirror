@@ -39,6 +39,7 @@ public class RouterService {
                                           .description("Number of path candidates")
                                           .publishPercentileHistogram()
                                           .publishPercentiles(0.5, 0.8, 0.99)
+                                          .percentilePrecision(2)
                                           .maximumExpectedValue(100000L)
                                           .distributionStatisticExpiry(Duration.ofMinutes(1))
                                           .register(meterRegistry);

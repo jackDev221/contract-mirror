@@ -53,6 +53,7 @@ public class PriceService {
                                                  .distributionStatisticExpiry(Duration.ofMinutes(1))
                                                  .publishPercentileHistogram()
                                                  .publishPercentiles(0.5, 0.95, 0.99, 0.9999)
+                                                 .percentilePrecision(2)
                                                  .maximumExpectedValue(Duration.ofSeconds(10)
                                                                                .toMillis())
                                                  .register(meterRegistry);
