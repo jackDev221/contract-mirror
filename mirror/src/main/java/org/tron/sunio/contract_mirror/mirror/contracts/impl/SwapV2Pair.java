@@ -320,14 +320,10 @@ public class SwapV2Pair extends BaseContract {
         BigInteger amount1Out = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
         BigInteger balance0;
         BigInteger balance1;
-
-        if (amount0In.compareTo(BigInteger.ZERO) > 0) {
-            balance0 = swapV2PairData.getReserve0().add(amount0In);
-            balance1 = swapV2PairData.getReserve1().subtract(amount1Out);
-        } else {
-            balance1 = swapV2PairData.getReserve1().add(amount1In);
-            balance0 = swapV2PairData.getReserve0().subtract(amount0Out);
-        }
+        balance0 = swapV2PairData.getReserve0().add(amount0In);
+        balance0 = balance0.subtract(amount0Out);
+        balance1 = swapV2PairData.getReserve1().add(amount1In);
+        balance1 = balance1.subtract(amount1Out);
         update(balance0, balance1, handleEventExtraData.getTimeStamp(), swapV2PairData);
         isDirty = true;
         return HandleResult.genHandleSuccess();
