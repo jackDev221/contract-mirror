@@ -38,6 +38,8 @@ dependencies {
     implementation "org.web3j:abi:${web3jVersion}"
 
     implementation "io.micrometer:micrometer-registry-prometheus:${micrometerVersion}"
+    implementation "io.prometheus:simpleclient:${prometheusVersion}"
+    implementation "io.prometheus:simpleclient_hotspot:${prometheusVersion}"
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
     testImplementation "org.apache.commons:commons-lang3:${apacheCommonsVersion}"
