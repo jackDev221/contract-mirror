@@ -39,14 +39,13 @@ public class ContractFactoryManager {
 
     @Autowired
     private PSMTotalData psmTotalData;
-    private List<String> psmContracts = new ArrayList<>();
+    private final List<String> psmContracts = new ArrayList<>();
 
-    private HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
+    private final HashMap<String, IContractFactory> contractFactoryHashMap = new HashMap<>();
     private Map<String, String> v1FactorySigMap;
     private Map<String, String> v2FactorySigMap;
     private Map<String, String> curve2PoolSigMap;
     private Map<String, String> curve3PoolSigMap;
-    private Map<String, String> curve4PoolSigMap;
     private Map<String, String> psmSigMap;
 
 
@@ -55,7 +54,6 @@ public class ContractFactoryManager {
         v2FactorySigMap = SwapV2FactoryEvent.getSigMap();
         curve2PoolSigMap = Curve2PoolEvent.getSigMap();
         curve3PoolSigMap = Curve3PoolEvent.getSigMap();
-        curve4PoolSigMap = Curve4PoolEvent.getSigMap();
         psmSigMap = PSMEvent.getSigMap();
     }
 

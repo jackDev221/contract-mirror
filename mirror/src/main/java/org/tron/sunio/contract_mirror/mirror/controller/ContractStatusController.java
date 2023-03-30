@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.tron.sunio.contract_mirror.mirror.contracts.BaseContract;
 import org.tron.sunio.contract_mirror.mirror.controller.request.ContractCallParams;
-import org.tron.sunio.contract_mirror.mirror.enums.ResponseEnum;
 import org.tron.sunio.contract_mirror.mirror.response.RestResultGenerator;
 import org.tron.sunio.contract_mirror.mirror.response.ResultResponse;
 import org.tron.sunio.contract_mirror.mirror.router.RoutItem;
@@ -74,13 +73,13 @@ public class ContractStatusController {
     }
 
     @GetMapping(value = CONTRACT_ROUTING)
-    public ResultResponse<Object> routerV2(@RequestParam(name = "fromToken", required = true) String fromToken,
-                                           @RequestParam(name = "toToken", required = true) String toToken,
-                                           @RequestParam(name = "fromTokenAddr", required = true) String fromTokenAddr,
-                                           @RequestParam(name = "toTokenAddr", required = true) String toTokenAddr,
-                                           @RequestParam(name = "inAmount", required = true) String inAmount,
-                                           @RequestParam(name = "fromDecimal", required = true) int fromDecimal,
-                                           @RequestParam(name = "toDecimal", required = true) int toDecimal,
+    public ResultResponse<Object> routerV2(@RequestParam(name = "fromToken") String fromToken,
+                                           @RequestParam(name = "toToken") String toToken,
+                                           @RequestParam(name = "fromTokenAddr") String fromTokenAddr,
+                                           @RequestParam(name = "toTokenAddr") String toTokenAddr,
+                                           @RequestParam(name = "inAmount") String inAmount,
+                                           @RequestParam(name = "fromDecimal") int fromDecimal,
+                                           @RequestParam(name = "toDecimal") int toDecimal,
                                            @RequestParam(name = "useBaseTokens", required = false, defaultValue = "true") boolean isUseBaseToken
     ) {
 

@@ -54,7 +54,7 @@ public class PSM extends BaseContract {
     private static final String FILE_TYPE_QUOTA = "quota";
     @Setter
     private PSMData psmData;
-    private String polyAddress;
+    private final String polyAddress;
     private String token;
     @Setter
     private PSMTotalData psmTotalData;
@@ -81,7 +81,7 @@ public class PSM extends BaseContract {
 
     public PSM(ContractType type, PSMData psmData, PSMTotalData psmTotalData, IChainHelper iChainHelper, IContractsHelper
             iContractsHelper, Map<String, String> sigMap) {
-        this( psmData.getAddress(), type, psmData.getVersion(), psmData.getPolyAddress(), iChainHelper, iContractsHelper, psmTotalData, sigMap);
+        this(psmData.getAddress(), type, psmData.getVersion(), psmData.getPolyAddress(), iChainHelper, iContractsHelper, psmTotalData, sigMap);
         this.setPsmData(psmData);
         this.setPsmTotalData(psmTotalData);
     }
@@ -153,6 +153,7 @@ public class PSM extends BaseContract {
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     private void loadInfosField(PSMData psmData) {
         Address inAddress = new Address(WalletUtil.ethAddressHex(this.getAddress()));
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(this.address, polyAddress, "getInfo",
@@ -175,6 +176,7 @@ public class PSM extends BaseContract {
         psmData.setReverseLimitEnable(infoArray.get(8).getValue().compareTo(BigInteger.ONE) == 0);
     }
 
+    @SuppressWarnings("unchecked")
     public BigInteger[] getTotalInfos() {
         Address inAddress = new Address(WalletUtil.ethAddressHex(this.getAddress()));
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(this.address, polyAddress, "getInfo",
@@ -227,6 +229,7 @@ public class PSM extends BaseContract {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getStatus() {
         return (T) getVarPsmData();
     }
@@ -237,6 +240,7 @@ public class PSM extends BaseContract {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T handleSpecialRequest(String method, String params) throws Exception {
         switch (method) {
             case METHOD_GEM_JOIN:
@@ -277,7 +281,7 @@ public class PSM extends BaseContract {
             String quota = WalletUtil.hexStringToTron((String) eventValues.getNonIndexedValues().get(0).getValue());
             psmData.setQuota(quota);
         } else {
-            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s handleEventFile cat find what:{}!, unique id :%s",
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s handleEventFile cat find what:%s!, unique id :%s",
                     address, type, what, handleEventExtraData.getUniqueId()));
         }
         isDirty = true;
@@ -437,7 +441,7 @@ public class PSM extends BaseContract {
         try {
             return GsonUtil.gsonToObject(input, ContractExtraData.class);
         } catch (Exception e) {
-            log.error("Parse psm failed, input:{} err:{}", e);
+            log.error("Parse psm failed, input:{} err:{}", input, e);
         }
         return null;
     }

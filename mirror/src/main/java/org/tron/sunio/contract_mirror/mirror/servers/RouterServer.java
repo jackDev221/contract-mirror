@@ -53,15 +53,15 @@ public class RouterServer {
     private static final String TRX_SYMBOL = "TRX";
     private static final String USDD = "USDD";
 
-    private ConcurrentMap<String, RoutNode> routNodeMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, RoutNode> routNodeMap = new ConcurrentHashMap<>();
     // 之后考虑用缓存
-    private ConcurrentMap<String, List<List<StepInfo>>> cachedPaths = new ConcurrentHashMap<>();
+//    private final ConcurrentMap<String, List<List<StepInfo>>> cachedPaths = new ConcurrentHashMap<>();
 
     @Autowired
     private TokenPrice tokenPrice;
 
-    private Map<String, String> baseTokensMap = new HashMap<>();
-    private Map<String, String> baseTokenSymbolsMap = new HashMap<>();
+    private final Map<String, String> baseTokensMap = new HashMap<>();
+    private final Map<String, String> baseTokenSymbolsMap = new HashMap<>();
 
 
     @Autowired
@@ -101,9 +101,7 @@ public class RouterServer {
             }
             long t2 = System.currentTimeMillis();
             log.info("RouterServer finish calc result, cast {}", t2 - t1);
-            res = res.stream().sorted(Comparator.comparing(RoutItem::getAmountV, (s1, s2) -> {
-                return (new BigDecimal(s2)).compareTo(new BigDecimal(s1));
-            })).collect(Collectors.toList());
+            res = res.stream().sorted(Comparator.comparing(RoutItem::getAmountV, (s1, s2) -> (new BigDecimal(s2)).compareTo(new BigDecimal(s1)))).collect(Collectors.toList());
             if (res.size() > routerConfig.getMaxResultSize()) {
                 res = res.subList(0, routerConfig.getMaxResultSize());
             }
@@ -517,7 +515,7 @@ public class RouterServer {
         if (IS_DEBUG) {
             for (RoutNode routNode : this.routNodeMap.values()) {
                 String start = routNode.getSymbol() + "/" + routNode.getAddress();
-                StringBuffer buff = new StringBuffer();
+                StringBuilder buff = new StringBuilder();
 
                 for (RoutNode subNode : routNode.getSubNodes()) {
                     buff.append(subNode.getSymbol());
@@ -525,8 +523,7 @@ public class RouterServer {
                     buff.append(subNode.getAddress());
                     buff.append(" ");
                 }
-
-                System.out.println(start + " ---> " + buff.toString());
+                log.info("{}: --> {}", start, buff);
             }
         }
     }

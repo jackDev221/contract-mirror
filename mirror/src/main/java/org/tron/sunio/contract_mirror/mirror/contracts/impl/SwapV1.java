@@ -45,8 +45,8 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.V
 @Slf4j
 public class SwapV1 extends BaseContract {
 
-    private String tokenAddress;
-    private String factory;
+    private final String tokenAddress;
+    private final String factory;
     @Setter
     private SwapV1Data swapV1Data;
 
@@ -308,7 +308,7 @@ public class SwapV1 extends BaseContract {
     }
 
     private HandleResult handleAdminFeeMint(String[] topics, String data) {
-        log.info("handleAdminFeeMint not implements!");
+        log.info("handleAdminFeeMint not implements!, {}, {}", topics, data);
         return HandleResult.genHandleFailMessage("handleAdminFeeMint not implements!");
     }
 
@@ -351,7 +351,7 @@ public class SwapV1 extends BaseContract {
     }
 
     private HandleResult handleTokenToToken(String[] topics, String data) {
-        log.info("TokenToToken not implements!");
+        log.info("TokenToToken not implements!,{}, {}", topics, data);
         return HandleResult.genHandleFailMessage("handleTokenToToken not implements!");
     }
 
@@ -492,10 +492,9 @@ public class SwapV1 extends BaseContract {
         if (baseContract instanceof SwapV1) {
             SwapV1 swapV1 = (SwapV1) baseContract;
 
-            BigInteger tokensBought = swapV1.trxToTokenInput(trxBought, minTokensBought, swapV1Data);
-            return tokensBought;
+            return swapV1.trxToTokenInput(trxBought, minTokensBought, swapV1Data);
         } else {
-            throw new Exception(String.format("Get %s contract instance not SwapV1"));
+            throw new Exception(String.format("Get %s contract instance not SwapV1", address));
         }
     }
 
@@ -515,7 +514,7 @@ public class SwapV1 extends BaseContract {
             BigInteger tokenSold = trxToTokenOutput(trxBought, maxTokenSold, swapV1Data);
             return tokenSold;
         } else {
-            throw new Exception(String.format("Get %s contract instance not SwapV1"));
+            throw new Exception(String.format("Get %s contract instance not SwapV1", address));
         }
     }
 

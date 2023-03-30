@@ -53,7 +53,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.V
 public class SwapV2Pair extends BaseContract {
     private static final BigInteger Q112 = BigInteger.TWO.pow(112);
     private static final BigInteger MINIMUM_LIQUIDITY = BigInteger.TEN.pow(3);
-    private String factory;
+    private final String factory;
     @Setter
     private SwapV2PairData swapV2PairData;
 
@@ -386,12 +386,12 @@ public class SwapV2Pair extends BaseContract {
         return new BigInteger[]{amount0, amount1};
     }
 
-    public BigInteger mint(BigInteger amount0, BigInteger amount1, long timeStamp) throws Exception {
+    public BigInteger mint(BigInteger amount0, BigInteger amount1, long timeStamp){
         SwapV2PairData v2PairData = this.getSwapV2PairData();
         return mint(amount0, amount1, timeStamp, v2PairData);
     }
 
-    public BigInteger mint(BigInteger amount0, BigInteger amount1, long timeStamp, SwapV2PairData swapV2PairData) throws Exception {
+    public BigInteger mint(BigInteger amount0, BigInteger amount1, long timeStamp, SwapV2PairData swapV2PairData){
         BigInteger reserve0 = swapV2PairData.getReserve0();
         BigInteger reserve1 = swapV2PairData.getReserve1();
         boolean feeOn = mintFee(reserve0, reserve1, swapV2PairData);

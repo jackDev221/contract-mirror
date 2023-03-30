@@ -53,13 +53,13 @@ public class NewCurvePool extends AbstractCurve {
     private static final BigInteger A_PRECISION = new BigInteger("100");
     private static final long BASE_CACHE_EXPIRES = 600;
     @Getter
-    private int coinsCount;
+    private final int coinsCount;
     @Getter
-    private int baseCoinsCount;
+    private final int baseCoinsCount;
     @Getter
-    private BigInteger[] rates;
+    private final BigInteger[] rates;
     @Getter
-    private BigInteger[] precisionMul;
+    private final BigInteger[] precisionMul;
     @Setter
     private NewCurvePoolData newCurvePoolData;
     @Setter
@@ -182,7 +182,7 @@ public class NewCurvePool extends AbstractCurve {
         BigInteger[] newBalances = new BigInteger[coinsCount];
 
         for (int i = 0; i < coinsCount; i++) {
-            BigInteger inAmount = amounts[i];
+            BigInteger inAmount;
             if (tokenSupply.compareTo(BigInteger.ZERO) <= 0) {
                 throw new Exception("in_amount must gt 0");
             }
@@ -194,16 +194,16 @@ public class NewCurvePool extends AbstractCurve {
         if (d1.compareTo(d0) <= 0) {
             throw new Exception("D1 must gt D0");
         }
-        BigInteger mintAmount = BigInteger.ZERO;
+        BigInteger mintAmount;
         BigInteger[] fees = empty(coinsCount);
         BigInteger d2 = d1;
 
         if (tokenSupply.compareTo(BigInteger.ZERO) > 0) {
-            BigInteger _fee = poolData.getFee().multiply(BigInteger.valueOf(coinsCount)).divide(BigInteger.valueOf((coinsCount - 1) * 4));
+            BigInteger _fee = poolData.getFee().multiply(BigInteger.valueOf(coinsCount)).divide(BigInteger.valueOf((coinsCount - 1) * 4L));
             BigInteger _admin_fee = poolData.getAdminFee();
             for (int i = 0; i < coinsCount; i++) {
                 BigInteger idealBalance = d1.multiply(oldBalances[i]).divide(d0);
-                BigInteger difference = BigInteger.ZERO;
+                BigInteger difference;
 
                 if (idealBalance.compareTo(newBalances[i]) > 0) {
                     difference = idealBalance.subtract(newBalances[i]);
@@ -238,7 +238,7 @@ public class NewCurvePool extends AbstractCurve {
         BigInteger vpRate = vpRate(uniqueId, timestamp, iContractsHelper);
         BigInteger[] calRes = localCalcWithdrawOneCoin(uniqueId, _token_amount, i, vpRate, timestamp, poolData);
         if (calRes[0].compareTo(min_amount) < 0) {
-            new Exception("Not enough coins removed");
+            throw new Exception("Not enough coins removed");
         }
         poolData.getBalances()[i] = poolData.getBalances()[i].subtract(calRes[0].add(calRes[1].multiply(
                 poolData.getAdminFee()).divide(FEE_DENOMINATOR)));
@@ -533,8 +533,9 @@ public class NewCurvePool extends AbstractCurve {
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected HandleResult handleEventAddLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventAddLiquidity:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventAddLiquidity:{}, {}, {}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         String body = Curve2PoolEvent.EVENT_NAME_ADD_LIQUIDITY_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_ADD_LIQUIDITY_BODY;
@@ -552,7 +553,7 @@ public class NewCurvePool extends AbstractCurve {
             vpRate(handleEventExtraData.getUniqueId(), handleEventExtraData.getTimeStamp(), this.iContractsHelper);
             List<Uint256> amountsNew = new ArrayList<>();
             for (int i = 0; i < coinsCount; i++) {
-                BigInteger amountWFee = getAmountWFee(i, (BigInteger) amounts.getValue().get(i).getValue());
+                BigInteger amountWFee = getAmountWFee(i, amounts.getValue().get(i).getValue());
                 BigInteger originBalance = curveData.getBalances()[i];
                 BigInteger newBalance = originBalance.add(amountWFee);
                 if (curveData.getLpTotalSupply().compareTo(BigInteger.ZERO) > 0) {
@@ -587,8 +588,9 @@ public class NewCurvePool extends AbstractCurve {
 
     }
 
+    @SuppressWarnings("unchecked")
     protected HandleResult handleEventRemoveLiquidity(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventRemoveLiquidity:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventRemoveLiquidity:{}, {}, {}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         String body = Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_BODY;
@@ -606,7 +608,7 @@ public class NewCurvePool extends AbstractCurve {
             List<Uint256> amountsNew = new ArrayList<>();
             for (int i = 0; i < coinsCount; i++) {
                 BigInteger origin = curveData.getBalances()[i];
-                BigInteger newBalance = origin.subtract((BigInteger) amounts.getValue().get(i).getValue());
+                BigInteger newBalance = origin.subtract(amounts.getValue().get(i).getValue());
                 curveData.updateBalances(i, newBalance);
                 amountsNew.add(new Uint256(newBalance));
             }
@@ -633,15 +635,16 @@ public class NewCurvePool extends AbstractCurve {
     }
 
     protected HandleResult handleEventRemoveLiquidityOne(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventRemoveLiquidityOne:{}:{},{}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventRemoveLiquidityOne:{}:{},{}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         updateBaseInfo(isUsing, false, isAddExchangeContracts);
         this.isReady = false;
         this.isDirty = true;
         return HandleResult.genHandleSuccess();
     }
 
+    @SuppressWarnings("unchecked")
     protected HandleResult handleEventRemoveLiquidityImbalance(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventRemoveLiquidityImbalance:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventRemoveLiquidityImbalance:{}, {}, {}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         String body = Curve2PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_REMOVE_LIQUIDITY_IM_BALANCE_BODY;
@@ -691,7 +694,7 @@ public class NewCurvePool extends AbstractCurve {
     }
 
     protected HandleResult handleEventCommitNewAdmin(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventCommitNewAdmin:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventCommitNewAdmin:{}, {}, {}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         String body = Curve2PoolEvent.EVENT_NAME_COMMIT_NEW_ADMIN_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_COMMIT_NEW_ADMIN_BODY;
@@ -712,7 +715,7 @@ public class NewCurvePool extends AbstractCurve {
     }
 
     protected HandleResult handleEventNewAdmin(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventNewAdmin:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventNewAdmin:{}, {}, {}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         String body = Curve2PoolEvent.EVENT_NAME_NEW_ADMIN_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_NEW_ADMIN_BODY;
@@ -732,7 +735,7 @@ public class NewCurvePool extends AbstractCurve {
     }
 
     protected HandleResult handleEventNewFeeConverter(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventNewFeeConverter:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventNewFeeConverter:{}, {}, {}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         String body = Curve2PoolEvent.EVENT_NAME_NEW_FEE_CONVERTER_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_NEW_FEE_CONVERTER_BODY;
@@ -751,7 +754,7 @@ public class NewCurvePool extends AbstractCurve {
     }
 
     protected HandleResult handleEventCommitNewFee(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventCommitNewFee:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventCommitNewFee:{}, {}, {}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         String body = Curve2PoolEvent.EVENT_NAME_COMMIT_NEW_FEE_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_COMMIT_NEW_FEE_BODY;
@@ -774,7 +777,7 @@ public class NewCurvePool extends AbstractCurve {
     }
 
     protected HandleResult handleEventNewFee(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventNewFee:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventNewFee:{}, {}, {}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         String body = Curve2PoolEvent.EVENT_NAME_NEW_FEE_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_NEW_FEE_BODY;
@@ -796,7 +799,7 @@ public class NewCurvePool extends AbstractCurve {
     }
 
     protected HandleResult handleEventRampA(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventRampA:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventRampA:{}, {}, {}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         String body = Curve2PoolEvent.EVENT_NAME_RAMP_A_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_RAMP_A_BODY;
@@ -821,7 +824,7 @@ public class NewCurvePool extends AbstractCurve {
     }
 
     protected HandleResult handleEventStopRampA(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("{}:{} handleEventStopRampA:{}, {}, {}", address, type, handleEventExtraData.getUniqueId());
+        log.info("{}:{} handleEventStopRampA:{}, {}, {}", address, type, handleEventExtraData.getUniqueId(), topics, data);
         String body = Curve2PoolEvent.EVENT_NAME_STOP_RAMP_A_BODY;
         if (coinsCount == 3) {
             body = Curve3PoolEvent.EVENT_NAME_STOP_RAMP_A_BODY;
@@ -876,7 +879,7 @@ public class NewCurvePool extends AbstractCurve {
         }
         BigInteger D1 = getDMem(vpRate, new_balances, amp);
         BigInteger _fee = poolData.getFee().multiply(BigInteger.valueOf(coinsCount))
-                .divide(BigInteger.valueOf((coinsCount - 1) * 4));
+                .divide(BigInteger.valueOf((coinsCount - 1) * 4L));
 
         BigInteger _admin_fee = poolData.getAdminFee();
         BigInteger[] fees = new BigInteger[coinsCount];
@@ -927,24 +930,12 @@ public class NewCurvePool extends AbstractCurve {
         if (baseJ < 0) {
             metaJ = j;
         }
-        BigInteger dy = BigInteger.ZERO;
-        String inputCoin, outputCoin;
-        if (baseI < 0) {
-            inputCoin = data.getCoins()[i];
-        } else {
-            inputCoin = data.getBaseCoins()[baseI];
-        }
-
-        if (baseJ < 0) {
-            outputCoin = data.getCoins()[j];
-        } else {
-            outputCoin = data.getBaseCoins()[baseJ];
-        }
+        BigInteger dy;
         BigInteger dxWFee = getAmountWFee(i, _dx);
 
         if (baseI < 0 || baseJ < 0) {
             BigInteger[] xp = xpMem(rates[maxCoin], data.getBalances());
-            BigInteger x = BigInteger.ZERO;
+            BigInteger x;
             if (baseI < 0) {
                 x = xp[i].add(dxWFee.multiply(rates[i]).divide(PRECISION));
             } else {
@@ -1037,7 +1028,7 @@ public class NewCurvePool extends AbstractCurve {
                 data.setBaseCacheUpdated(BigInteger.valueOf(timeStamp));
             }
         } catch (Exception e) {
-
+            log.warn("vpRate input:{},{}, err:{}", uniqueID, timeStamp, e);
         }
         return data.getBaseVirtualPrice();
     }
@@ -1050,7 +1041,7 @@ public class NewCurvePool extends AbstractCurve {
                 return curve.getVirtualPrice(uniqueID, 0, iContractsHelper);
             }
         } catch (Exception e) {
-
+            log.warn("vpRateRo input:{},{}, err:{}", uniqueID, timeStamp, e);
         }
         return data.getBaseVirtualPrice();
     }
@@ -1147,7 +1138,7 @@ public class NewCurvePool extends AbstractCurve {
         BigInteger s_ = BigInteger.ZERO;
         BigInteger nCoins = BigInteger.valueOf(coinsCount);
         BigInteger ann = amp.multiply(nCoins);
-        BigInteger _x = BigInteger.ZERO;
+        BigInteger _x;
         for (int _i = 0; _i < coinsCount; _i++) {
             if (_i == i) {
                 _x = x;
@@ -1161,7 +1152,7 @@ public class NewCurvePool extends AbstractCurve {
         }
         c = c.multiply(d).multiply(A_PRECISION).divide(ann.multiply(nCoins));
         BigInteger b = s_.add(d.multiply(A_PRECISION).divide(ann));
-        BigInteger yPrev = BigInteger.ZERO;
+        BigInteger yPrev;
         BigInteger y = d;
         for (int _i = 0; _i < 255; _i++) {
             yPrev = y;
@@ -1224,7 +1215,7 @@ public class NewCurvePool extends AbstractCurve {
         if (baseJ < 0) {
             metaJ = j;
         }
-        BigInteger x = BigInteger.ZERO;
+        BigInteger x;
         if (baseI < 0) {
             x = xp[i].add(_dx.multiply(precisions[i]));
         } else {
@@ -1262,7 +1253,7 @@ public class NewCurvePool extends AbstractCurve {
         BigInteger s_ = BigInteger.ZERO;
         BigInteger nCoins = BigInteger.valueOf(coinsCount);
         BigInteger ann = a_.multiply(nCoins);
-        BigInteger _x = BigInteger.ZERO;
+        BigInteger _x;
         for (int _i = 0; _i < coinsCount; _i++) {
             if (_i != i) {
                 _x = xp[_i];
@@ -1274,7 +1265,7 @@ public class NewCurvePool extends AbstractCurve {
         }
         c = c.multiply(d).multiply(A_PRECISION).divide(ann.multiply(nCoins));
         BigInteger b = s_.add(d.multiply(A_PRECISION).divide(ann));
-        BigInteger yPrev = BigInteger.ZERO;
+        BigInteger yPrev;
         BigInteger y = d;
 
         for (int _i = 0; _i < 255; _i++) {
@@ -1302,7 +1293,7 @@ public class NewCurvePool extends AbstractCurve {
         BigInteger totalSupply = data.getLpTotalSupply();
         BigInteger d1 = d0.subtract(_token_amount.multiply(d0).divide(totalSupply));
         BigInteger newY = getYD(amp, i, xp, d1);
-        BigInteger _fee = data.getFee().multiply(nCoins).divide(BigInteger.valueOf((coinsCount - 1) * 4));
+        BigInteger _fee = data.getFee().multiply(nCoins).divide(BigInteger.valueOf((coinsCount - 1) * 4L));
 
         BigInteger[] rates = copyBigIntegerArray(this.rates);
         rates[coinsCount - 1] = vpRate;
@@ -1310,7 +1301,7 @@ public class NewCurvePool extends AbstractCurve {
         BigInteger dy0 = (xp[i].subtract(newY)).multiply(PRECISION).divide(rates[i]);  // w/o fees
 
         for (int j = 0; j < coinsCount; j++) {
-            BigInteger dxExpected = BigInteger.ZERO;
+            BigInteger dxExpected;
             if (j == i) {
                 dxExpected = xp[j].multiply(d1).divide(d0).subtract(newY);
             } else {
@@ -1341,10 +1332,9 @@ public class NewCurvePool extends AbstractCurve {
 
     public static ContractExtraData parseToExtraData(String input) {
         try {
-            ContractExtraData res = GsonUtil.gsonToObject(input, ContractExtraData.class);
-            return res;
+            return GsonUtil.gsonToObject(input, ContractExtraData.class);
         } catch (Exception e) {
-            log.error("Parse base stable swap pool failed, input:{} err:{}", e);
+            log.error("Parse base stable swap pool failed, input:{} err:{}", input, e);
         }
         return null;
     }

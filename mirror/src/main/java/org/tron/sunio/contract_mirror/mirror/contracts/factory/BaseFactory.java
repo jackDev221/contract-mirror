@@ -20,7 +20,7 @@ import java.util.Map;
 public class BaseFactory extends BaseContract implements IContractFactory {
     protected boolean hasNewContract;
     protected List<BaseContract> newSubContracts = new ArrayList<>();
-    private List<Integer> unFinshLoadSub = new ArrayList<>();
+    private List<Integer> unFinishLoadSub = new ArrayList<>();
 
     public BaseFactory(String address, ContractType type, String version, IChainHelper iChainHelper, IContractsHelper iContractsHelper, Map<String, String> sigMap) {
         super(address, type, version, iChainHelper, iContractsHelper, sigMap);
@@ -81,13 +81,13 @@ public class BaseFactory extends BaseContract implements IContractFactory {
     }
 
     protected List<BaseProcessOut> getListContractsBase(CMPool cmPool, int baseCount) {
-        log.info("Into BaseFactory: getListContractsBase:baseCount:{} unFinshLoadSub:{}", baseCount, unFinshLoadSub.size());
+        log.info("Into BaseFactory: getListContractsBase:baseCount:{} unFinishLoadSub:{}", baseCount, unFinishLoadSub.size());
         List<BaseProcessOut> result = new ArrayList<>();
-        if (baseCount <= 0 && unFinshLoadSub.size() == 0) {
+        if (baseCount <= 0 && unFinishLoadSub.size() == 0) {
             return Collections.emptyList();
         }
         List<Integer> unfinished = new ArrayList<>();
-        if (unFinshLoadSub.size() == 0) {
+        if (unFinishLoadSub.size() == 0) {
             cmPool.initCountDownLatch(baseCount);
             for (long i = 0; i < baseCount; i++) {
                 addTaskToPool(cmPool, i);
@@ -98,20 +98,20 @@ public class BaseFactory extends BaseContract implements IContractFactory {
                 getSubThreadReult(cmPool, result, unfinished, (int) i, key);
             }
         } else {
-            cmPool.initCountDownLatch(unFinshLoadSub.size());
-            for (Integer i : unFinshLoadSub) {
+            cmPool.initCountDownLatch(unFinishLoadSub.size());
+            for (Integer i : unFinishLoadSub) {
                 addTaskToPool(cmPool, i);
             }
             cmPool.waitFinish();
-            for (Integer i : unFinshLoadSub) {
+            for (Integer i : unFinishLoadSub) {
                 String key = this.type.getDesc() + "_" + i;
-                getSubThreadReult(cmPool, result, unfinished, (int) i, key);
+                getSubThreadReult(cmPool, result, unfinished, i, key);
             }
         }
         int finishCount = cmPool.getResultSize();
         log.info("BaseFactory: getListContractsBase Result: finishCount:{} unfinished:{}", finishCount, unfinished.size());
-        unFinshLoadSub.clear();
-        unFinshLoadSub.addAll(unfinished);
+        unFinishLoadSub.clear();
+        unFinishLoadSub.addAll(unfinished);
         return result;
     }
 
@@ -135,6 +135,6 @@ public class BaseFactory extends BaseContract implements IContractFactory {
     }
 
     public void resetLoadSubContractState() {
-        setAddExchangeContracts(unFinshLoadSub.size() == 0);
+        setAddExchangeContracts(unFinishLoadSub.size() == 0);
     }
 }

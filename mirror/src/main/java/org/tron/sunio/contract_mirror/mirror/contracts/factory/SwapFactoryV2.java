@@ -40,7 +40,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.V
 
 @Slf4j
 public class SwapFactoryV2 extends BaseFactory {
-    private Map<String, String> v2PairSigMap;
+    private final Map<String, String> v2PairSigMap;
     @Setter
     private SwapFactoryV2Data swapFactoryV2Data;
 
