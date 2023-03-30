@@ -51,7 +51,6 @@ public class PriceService {
                                                  .description("Time token to call price center")
                                                  .baseUnit("ms")
                                                  .publishPercentiles(0.5, 0.95, 0.99, 0.9999)
-                                                 .minimumExpectedValue(0L)
                                                  .maximumExpectedValue(Duration.ofSeconds(10)
                                                                                .toMillis())
                                                  .register(meterRegistry);
