@@ -435,18 +435,10 @@ public class SwapV2Pair extends BaseContract {
             throw new Exception("Wrong Input");
         }
 
-        BigInteger reserve0 = swapV2PairData.getReserve0();
-        BigInteger reserve1 = swapV2PairData.getReserve1();
-
-        BigInteger balance0;
-        BigInteger balance1;
-        if (amountIn0.compareTo(BigInteger.ZERO) > 0) {
-            balance0 = reserve0.add(amountIn0);
-            balance1 = reserve1.subtract(amountOut1);
-        } else {
-            balance1 = reserve1.add(amountIn1);
-            balance0 = reserve0.subtract(amountOut0);
-        }
+        BigInteger balance0 = swapV2PairData.getReserve0().add(amountIn0);
+        balance0 = balance0.subtract(amountOut0);
+        BigInteger balance1 = swapV2PairData.getReserve1().add(amountIn1);
+        balance1 = balance1.subtract(amountOut1);
 
         update(balance0, balance1, timestamp, swapV2PairData);
     }
