@@ -50,6 +50,7 @@ public class PriceService {
         priceCenterDuration = DistributionSummary.builder("http_price_center_duration")
                                                  .description("Time token to call price center")
                                                  .baseUnit("ms")
+                                                 .distributionStatisticExpiry(Duration.ofMinutes(1))
                                                  .publishPercentileHistogram()
                                                  .publishPercentiles(0.5, 0.95, 0.99, 0.9999)
                                                  .maximumExpectedValue(Duration.ofSeconds(10)

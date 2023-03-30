@@ -132,6 +132,7 @@ public class CurveCombinationPool extends Pool {
     public JSONObject getInfo() {
         JSONObject info = super.getInfo();
         info.put("base_pool", underlyingPool.getInfo());
+        info.put("balances", balances);
         return info;
     }
 

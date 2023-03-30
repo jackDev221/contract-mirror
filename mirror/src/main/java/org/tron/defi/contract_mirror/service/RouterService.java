@@ -39,6 +39,8 @@ public class RouterService {
                                           .description("Number of path candidates")
                                           .publishPercentileHistogram()
                                           .publishPercentiles(0.5, 0.8, 0.99)
+                                          .maximumExpectedValue(100000L)
+                                          .distributionStatisticExpiry(Duration.ofMinutes(1))
                                           .register(meterRegistry);
         for (String strategy : StrategyFactory.getInstance().getStrategyNames()) {
             strategyDuration.put(strategy,
@@ -50,6 +52,8 @@ public class RouterService {
                                                     .percentilePrecision(2)
                                                     .maximumExpectedValue(Duration.ofSeconds(10)
                                                                                   .toMillis())
+                                                    .distributionStatisticExpiry(Duration.ofMinutes(
+                                                        1))
                                                     .register(meterRegistry));
         }
     }

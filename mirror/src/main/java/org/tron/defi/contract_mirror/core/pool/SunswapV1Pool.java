@@ -1,6 +1,8 @@
 package org.tron.defi.contract_mirror.core.pool;
 
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.defi.contract.abi.ContractAbi;
 import org.tron.defi.contract.abi.EventPrototype;
@@ -61,6 +63,18 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
     @Override
     public void transfer(String issuer, String to, BigInteger amount) {
         ((IToken) getLpToken()).transfer(issuer, to, amount);
+    }
+
+    @Override
+    public JSONObject getInfo() {
+        JSONObject info = super.getInfo();
+        JSONArray balances = new JSONArray();
+        IToken token0 = (IToken) getTokens().get(0);
+        balances.add(token0.balanceOf(getAddress()));
+        IToken token1 = (IToken) getTokens().get(1);
+        balances.add(token1.balanceOf(getAddress()));
+        info.put("balances", balances);
+        return info;
     }
 
     @Override
