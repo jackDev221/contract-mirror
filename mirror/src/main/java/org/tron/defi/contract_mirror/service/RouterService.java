@@ -1,6 +1,7 @@
 package org.tron.defi.contract_mirror.service;
 
-import io.prometheus.client.Summary;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,24 +25,24 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class RouterService {
-    private final Summary candidateNum = Summary.build("num_router_candidates",
-                                                       "Number of path candidates").register();
-    private final Map<String, Summary> strategyDuration = new HashMap<>();
+    private final DistributionSummary candidateNum;
+    private final Map<String, DistributionSummary> strategyDuration = new HashMap<>();
     @Autowired
     private Graph graph;
     @Autowired
     private RouterConfig routerConfig;
 
-    public RouterService() {
-        StrategyFactory.getInstance()
-                       .getStrategyNames()
-                       .forEach(strategy -> strategyDuration.put(strategy,
-                                                                 Summary.build(
-                                                                            "process_strategy_duration_" +
-                                                                            strategy,
-                                                                            "Time token of " +
-                                                                            "strategy process")
-                                                                        .register()));
+    @Autowired
+    public RouterService(MeterRegistry meterRegistry) {
+        candidateNum = DistributionSummary.builder("num_router_candidates")
+                                          .description("Number of path candidates")
+                                          .register(meterRegistry);
+        for (String strategy : StrategyFactory.getInstance().getStrategyNames()) {
+            strategyDuration.put(strategy,
+                                 DistributionSummary.builder("strategy_duration_" + strategy)
+                                                    .description("Time token for strategy")
+                                                    .register(meterRegistry));
+        }
     }
 
     private static RouterPath calculateFee(RouterPath path) {
@@ -95,14 +96,16 @@ public class RouterService {
     }
 
     public List<RouterPath> getPath(String from, String to, BigInteger amountIn) {
-        Summary duration = strategyDuration.getOrDefault(routerConfig.getStrategy(),
-                                                         strategyDuration.get("DEFAULT"));
-        Summary.Timer timer = duration.startTimer();
+        DistributionSummary duration = strategyDuration.getOrDefault(routerConfig.getStrategy(),
+                                                                     strategyDuration.get(
+                                                                         "DEFAULT"));
+        long t0 = System.currentTimeMillis();
         RouterInfo routerInfo = StrategyFactory.getInstance()
                                                .getStrategy(graph, routerConfig)
                                                .getPath(from, to, amountIn);
-        timer.observeDuration();
-        candidateNum.observe(routerInfo.getTotalCandidates());
+        long t1 = System.currentTimeMillis();
+        duration.record(t1 - t0);
+        candidateNum.record(routerInfo.getTotalCandidates());
         return routerInfo.getPaths()
                          .stream()
                          .map(RouterService::calculateFee)
@@ -124,14 +127,16 @@ public class RouterService {
         config.setTopN(topN);
         config.setTokenWhiteList(tokenWhiteList);
         config.setPoolBlackList(poolBlackList);
-        Summary duration = strategyDuration.getOrDefault(routerConfig.getStrategy(),
-                                                         strategyDuration.get("DEFAULT"));
-        Summary.Timer timer = duration.startTimer();
+        DistributionSummary duration = strategyDuration.getOrDefault(routerConfig.getStrategy(),
+                                                                     strategyDuration.get(
+                                                                         "DEFAULT"));
+        long t0 = System.currentTimeMillis();
         RouterInfo routerInfo = StrategyFactory.getInstance()
                                                .getStrategy(graph, config)
                                                .getPath(from, to, amountIn);
-        timer.observeDuration();
-        candidateNum.observe(routerInfo.getTotalCandidates());
+        long t1 = System.currentTimeMillis();
+        duration.record(t1 - t0);
+        candidateNum.record(routerInfo.getTotalCandidates());
         return routerInfo.getPaths()
                          .stream()
                          .map(RouterService::calculateFee)

@@ -3,9 +3,9 @@ package org.tron.defi.contract_mirror.service;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.cache.GuavaCacheMetrics;
-import io.prometheus.client.Summary;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,6 @@ import org.tron.defi.contract_mirror.config.TokenConfigList;
 import org.tron.defi.contract_mirror.dto.legacy.PriceResponse;
 import org.tron.defi.contract_mirror.utils.RestClient;
 
-import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,14 +24,32 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class PriceService {
     private final RestClient priceCenter = new RestClient(null);
+    private final Cache<String, BigDecimal> priceCache;
+    private final DistributionSummary priceCenterDuration;
+    private final PriceCenterConfig priceCenterConfig;
     @Autowired
     private TokenConfigList tokenConfigList;
+
     @Autowired
-    private PriceCenterConfig priceCenterConfig;
-    @Autowired
-    private MeterRegistry registry;
-    private Cache<String, BigDecimal> priceCache;
-    private Summary priceCenterDuration;
+    public PriceService(MeterRegistry meterRegistry, PriceCenterConfig priceCenterConfig) {
+        this.priceCenterConfig = priceCenterConfig;
+        PriceCenterConfig.CacheConfig cacheConfig = priceCenterConfig.getCacheConfig();
+        priceCache = null == cacheConfig
+                     ? null
+                     : GuavaCacheMetrics.monitor(meterRegistry,
+                                                 CacheBuilder.newBuilder()
+                                                             .recordStats()
+                                                             .concurrencyLevel(cacheConfig.getConcurrencyLevel())
+                                                             .initialCapacity(30000)
+                                                             .maximumSize(cacheConfig.getMaxCacheSize())
+                                                             .expireAfterWrite(cacheConfig.getExpireTime(),
+                                                                               TimeUnit.SECONDS)
+                                                             .build(),
+                                                 "priceCache");
+        priceCenterDuration = DistributionSummary.builder("http_price_center_duration")
+                                                 .description("Time token to call price center")
+                                                 .register(meterRegistry);
+    }
 
     public BigDecimal getPrice(String symbolOrAddress) {
         symbolOrAddress = tokenConfigList.getWrapTokens()
@@ -51,9 +68,10 @@ public class PriceService {
         }
         uriBuilder.queryParam("symbol", symbolOrAddress);
         try {
-            Summary.Timer timer = priceCenterDuration.startTimer();
+            long t0 = System.currentTimeMillis();
             String json = priceCenter.get(uriBuilder.build().toString());
-            timer.observeDuration();
+            long t1 = System.currentTimeMillis();
+            priceCenterDuration.record(t1 - t0);
             log.debug("http response {}", json);
             PriceResponse response = JSONObject.parseObject(json, PriceResponse.class);
             log.debug("PriceResponse {}", response);
@@ -83,26 +101,6 @@ public class PriceService {
             return null;
         }
         return priceCache.getIfPresent(symbolOrAddress);
-    }
-
-    @PostConstruct
-    public void initCache() {
-        PriceCenterConfig.CacheConfig cacheConfig = priceCenterConfig.getCacheConfig();
-        if (null == cacheConfig) {
-            return;
-        }
-        priceCache = GuavaCacheMetrics.monitor(registry,
-                                               CacheBuilder.newBuilder()
-                                                           .recordStats()
-                                                           .concurrencyLevel(cacheConfig.getConcurrencyLevel())
-                                                           .initialCapacity(30000)
-                                                           .maximumSize(cacheConfig.getMaxCacheSize())
-                                                           .expireAfterWrite(cacheConfig.getExpireTime(),
-                                                                             TimeUnit.SECONDS)
-                                                           .build(),
-                                               "priceCache");
-        priceCenterDuration = Summary.build("http_price_center_duration",
-                                            "Time token to call price center").register();
     }
 
     public void updateCache(String symbolOrAddress, BigDecimal price) {
