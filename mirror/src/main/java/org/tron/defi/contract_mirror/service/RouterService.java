@@ -36,11 +36,14 @@ public class RouterService {
     public RouterService(MeterRegistry meterRegistry) {
         candidateNum = DistributionSummary.builder("num_router_candidates")
                                           .description("Number of path candidates")
+                                          .publishPercentiles(0.5, 0.8, 0.99)
                                           .register(meterRegistry);
         for (String strategy : StrategyFactory.getInstance().getStrategyNames()) {
             strategyDuration.put(strategy,
                                  DistributionSummary.builder("strategy_duration_" + strategy)
                                                     .description("Time token for strategy")
+                                                    .baseUnit("ms")
+                                                    .publishPercentiles(0.5, 0.95, 0.99, 0.9999)
                                                     .register(meterRegistry));
         }
     }

@@ -53,8 +53,12 @@ public class RouterController {
                                   .register(registry);
     }
 
-    @Timed(value = "http_router_duration", description = "Time taken to get router path",
-        histogram = true)
+    @Timed(value = "http_router_duration_seconds", description = "Time taken to get router path",
+        percentiles = {
+        0.5,
+        0.95,
+        0.99,
+        0.9999})
     @GetMapping("/router")
     public Response router(@RequestParam(name = "fromToken") String from,
                            @RequestParam(name = "toToken") String to,
@@ -146,8 +150,11 @@ public class RouterController {
         return response;
     }
 
-    @Timed(value = "http_routingInV2_duration", description = "Time taken to get router path",
-        histogram = true)
+    @Timed(value = "http_routingInV2_duration_seconds", description = "Time taken to get router " +
+                                                                      "path", percentiles = {0.5,
+                                                                                             0.95,
+                                                                                             0.99,
+                                                                                             0.9999})
     @GetMapping("/routingInV2")
     public Response routerV2(@RequestParam(name = "fromToken", required = true) String fromToken,
                              @RequestParam(name = "toToken", required = true) String toToken,
