@@ -89,7 +89,7 @@ public class PSM extends BaseContract {
     @Override
     public BaseContract copySelf() {
         try {
-            rlock.lock();
+            rLock.lock();
             PSMData psmData = getPsmData();
             PSMTotalData psmTotalData = this.psmTotalData.copySelf();
             PSM psm = new PSM(
@@ -100,13 +100,10 @@ public class PSM extends BaseContract {
                     iContractsHelper,
                     sigMap
             );
-            psm.setReady(this.isReady);
-            psm.setAddExchangeContracts(this.isAddExchangeContracts);
-            psm.setUsing(this.isUsing);
-            psm.setDirty(this.isDirty);
+            psm.setStateInfo(psmData.getStateInfo());
             return psm;
         } finally {
-            rlock.unlock();
+            rLock.unlock();
         }
     }
 
@@ -118,9 +115,7 @@ public class PSM extends BaseContract {
             psmData.setAddress(address);
             psmData.setToken(token);
             psmData.setType(type);
-            psmData.setAddExchangeContracts(false);
-            psmData.setUsing(true);
-            psmData.setReady(false);
+            psmData.setStateInfo(stateInfo);
         }
         return psmData;
     }
@@ -149,7 +144,7 @@ public class PSM extends BaseContract {
         String tokenSymbol = CallContractUtil.getString(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, token, "symbol");
         psmData.setTokenSymbol(tokenSymbol);
         loadInfosField(psmData);
-        isDirty = true;
+        stateInfo.dirty = true;
         return true;
     }
 
@@ -195,15 +190,6 @@ public class PSM extends BaseContract {
     }
 
     @Override
-    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        PSMData psmData = getVarPsmData();
-        psmData.setUsing(isUsing);
-        psmData.setReady(isReady);
-        psmData.setAddExchangeContracts(isAddExchangeContracts);
-        isDirty = true;
-    }
-
-    @Override
     protected void saveUpdateToCache() {
     }
 
@@ -222,7 +208,7 @@ public class PSM extends BaseContract {
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
-                result = HandleResult.genHandleFailMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
+                result = HandleResult.genHandleUselessMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
                 break;
         }
         return result;
@@ -284,7 +270,7 @@ public class PSM extends BaseContract {
             return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s handleEventFile cat find what:%s!, unique id :%s",
                     address, type, what, handleEventExtraData.getUniqueId()));
         }
-        isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
@@ -300,7 +286,7 @@ public class PSM extends BaseContract {
         BigInteger sumValue = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         BigInteger fee = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         doSellGem(psmData, sumValue, fee, psmTotalData);
-        isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
@@ -332,7 +318,7 @@ public class PSM extends BaseContract {
         BigInteger value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         BigInteger fee = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
         doBuyGem(value, fee, psmData, psmTotalData);
-        isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 

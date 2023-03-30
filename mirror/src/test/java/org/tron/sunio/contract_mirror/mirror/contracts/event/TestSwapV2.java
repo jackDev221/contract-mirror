@@ -46,9 +46,7 @@ public class TestSwapV2 {
                 SwapV2PairEvent.getSigMap()
         );
 
-        swapV2.setReady(true);
         SwapV2PairData v2PairData = new SwapV2PairData();
-        v2PairData.setReady(true);
         v2PairData.setFactory(FACTORY_ADDRESS);
         v2PairData.setTrxBalance(new BigInteger("0"));
         v2PairData.setLpTotalSupply(new BigInteger("19641646134554622"));
@@ -60,6 +58,8 @@ public class TestSwapV2 {
         v2PairData.setKLast(new BigInteger("389825490198228847251005559491322"));
         swapV2.setSwapV2PairData(v2PairData);
         System.out.println(v2PairData);
+        swapV2.getStateInfo().setReady(true);
+        v2PairData.setStateInfo(swapV2.getStateInfo());
 
         long timeStamp = 1676527995000L;
         IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
@@ -114,9 +114,7 @@ public class TestSwapV2 {
                 SwapV2PairEvent.getSigMap()
         );
 
-        swapV2.setReady(true);
         SwapV2PairData v2PairData = new SwapV2PairData();
-        v2PairData.setReady(true);
         v2PairData.setFactory(FACTORY_ADDRESS);
         v2PairData.setTrxBalance(new BigInteger("0"));
         v2PairData.setLpTotalSupply(new BigInteger("19828618537904864"));
@@ -127,6 +125,8 @@ public class TestSwapV2 {
         v2PairData.setPrice1CumulativeLast(new BigInteger("245667873203635236345015659344243024763792542124813982"));
         v2PairData.setKLast(new BigInteger("397282453712020115841141211155549"));
         swapV2.setSwapV2PairData(v2PairData);
+        swapV2.getStateInfo().setReady(true);
+        v2PairData.setStateInfo(swapV2.getStateInfo());
         long timeStamp = 1676528367000L;
         IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
                 "txid0",
@@ -192,9 +192,7 @@ public class TestSwapV2 {
                 SwapV2PairEvent.getSigMap()
         );
 
-        swapV2.setReady(true);
         SwapV2PairData v2PairData = new SwapV2PairData();
-        v2PairData.setReady(true);
         v2PairData.setFactory(FACTORY_ADDRESS);
         v2PairData.setTrxBalance(new BigInteger("0"));
         v2PairData.setLpTotalSupply(new BigInteger("19765211870944453"));
@@ -206,6 +204,8 @@ public class TestSwapV2 {
         v2PairData.setKLast(new BigInteger("394745708139655336245497468799909"));
         swapV2.setSwapV2PairData(v2PairData);
         long timeStamp = 1676528913000L;
+        swapV2.getStateInfo().setReady(true);
+        v2PairData.setStateInfo(swapV2.getStateInfo());
         IContractEventWrap ic1 = EventLogUtils.generateContractEvent(
                 "txid0",
                 new String[]{

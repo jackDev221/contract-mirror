@@ -21,7 +21,6 @@ public class TestPSM {
                 "TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r", null, null, new PSMTotalData(), PSMEvent.getSigMap());
         PSMData psmData = psm.getPsmData();
         psmData.setTokenDecimal(6);
-        psmData.setReady(true);
         psmData.setAddress("TFDUZ6FAtXptkY3dKHk2oRarCckyDYRkEL");
         psmData.setPolyAddress("TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r");
         psmData.setMaxReversSwap(new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));
@@ -37,7 +36,8 @@ public class TestPSM {
         psmData.setTout(new BigInteger("11234567890123456"));
         System.out.println(psm.getPsmData());
         psm.setPsmData(psmData);
-        psm.setReady(true);
+        psm.getStateInfo().setReady(true);
+        psmData.setStateInfo(psm.getStateInfo());
         IContractEventWrap log0 = EventLogUtils.generateContractEvent(
                 "tx0",
                 new String[]{

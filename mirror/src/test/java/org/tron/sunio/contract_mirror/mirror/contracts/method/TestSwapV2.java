@@ -2,15 +2,12 @@ package org.tron.sunio.contract_mirror.mirror.contracts.method;
 
 import cn.hutool.core.lang.Assert;
 import org.junit.jupiter.api.Test;
-import org.tron.sunio.contract_mirror.event_decode.events.SwapV1Event;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2FactoryEvent;
 import org.tron.sunio.contract_mirror.event_decode.events.SwapV2PairEvent;
-import org.tron.sunio.contract_mirror.mirror.contracts.events.IContractEventWrap;
 import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV2;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV2Pair;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV2PairData;
 import org.tron.sunio.contract_mirror.mirror.utils.ContractsHelper;
-import org.tron.sunio.contract_mirror.mirror.utils.EventLogUtils;
 
 import java.math.BigInteger;
 
@@ -47,9 +44,7 @@ public class TestSwapV2 {
                 SwapV2PairEvent.getSigMap()
         );
 
-        swapV2.setReady(true);
         SwapV2PairData v2PairData = new SwapV2PairData();
-        v2PairData.setReady(true);
         v2PairData.setFactory(FACTORY_ADDRESS);
         v2PairData.setTrxBalance(new BigInteger("0"));
         v2PairData.setLpTotalSupply(new BigInteger("19641646134554622"));
@@ -60,6 +55,8 @@ public class TestSwapV2 {
         v2PairData.setPrice1CumulativeLast(new BigInteger("245666860928863860309119737964453306530744686862692183"));
         v2PairData.setKLast(new BigInteger("389825490198228847251005559491322"));
         swapV2.setSwapV2PairData(v2PairData);
+        swapV2.getStateInfo().setReady(true);
+        v2PairData.setStateInfo(swapV2.getStateInfo());
         System.out.println(v2PairData);
         long blockTimestampLast = 1676527995;
         try {
@@ -102,9 +99,7 @@ public class TestSwapV2 {
                 SwapV2PairEvent.getSigMap()
         );
 
-        swapV2.setReady(true);
         SwapV2PairData v2PairData = new SwapV2PairData();
-        v2PairData.setReady(true);
         v2PairData.setFactory(FACTORY_ADDRESS);
         v2PairData.setTrxBalance(new BigInteger("0"));
         v2PairData.setLpTotalSupply(new BigInteger("19828618537904864"));
@@ -115,6 +110,8 @@ public class TestSwapV2 {
         v2PairData.setPrice1CumulativeLast(new BigInteger("245667873203635236345015659344243024763792542124813982"));
         v2PairData.setKLast(new BigInteger("397282453712020115841141211155549"));
         swapV2.setSwapV2PairData(v2PairData);
+        swapV2.getStateInfo().setReady(true);
+        v2PairData.setStateInfo(swapV2.getStateInfo());
         long blockTimestampLast = 1676528367;
         System.out.println(v2PairData);
         try {
@@ -155,9 +152,7 @@ public class TestSwapV2 {
                 SwapV2PairEvent.getSigMap()
         );
 
-        swapV2.setReady(true);
         SwapV2PairData v2PairData = new SwapV2PairData();
-        v2PairData.setReady(true);
         v2PairData.setFactory(FACTORY_ADDRESS);
         v2PairData.setTrxBalance(new BigInteger("0"));
         v2PairData.setLpTotalSupply(new BigInteger("19765211870944453"));
@@ -168,6 +163,8 @@ public class TestSwapV2 {
         v2PairData.setPrice1CumulativeLast(new BigInteger("245668559116595085188219538336661262158690150817510742"));
         v2PairData.setKLast(new BigInteger("394745708139655336245497468799909"));
         swapV2.setSwapV2PairData(v2PairData);
+        swapV2.getStateInfo().setReady(true);
+        v2PairData.setStateInfo(swapV2.getStateInfo());
         long blockTimestampLast = 1676528913;
         System.out.println(v2PairData);
         try {

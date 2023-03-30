@@ -73,6 +73,7 @@ public class SwapV2FactoryExcProcess implements IProcessor {
         return Address.DEFAULT;
     }
 
+    @SuppressWarnings("unchecked")
     protected Address callContractAddress(String from, String to, String method) {
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, to, method, Collections.EMPTY_LIST,
                 List.of(new TypeReference<Address>() {

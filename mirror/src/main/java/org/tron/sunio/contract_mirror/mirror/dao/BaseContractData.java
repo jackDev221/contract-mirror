@@ -3,6 +3,7 @@ package org.tron.sunio.contract_mirror.mirror.dao;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.tron.sunio.contract_mirror.mirror.contracts.ContractObj;
 import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 
 @Data
@@ -12,7 +13,5 @@ public class BaseContractData {
     protected String address;
     protected ContractType type;
     protected String version;
-    protected boolean isReady;
-    protected boolean isUsing;
-    protected boolean isAddExchangeContracts;
+    protected ContractObj.ContractStateInfo stateInfo;
 }

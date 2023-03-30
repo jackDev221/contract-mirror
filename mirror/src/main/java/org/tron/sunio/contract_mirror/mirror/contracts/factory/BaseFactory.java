@@ -27,17 +27,12 @@ public class BaseFactory extends BaseContract implements IContractFactory {
     }
 
     public boolean hasFinishLoadSubContract() {
-        return !hasNewContract && isAddExchangeContracts;
+        return !hasNewContract && stateInfo.addExchangeContracts;
     }
 
     @Override
     public boolean initDataFromChain1() {
         return false;
-    }
-
-    @Override
-    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-
     }
 
     @Override
@@ -135,6 +130,6 @@ public class BaseFactory extends BaseContract implements IContractFactory {
     }
 
     public void resetLoadSubContractState() {
-        setAddExchangeContracts(unFinishLoadSub.size() == 0);
+        stateInfo.addExchangeContracts = unFinishLoadSub.size() == 0;
     }
 }

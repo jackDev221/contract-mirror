@@ -30,6 +30,7 @@ public class CallContractUtil {
         return results.get(0);
     }
 
+    @SuppressWarnings("unchecked")
     public static String getString(IChainHelper iChainHelper, String from, String contract, String method) {
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, method,
                 Collections.EMPTY_LIST, List.of(new TypeReference<Utf8String>() {
@@ -41,6 +42,7 @@ public class CallContractUtil {
         return res.getValue().toString();
     }
 
+    @SuppressWarnings("unchecked")
     public static BigInteger getU256(IChainHelper iChainHelper, String from, String contract, String method) {
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, method, Collections.EMPTY_LIST,
                 List.of(new TypeReference<Uint256>() {
@@ -65,6 +67,7 @@ public class CallContractUtil {
         return (BigInteger) res.getValue();
     }
 
+    @SuppressWarnings("unchecked")
     public static Address getAddress(IChainHelper iChainHelper, String from, String contract, String method) {
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, method, Collections.EMPTY_LIST,
                 List.of(new TypeReference<Address>() {
@@ -77,6 +80,7 @@ public class CallContractUtil {
         return new Address(EthUtil.addHexPrefix((String) res.getValue()));
     }
 
+    @SuppressWarnings("unchecked")
     public static String getTronAddress(IChainHelper iChainHelper, String from, String contract, String method) {
         TriggerContractInfo triggerContractInfo = new TriggerContractInfo(from, contract, method, Collections.EMPTY_LIST,
                 List.of(new TypeReference<Address>() {

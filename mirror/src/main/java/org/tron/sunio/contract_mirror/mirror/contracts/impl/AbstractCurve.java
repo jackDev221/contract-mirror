@@ -62,11 +62,6 @@ public abstract class AbstractCurve extends BaseContract {
     }
 
     @Override
-    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-
-    }
-
-    @Override
     protected void saveUpdateToCache() {
 
     }

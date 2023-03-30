@@ -1,6 +1,7 @@
 package org.tron.sunio.contract_mirror.mirror.dao;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.tron.sunio.contract_mirror.mirror.tools.DeepCopyUtils;
 
 import java.math.BigInteger;
@@ -37,6 +38,7 @@ import java.math.BigInteger;
  */
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class NewCurvePoolData extends BaseContractData {
     private String[] coins;
     private String[] coinNames;

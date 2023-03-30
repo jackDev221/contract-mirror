@@ -70,7 +70,7 @@ public class SwapV1 extends BaseContract {
             swapV1Data.setAddress(this.address);
             swapV1Data.setVersion(version);
             swapV1Data.setTokenAddress(this.tokenAddress);
-            swapV1Data.setUsing(true);
+            swapV1Data.setStateInfo(stateInfo);
         }
         return swapV1Data;
     }
@@ -82,16 +82,13 @@ public class SwapV1 extends BaseContract {
     @Override
     public BaseContract copySelf() {
         try {
-            rlock.lock();
+            rLock.lock();
             SwapV1Data data = this.getSwapV1Data();
             SwapV1 v1 = new SwapV1(data, iChainHelper, iContractsHelper, sigMap);
-            v1.setReady(this.isReady);
-            v1.setAddExchangeContracts(this.isAddExchangeContracts);
-            v1.setUsing(this.isUsing);
-            v1.setDirty(this.isDirty);
+            v1.setStateInfo(data.getStateInfo());
             return v1;
         } finally {
-            rlock.unlock();
+            rLock.unlock();
         }
     }
 
@@ -108,7 +105,6 @@ public class SwapV1 extends BaseContract {
         BigInteger tokenBalance = CallContractUtil.tokenBalance(iChainHelper, this.getAddress(), tokenAddress);
         BigInteger trxBalance = getBalance(address);
         BigInteger kLast = CallContractUtil.getU256(iChainHelper, ContractMirrorConst.EMPTY_ADDRESS, address, "kLast");
-        isReady = false;
         v1Data.setName(name);
         v1Data.setSymbol(symbol);
         v1Data.setDecimals(decimals);
@@ -119,18 +115,8 @@ public class SwapV1 extends BaseContract {
         v1Data.setTokenBalance(tokenBalance);
         v1Data.setTokenName(tokenName);
         v1Data.setTokenSymbol(tokenSymbol);
-        v1Data.setReady(isReady);
-        isDirty = true;
+        stateInfo.dirty = true;
         return true;
-    }
-
-    @Override
-    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        SwapV1Data v1Data = this.getVarSwapV1Data();
-        v1Data.setReady(isReady);
-        v1Data.setUsing(isUsing);
-        v1Data.setAddExchangeContracts(isAddExchangeContracts);
-        isDirty = true;
     }
 
     @Override
@@ -168,7 +154,7 @@ public class SwapV1 extends BaseContract {
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{}  unique id:{} not handle", address, type, topics[0], handleEventExtraData.getUniqueId());
-                result = HandleResult.genHandleFailMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
+                result = HandleResult.genHandleUselessMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
                 break;
         }
         return result;
@@ -239,7 +225,7 @@ public class SwapV1 extends BaseContract {
 
         }
         if (change) {
-            isDirty = true;
+            stateInfo.dirty = true;
         }
         return HandleResult.genHandleSuccess();
     }
@@ -280,7 +266,7 @@ public class SwapV1 extends BaseContract {
         }
         v1Data.setTrxBalance(trxNew);
         v1Data.setTokenBalance(tokenBalanceNew);
-        isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
@@ -303,13 +289,13 @@ public class SwapV1 extends BaseContract {
         }
         v1Data.setTrxBalance(trxNew);
         v1Data.setTokenBalance(tokenBalanceNew);
-        isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
     private HandleResult handleAdminFeeMint(String[] topics, String data) {
         log.info("handleAdminFeeMint not implements!, {}, {}", topics, data);
-        return HandleResult.genHandleFailMessage("handleAdminFeeMint not implements!");
+        return HandleResult.genHandleUselessMessage("handleAdminFeeMint not implements!");
     }
 
     private HandleResult handleTokenPurchase(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
@@ -327,7 +313,7 @@ public class SwapV1 extends BaseContract {
         BigInteger tokenBalanceNew = v1Data.getTokenBalance().subtract(tokenOut);
         v1Data.setTrxBalance(trxNew);
         v1Data.setTokenBalance(tokenBalanceNew);
-        isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
@@ -346,13 +332,13 @@ public class SwapV1 extends BaseContract {
         BigInteger tokenBalanceNew = v1Data.getTokenBalance().add(tokenIn);
         v1Data.setTrxBalance(trxNew);
         v1Data.setTokenBalance(tokenBalanceNew);
-        isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
     private HandleResult handleTokenToToken(String[] topics, String data) {
         log.info("TokenToToken not implements!,{}, {}", topics, data);
-        return HandleResult.genHandleFailMessage("handleTokenToToken not implements!");
+        return HandleResult.genHandleUselessMessage("handleTokenToToken not implements!");
     }
 
     private boolean isFeeOn(SwapV1Data v1Data) {

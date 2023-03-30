@@ -30,7 +30,6 @@ public class TestCurve {
                 Curve3PoolEvent.getSigMap()
         );
         OldCurvePoolData data = new OldCurvePoolData();
-        data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
         data.setBalances(new BigInteger[3]);
@@ -43,7 +42,8 @@ public class TestCurve {
         data.setFutureA(new BigInteger("400"));
         data.setFutureATime(new BigInteger("0"));
         curve3Pool.setOldCurvePoolData(data);
-        curve3Pool.setReady(true);
+        curve3Pool.getStateInfo().setReady(true);
+        data.setStateInfo(curve3Pool.getStateInfo());
         OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         try {
 
@@ -83,7 +83,6 @@ public class TestCurve {
                 Curve3PoolEvent.getSigMap()
         );
         OldCurvePoolData data = new OldCurvePoolData();
-        data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
         data.setBalances(new BigInteger[3]);
@@ -96,7 +95,8 @@ public class TestCurve {
         data.setFutureA(new BigInteger("400"));
         data.setFutureATime(new BigInteger("0"));
         curve3Pool.setOldCurvePoolData(data);
-        curve3Pool.setReady(true);
+        curve3Pool.getStateInfo().setReady(true);
+        data.setStateInfo(curve3Pool.getStateInfo());
         OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         BigInteger dy = BigInteger.ZERO;
         try {
@@ -138,7 +138,6 @@ public class TestCurve {
                 Curve3PoolEvent.getSigMap()
         );
         OldCurvePoolData data = new OldCurvePoolData();
-        data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
         data.setBalances(new BigInteger[3]);
@@ -151,7 +150,8 @@ public class TestCurve {
         data.setFutureA(new BigInteger("400"));
         data.setFutureATime(new BigInteger("0"));
         curve3Pool.setOldCurvePoolData(data);
-        curve3Pool.setReady(true);
+        curve3Pool.getStateInfo().setReady(true);
+        data.setStateInfo(curve3Pool.getStateInfo());
         OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         try {
             curve3Pool.removeLiquidity(
@@ -191,7 +191,6 @@ public class TestCurve {
         );
 
         OldCurvePoolData data = new OldCurvePoolData();
-        data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
         data.setBalances(new BigInteger[3]);
@@ -204,7 +203,8 @@ public class TestCurve {
         data.setFutureA(new BigInteger("400"));
         data.setFutureATime(new BigInteger("0"));
         curve3Pool.setOldCurvePoolData(data);
-        curve3Pool.setReady(true);
+        curve3Pool.getStateInfo().setReady(true);
+        data.setStateInfo(curve3Pool.getStateInfo());
         OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
 
         try {
@@ -246,7 +246,6 @@ public class TestCurve {
         );
 
         OldCurvePoolData data = new OldCurvePoolData();
-        data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
         data.setBalances(new BigInteger[3]);
@@ -259,7 +258,8 @@ public class TestCurve {
         data.setFutureA(new BigInteger("400"));
         data.setFutureATime(new BigInteger("0"));
         curve3Pool.setOldCurvePoolData(data);
-        curve3Pool.setReady(true);
+        curve3Pool.getStateInfo().setReady(true);
+        data.setStateInfo(curve3Pool.getStateInfo());
         OldCurvePoolData poolData = curve3Pool.getOldCurvePoolData();
         try {
             curve3Pool.removeLiquidityOneCoin(

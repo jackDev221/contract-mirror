@@ -142,7 +142,7 @@ public class ContractFactoryManager {
         }
         for (String contract : psmContracts) {
             BaseContract baseContract = iContractsHelper.getContract(contract);
-            if (ObjectUtil.isNull(baseContract) || !baseContract.isReady) {
+            if (ObjectUtil.isNull(baseContract) || !baseContract.isReady()) {
                 return;
             }
         }
@@ -189,7 +189,6 @@ public class ContractFactoryManager {
                 }
             }
             baseContract.resetLoadSubContractState();
-            baseContract.updateBaseInfo(baseContract.isUsing, baseContract.isReady, baseContract.isAddExchangeContracts);
         }
         if (addContracts > 0) {
             log.info("ContractFactoryManager: start updateMirrorContracts, add contracts:{}", addContracts);

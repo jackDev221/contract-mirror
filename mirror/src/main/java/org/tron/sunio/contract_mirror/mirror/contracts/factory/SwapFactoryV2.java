@@ -53,8 +53,7 @@ public class SwapFactoryV2 extends BaseFactory {
     private SwapFactoryV2Data getVarFactoryV2Data() {
         if (ObjectUtil.isNull(swapFactoryV2Data)) {
             swapFactoryV2Data = new SwapFactoryV2Data();
-            swapFactoryV2Data.setReady(false);
-            swapFactoryV2Data.setUsing(true);
+            swapFactoryV2Data.setStateInfo(stateInfo);
             swapFactoryV2Data.setAddress(this.address);
             swapFactoryV2Data.setType(this.type);
             swapFactoryV2Data.setVersion(version);
@@ -77,7 +76,7 @@ public class SwapFactoryV2 extends BaseFactory {
         factoryV2Data.setPairCount(feeToRate);
         long pairCount = CallContractUtil.getU256(iChainHelper, EMPTY_ADDRESS, address, "allPairsLength").longValue();
         factoryV2Data.setPairCount(pairCount);
-        isDirty = true;
+        stateInfo.dirty = true;
         return true;
     }
 
@@ -93,10 +92,11 @@ public class SwapFactoryV2 extends BaseFactory {
 
     @Override
     public List<BaseContract> getListContracts(CMPool cmPool) {
+        log.info("SwapFactoryV2: getListContracts");
         List<BaseContract> result = newSubContracts;
         newSubContracts = new ArrayList<>();
         this.hasNewContract = false;
-        if (isAddExchangeContracts) {
+        if (stateInfo.addExchangeContracts) {
             return result;
         }
         long pairCount = this.getVarFactoryV2Data().getPairCount();
@@ -135,15 +135,6 @@ public class SwapFactoryV2 extends BaseFactory {
     }
 
     @Override
-    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        SwapFactoryV2Data factoryV2Data = this.getVarFactoryV2Data();
-        factoryV2Data.setUsing(isUsing);
-        factoryV2Data.setReady(isReady);
-        factoryV2Data.setAddExchangeContracts(isAddExchangeContracts);
-        isDirty = true;
-    }
-
-    @Override
     protected void saveUpdateToCache() {
     }
 
@@ -156,7 +147,7 @@ public class SwapFactoryV2 extends BaseFactory {
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
-                result = HandleResult.genHandleFailMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
+                result = HandleResult.genHandleUselessMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
                 break;
         }
         return result;
@@ -220,7 +211,7 @@ public class SwapFactoryV2 extends BaseFactory {
     }
 
     private HandleResult handleCreatePair(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("SwapFactoryV1:{}, handleCreatePair, topics:{} data:{} ", address, topics, data);
+        log.info("SwapFactoryV2:{}, handleCreatePair, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(
                 EVENT_NAME_PAIR_CREATED,
                 EVENT_NAME_NEW_PAIR_CREATED_BODY,
@@ -244,13 +235,12 @@ public class SwapFactoryV2 extends BaseFactory {
         );
 
         newSubContracts.add(swapV2Pair);
-        hasNewContract = true;
         updateTokenToPairs(pairAddress, token0, token1);
         updateTokenToPairs(pairAddress, token0, token1);
         SwapFactoryV2Data factoryV2Data = this.getVarFactoryV2Data();
-        factoryV2Data.setAddExchangeContracts(false);
         factoryV2Data.setPairCount(factoryV2Data.getPairCount() + 1);
-        isDirty = true;
+        hasNewContract = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 }

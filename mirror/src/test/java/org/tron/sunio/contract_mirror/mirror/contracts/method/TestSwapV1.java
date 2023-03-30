@@ -8,6 +8,7 @@ import org.tron.sunio.contract_mirror.mirror.contracts.factory.SwapFactoryV1;
 import org.tron.sunio.contract_mirror.mirror.contracts.impl.SwapV1;
 import org.tron.sunio.contract_mirror.mirror.dao.SwapV1Data;
 import org.tron.sunio.contract_mirror.mirror.utils.ContractsHelper;
+
 import java.math.BigInteger;
 
 public class TestSwapV1 {
@@ -44,15 +45,15 @@ public class TestSwapV1 {
                 SwapV1Event.getSigMap()
         );
 
-        swapV1.setReady(true);
         SwapV1Data swapV1Data = new SwapV1Data();
-        swapV1Data.setReady(true);
         swapV1Data.setFactory(FACTORY_ADDRESS);
         swapV1Data.setTrxBalance(new BigInteger("4314662368935"));
         swapV1Data.setTokenBalance(new BigInteger("809463126858161732561578006"));
         swapV1Data.setLpTotalSupply(new BigInteger("41614163432"));
         swapV1Data.setKLast(BigInteger.ZERO);
         swapV1.setSwapV1Data(swapV1Data);
+        swapV1.getStateInfo().setReady(true);
+        swapV1Data.setStateInfo(swapV1.getStateInfo());
 
         try {
             swapV1.addLiquidity(
@@ -61,7 +62,7 @@ public class TestSwapV1 {
                     new BigInteger("00000000000000000000000000000000000000000000007aa724c7792dff9d28", 16),
                     swapV1Data
             );
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
         BigInteger trxBalance = new BigInteger("4314674368935");
@@ -87,24 +88,24 @@ public class TestSwapV1 {
                 SwapV1Event.getSigMap()
         );
 
-        swapV1.setReady(true);
         SwapV1Data swapV1Data = new SwapV1Data();
-        swapV1Data.setReady(true);
         swapV1Data.setFactory(FACTORY_ADDRESS);
         swapV1Data.setTrxBalance(new BigInteger("4314674368935"));
         swapV1Data.setTokenBalance(new BigInteger("809465378148457871205899353"));
         swapV1Data.setLpTotalSupply(new BigInteger("41614279169"));
         swapV1Data.setKLast(BigInteger.ZERO);
         swapV1.setSwapV1Data(swapV1Data);
+        swapV1.getStateInfo().setReady(true);
+        swapV1Data.setStateInfo(swapV1.getStateInfo());
 
-        try{
+        try {
             swapV1.removeLiquidity(
                     new BigInteger("0000000000000000000000000000000000000000000000000000000000004eab", 16),
                     new BigInteger("0000000000000000000000000000000000000000000000000000000000000001", 16),
                     new BigInteger("0000000000000000000000000000000000000000000000000000000000000001", 16),
                     swapV1Data
             );
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
         BigInteger trxBalance = new BigInteger("4314672280873");
@@ -130,21 +131,21 @@ public class TestSwapV1 {
                 SwapV1Event.getSigMap()
         );
 
-        swapV1.setReady(true);
         SwapV1Data swapV1Data = new SwapV1Data();
-        swapV1Data.setReady(true);
         swapV1Data.setFactory(FACTORY_ADDRESS);
         swapV1Data.setTrxBalance(new BigInteger("4314672280873"));
         swapV1Data.setTokenBalance(new BigInteger("809464986412169845445309056"));
         swapV1Data.setLpTotalSupply(new BigInteger("41614259030"));
         swapV1.setSwapV1Data(swapV1Data);
-        try{
+        swapV1.getStateInfo().setReady(true);
+        swapV1Data.setStateInfo(swapV1.getStateInfo());
+        try {
             swapV1.trxToTokenInput(
                     new BigInteger("00000000000000000000000000000000000000000000000000000000002dc6c0", 16),
                     new BigInteger("00000000000000000000000000000000000000000000001e445bb22de57b2c5e", 16),
                     swapV1Data
             );
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
         BigInteger trxBalance = new BigInteger("4314675280873");
@@ -170,22 +171,22 @@ public class TestSwapV1 {
                 SwapV1Event.getSigMap()
         );
 
-        swapV1.setReady(true);
         SwapV1Data swapV1Data = new SwapV1Data();
-        swapV1Data.setReady(true);
         swapV1Data.setFactory(FACTORY_ADDRESS);
         swapV1Data.setTrxBalance(new BigInteger("4314675280873"));
         swapV1Data.setTokenBalance(new BigInteger("809464425278452519877826622"));
         swapV1Data.setLpTotalSupply(new BigInteger("41614259030"));
         swapV1.setSwapV1Data(swapV1Data);
+        swapV1.getStateInfo().setReady(true);
+        swapV1Data.setStateInfo(swapV1.getStateInfo());
 
-        try{
+        try {
             swapV1.tokenToTrxInput(
                     new BigInteger("00000000000000000000000000000000000000000000001043561a8829300000", 16),
                     new BigInteger("000000000000000000000000000000000000000000000000000000000018348b", 16),
                     swapV1Data
             );
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
 

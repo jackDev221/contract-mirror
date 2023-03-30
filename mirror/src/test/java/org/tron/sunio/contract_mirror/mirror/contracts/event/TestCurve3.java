@@ -25,7 +25,6 @@ public class TestCurve3 {
                 Curve3PoolEvent.getSigMap()
         );
         OldCurvePoolData data = new OldCurvePoolData();
-        data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
         data.setBalances(new BigInteger[3]);
@@ -34,7 +33,8 @@ public class TestCurve3 {
         data.updateBalances(2, new BigInteger("5912730454"));
         data.setTotalSupply(new BigInteger("5804442149820345213230"));
         curve3Pool.setOldCurvePoolData(data);
-        curve3Pool.setReady(true);
+        curve3Pool.getStateInfo().setReady(true);
+        data.setStateInfo(curve3Pool.getStateInfo());
 
         IContractEventWrap iContractEventWrap1 = EventLogUtils.generateContractEvent("txId1", new String[]{
                         "423f6495a08fc652425cf4ed0d1f9e37e571d9b9529b1c1c23cce780b2e7df0d",
@@ -72,7 +72,6 @@ public class TestCurve3 {
         );
 
         OldCurvePoolData data = new OldCurvePoolData();
-        data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
         data.setBalances(new BigInteger[3]);
@@ -81,7 +80,8 @@ public class TestCurve3 {
         data.updateBalances(2, new BigInteger("6012709393"));
         data.setTotalSupply(new BigInteger("6178218730983441802126"));
         curve3Pool.setOldCurvePoolData(data);
-        curve3Pool.setReady(true);
+        curve3Pool.getStateInfo().setReady(true);
+        data.setStateInfo(curve3Pool.getStateInfo());
 
         IContractEventWrap iContractEventWrap1 = EventLogUtils.generateContractEvent("txId1", new String[]{
                 "8b3e96f2b889fa771c53c981b40daf005f63f637f1869f707052d15a3dd97140",
@@ -117,7 +117,6 @@ public class TestCurve3 {
         );
 
         OldCurvePoolData data = new OldCurvePoolData();
-        data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
         data.setBalances(new BigInteger[3]);
@@ -126,7 +125,8 @@ public class TestCurve3 {
         data.updateBalances(2, new BigInteger("6024709393"));
         data.setTotalSupply(new BigInteger("6178218730983441802126"));
         curve3Pool.setOldCurvePoolData(data);
-        curve3Pool.setReady(true);
+        curve3Pool.getStateInfo().setReady(true);
+        data.setStateInfo(curve3Pool.getStateInfo());
 
         IContractEventWrap iContractEventWrap1 = EventLogUtils.generateContractEvent("txId1", new String[]{
                 "a49d4cf02656aebf8c771f5a8585638a2a15ee6c97cf7205d4208ed7c1df252d",
@@ -163,7 +163,6 @@ public class TestCurve3 {
         );
 
         OldCurvePoolData data = new OldCurvePoolData();
-        data.setReady(true);
         data.setAdminFee(BigInteger.valueOf(5000000000L));
         data.setFee(BigInteger.valueOf(4000000));
         data.setBalances(new BigInteger[3]);
@@ -172,7 +171,8 @@ public class TestCurve3 {
         data.updateBalances(2, new BigInteger("5128318416"));
         data.setTotalSupply(new BigInteger("5258987749200220399191"));
         curve3Pool.setOldCurvePoolData(data);
-        curve3Pool.setReady(true);
+        curve3Pool.getStateInfo().setReady(true);
+        data.setStateInfo(curve3Pool.getStateInfo());
 
         IContractEventWrap iContractEventWrap1 = EventLogUtils.generateContractEvent("txId1", new String[]{
                 "173599dbf9c6ca6f7c3b590df07ae98a45d74ff54065505141e7de6c46a624c2",

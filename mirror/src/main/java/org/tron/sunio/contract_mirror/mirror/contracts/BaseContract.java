@@ -25,7 +25,7 @@ public abstract class BaseContract extends ContractObj {
     private static final int INIT_FLAG_START = 0;
     private static final int INIT_FLAG_DOING = 1;
     private static final int INIT_FLAG_FAILED = 2;
-    private static final int INIT_FLAG_SUCCESS = 2;
+    private static final int INIT_FLAG_SUCCESS = 3;
     private long t0;
     private long t1;
     private long t2;
@@ -42,14 +42,12 @@ public abstract class BaseContract extends ContractObj {
 
     public abstract boolean initDataFromChain1();
 
-    public abstract void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts);
-
     protected abstract void saveUpdateToCache();
 
     protected abstract HandleResult handleEvent1(String eventName, String[] topics, String data, HandleEventExtraData handleEventExtraData);
 
     private boolean isContractIncremental() {
-        return false;
+        return true;
     }
 
     public abstract <T> T getStatus();
@@ -116,12 +114,13 @@ public abstract class BaseContract extends ContractObj {
             return;
         }
         if (eventTime > t2) {
-            isReady = true;
-            updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
+            stateInfo.ready = true;
             initFlag = INIT_FLAG_SUCCESS;
         } else {
-            isReady = false;
+            stateInfo.ready = false;
             initFlag = INIT_FLAG_FAILED;
+            log.warn("OMG Ready contract {}:{} receive pre kafka msg, contract time:{} kafka time:{}, " +
+                    "contract need reload", type, address, t2, iContractEventWrap.getTimeStamp());
         }
     }
 
@@ -131,9 +130,8 @@ public abstract class BaseContract extends ContractObj {
         if (eventTime < t0) {
             return;
         }
-        isReady = true;
+        stateInfo.ready = true;
         initFlag = INIT_FLAG_SUCCESS;
-        updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
     }
 
     protected String getEventName(IContractEventWrap iContractEventWrap) {
@@ -146,7 +144,7 @@ public abstract class BaseContract extends ContractObj {
     }
 
     public HandleResult handleEvent(IContractEventWrap iContractEventWrap) {
-        if (!isReady) {
+        if (!stateInfo.ready) {
             // 过滤中间需要重新init和初始化失败
             if (initFlag == INIT_FLAG_START || initFlag == INIT_FLAG_DOING) {
                 initFlag = INIT_FLAG_DOING;
@@ -157,15 +155,15 @@ public abstract class BaseContract extends ContractObj {
                 }
             }
         }
-        if (!isReady) {
-            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s not Ready", address, type));
+        if (!stateInfo.ready) {
+            return HandleResult.genHandleFailMessage(String.format("Contract%s, type:%s not Ready", address, type), HandleResult.CODE_NOT_READY);
         }
 
         if (iContractEventWrap.getTimeStamp() <= t2) {
-            log.error("OMG Ready contract {}:{}receive pre kafka msg, contract time:{} kafka time:{}, " +
+            log.warn("OMG Ready contract {}:{} receive pre kafka msg, contract time:{} kafka time:{}, " +
                     "contract need reload", type, address, t2, iContractEventWrap.getTimeStamp());
             this.resetReloadData();
-            return HandleResult.genHandleFailMessage("OMG receive pre kafka!!");
+            return HandleResult.genHandleFailMessage("OMG receive pre kafka!!", HandleResult.CODE_PRE_LOG);
         }
         // Do handleEvent
         String eventName = getEventName(iContractEventWrap);
@@ -173,10 +171,14 @@ public abstract class BaseContract extends ContractObj {
         String data = iContractEventWrap.getData();
         HandleEventExtraData handleEventExtraData = genEventExtraData(iContractEventWrap);
         try {
-            wlock.lock();
-            return handleEvent1(eventName, topics, data, handleEventExtraData);
+            wLock.lock();
+            HandleResult res = handleEvent1(eventName, topics, data, handleEventExtraData);
+            if (!res.result && res.code == HandleResult.CODE_HANDLE_FAIL) {
+                this.resetReloadData();
+            }
+            return res;
         } finally {
-            wlock.unlock();
+            wLock.unlock();
         }
     }
 
@@ -184,23 +186,19 @@ public abstract class BaseContract extends ContractObj {
     public void finishBatchKafka() {
         if (initFlag == INIT_FLAG_START || initFlag == INIT_FLAG_DOING) {
             initFlag = INIT_FLAG_SUCCESS;
-            isReady = true;
-            updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
+            stateInfo.ready = true;
         }
-        if (!isReady) {
+        if (!stateInfo.ready) {
             initFlag = INIT_FLAG_INIT;
         }
-        if (isDirty) {
+        if (stateInfo.dirty) {
 //            saveUpdateToCache();
-            isDirty = false;
+            stateInfo.dirty = false;
         }
     }
 
     public void resetReloadData() {
-        isReady = false;
-        isAddExchangeContracts = false;
-        isDirty = true;
-        this.updateBaseInfo(isUsing, isReady, isAddExchangeContracts);
+        stateInfo.resetReloadData();
     }
 
     protected EventValues getEventValue(String eventName, String eventBody, String[] topics, String data, String id) {
@@ -230,10 +228,16 @@ public abstract class BaseContract extends ContractObj {
     @Data
     @Builder
     public static class HandleResult {
+        public static final int CODE_SUCCESS = 0;
+        public static final int CODE_HANDLE_FAIL = 1;
+        public static final int CODE_NOT_READY = 2;
+        public static final int CODE_PRE_LOG = 3;
+        public static final int CODE_USELESS_LOG = 4;
         private boolean result;
         private String message;
         private String[] newTopic;
         private String newData;
+        private int code;
 
         public boolean needToSendMessage() {
             if (!result || newTopic == null || newTopic.length == 0) {
@@ -243,15 +247,24 @@ public abstract class BaseContract extends ContractObj {
         }
 
         public static HandleResult genHandleFailMessage(String msg) {
-            return HandleResult.builder().result(false).message(msg).build();
+            return HandleResult.builder().result(false).code(CODE_HANDLE_FAIL).message(msg).build();
         }
 
+        public static HandleResult genHandleUselessMessage(String msg) {
+            return HandleResult.builder().result(true).code(CODE_USELESS_LOG).message(msg).build();
+        }
+
+        public static HandleResult genHandleFailMessage(String msg, int code) {
+            return HandleResult.builder().result(false).code(code).message(msg).build();
+        }
+
+
         public static HandleResult genHandleSuccess() {
-            return HandleResult.builder().result(true).build();
+            return HandleResult.builder().result(true).code(CODE_SUCCESS).build();
         }
 
         public static HandleResult genHandleSuccessAndSend(String[] topics, String data) {
-            return HandleResult.builder().result(true).newTopic(topics).newData(data).build();
+            return HandleResult.builder().result(true).code(CODE_SUCCESS).newTopic(topics).newData(data).build();
         }
     }
 }

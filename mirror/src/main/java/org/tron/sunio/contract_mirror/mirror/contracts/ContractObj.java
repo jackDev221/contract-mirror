@@ -17,15 +17,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Slf4j
 public class ContractObj implements IContract {
     protected final ReadWriteLock rwlock = new ReentrantReadWriteLock();
-    protected final Lock rlock = rwlock.readLock();
-    protected final Lock wlock = rwlock.writeLock();
+    protected final Lock rLock = rwlock.readLock();
+    protected final Lock wLock = rwlock.writeLock();
     protected String address;
     protected ContractType type;
     protected String version;
-    protected boolean isReady;
-    protected boolean isUsing;
-    protected boolean isAddExchangeContracts;
-    protected boolean isDirty;
+    protected ContractStateInfo stateInfo = new ContractStateInfo();
     protected Map<String, String> sigMap;
     protected IChainHelper iChainHelper;
     @Getter
@@ -39,7 +36,6 @@ public class ContractObj implements IContract {
         this.version = version;
         this.iChainHelper = iChainHelper;
         this.sigMap = sigMap;
-        this.isUsing = true;
         this.iContractsHelper = iContractsHelper;
     }
 
@@ -47,4 +43,40 @@ public class ContractObj implements IContract {
         return iChainHelper.balance(address);
     }
 
+    @Override
+    public boolean isReady() {
+        return stateInfo.ready;
+    }
+
+    @Override
+    public boolean isUsing() {
+        return stateInfo.using;
+    }
+
+    @Override
+    public boolean isAddExchangeContracts() {
+        return stateInfo.addExchangeContracts;
+    }
+
+    @Data
+    public static class ContractStateInfo {
+        public boolean ready;
+        public boolean using;
+        public boolean addExchangeContracts;
+        public boolean dirty;
+
+        public ContractStateInfo() {
+            ready = false;
+            addExchangeContracts = false;
+            using = true;
+            dirty = false;
+        }
+
+        public void resetReloadData() {
+            ready = false;
+            addExchangeContracts = false;
+            dirty = true;
+            using = true;
+        }
+    }
 }

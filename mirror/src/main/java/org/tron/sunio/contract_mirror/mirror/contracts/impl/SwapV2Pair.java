@@ -81,7 +81,7 @@ public class SwapV2Pair extends BaseContract {
             swapV2PairData.setType(type);
             swapV2PairData.setAddress(address);
             swapV2PairData.setVersion(version);
-            swapV2PairData.setUsing(true);
+            swapV2PairData.setStateInfo(stateInfo);
         }
         return swapV2PairData;
     }
@@ -151,17 +151,8 @@ public class SwapV2Pair extends BaseContract {
         swapV2PairData.setLpTotalSupply(lpTotalSupply);
         BigInteger trxBalance = getBalance(address);
         swapV2PairData.setTrxBalance(trxBalance);
-        isDirty = true;
+        stateInfo.dirty = true;
         return true;
-    }
-
-    @Override
-    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        SwapV2PairData swapV2PairData = this.getVarSwapV2PairData();
-        swapV2PairData.setUsing(isUsing);
-        swapV2PairData.setReady(isReady);
-        swapV2PairData.setAddExchangeContracts(isAddExchangeContracts);
-        isDirty = true;
     }
 
     @Override
@@ -172,16 +163,13 @@ public class SwapV2Pair extends BaseContract {
     @Override
     public BaseContract copySelf() {
         try {
-            rlock.lock();
+            rLock.lock();
             SwapV2PairData swapV2PairData = this.getSwapV2PairData();
             SwapV2Pair v2 = new SwapV2Pair(swapV2PairData, iChainHelper, iContractsHelper, sigMap);
-            v2.setReady(this.isReady);
-            v2.setAddExchangeContracts(this.isAddExchangeContracts);
-            v2.setUsing(this.isUsing);
-            v2.setDirty(this.isDirty);
+            v2.setStateInfo(swapV2PairData.getStateInfo());
             return v2;
         } finally {
-            rlock.unlock();
+            rLock.unlock();
         }
     }
 
@@ -210,7 +198,7 @@ public class SwapV2Pair extends BaseContract {
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
-                result = HandleResult.genHandleFailMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
+                result = HandleResult.genHandleUselessMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
                 break;
         }
         return result;
@@ -255,7 +243,7 @@ public class SwapV2Pair extends BaseContract {
     }
 
     private HandleResult handleTransfer(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("SwapV1:{}, handleTransfer, topics:{} data:{} ", address, topics, data);
+        log.info("SwapV2:{}, handleTransfer, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(EVENT_NAME_TRANSFER, EVENT_NAME_TRANSFER_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
@@ -278,13 +266,13 @@ public class SwapV2Pair extends BaseContract {
 
         }
         if (change) {
-            isDirty = true;
+            stateInfo.dirty = true;
         }
         return HandleResult.genHandleSuccess();
     }
 
     private HandleResult handleMint(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("SwapV1:{}, handleMint, topics:{} data:{} ", address, topics, data);
+        log.info("SwapV2:{}, handleMint, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(EVENT_NAME_NEW_MINT, EVENT_NAME_NEW_MINT_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
@@ -302,12 +290,12 @@ public class SwapV2Pair extends BaseContract {
             BigInteger kLast = swapV2PairData.getReserve0().multiply(swapV2PairData.getReserve1());
             swapV2PairData.setKLast(kLast);
         }
-        isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
     private HandleResult handleBurn(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("SwapV1:{}, handleBurn, topics:{} data:{} ", address, topics, data);
+        log.info("SwapV2:{}, handleBurn, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(EVENT_NAME_NEW_BURN, EVENT_NAME_NEW_BURN_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
@@ -325,12 +313,12 @@ public class SwapV2Pair extends BaseContract {
             BigInteger kLast = swapV2PairData.getReserve0().multiply(swapV2PairData.getReserve1());
             swapV2PairData.setKLast(kLast);
         }
-        isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
     private HandleResult handleSwap(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("SwapV1:{}, handleSwap, topics:{} data:{} ", address, topics, data);
+        log.info("SwapV2:{}, handleSwap, topics:{} data:{} ", address, topics, data);
         EventValues eventValues = getEventValue(EVENT_NAME_NEW_SWAP, EVENT_NAME_NEW_SWAP_BODY, topics, data,
                 handleEventExtraData.getUniqueId());
         if (ObjectUtil.isNull(eventValues)) {
@@ -349,12 +337,12 @@ public class SwapV2Pair extends BaseContract {
         balance1 = swapV2PairData.getReserve1().add(amount1In);
         balance1 = balance1.subtract(amount1Out);
         update(balance0, balance1, handleEventExtraData.getTimeStamp(), swapV2PairData);
-        isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
     private HandleResult handleSync(String[] topics, String data, HandleEventExtraData handleEventExtraData) {
-        log.info("SwapV1:{}, handleSync, topics:{} data:{} ", address, topics, data);
+        log.info("SwapV2:{}, handleSync, topics:{} data:{} ", address, topics, data);
         return HandleResult.genHandleSuccess();
     }
 
@@ -386,12 +374,12 @@ public class SwapV2Pair extends BaseContract {
         return new BigInteger[]{amount0, amount1};
     }
 
-    public BigInteger mint(BigInteger amount0, BigInteger amount1, long timeStamp){
+    public BigInteger mint(BigInteger amount0, BigInteger amount1, long timeStamp) {
         SwapV2PairData v2PairData = this.getSwapV2PairData();
         return mint(amount0, amount1, timeStamp, v2PairData);
     }
 
-    public BigInteger mint(BigInteger amount0, BigInteger amount1, long timeStamp, SwapV2PairData swapV2PairData){
+    public BigInteger mint(BigInteger amount0, BigInteger amount1, long timeStamp, SwapV2PairData swapV2PairData) {
         BigInteger reserve0 = swapV2PairData.getReserve0();
         BigInteger reserve1 = swapV2PairData.getReserve1();
         boolean feeOn = mintFee(reserve0, reserve1, swapV2PairData);

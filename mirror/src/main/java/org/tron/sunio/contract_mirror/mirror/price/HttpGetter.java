@@ -134,7 +134,7 @@ public class HttpGetter {
         return jsonResult;
     }
 
-
+    @SuppressWarnings("unchecked")
     public static JSONObject httpPost(String url, List nameValuePairList, String payLoad,
                                       Map<String, String> headers) {
         JSONObject jsonResult = null;

@@ -47,14 +47,14 @@ public class TestSwapV1 {
                 SwapV1Event.getSigMap()
         );
 
-        swapV1.setReady(true);
         SwapV1Data swapV1Data = new SwapV1Data();
-        swapV1Data.setReady(true);
         swapV1Data.setFactory(FACTORY_ADDRESS);
         swapV1Data.setTrxBalance(new BigInteger("4314662368935"));
         swapV1Data.setTokenBalance(new BigInteger("809463126858161732561578006"));
         swapV1Data.setLpTotalSupply(new BigInteger("41614163432"));
         swapV1.setSwapV1Data(swapV1Data);
+        swapV1.getStateInfo().setReady(true);
+        swapV1Data.setStateInfo(swapV1.getStateInfo());
         // AddLiquidity
         // addliquidityEvent
         IContractEventWrap log0 = EventLogUtils.generateContractEvent(
@@ -103,14 +103,14 @@ public class TestSwapV1 {
                 SwapV1Event.getSigMap()
         );
 
-        swapV1.setReady(true);
         SwapV1Data swapV1Data = new SwapV1Data();
-        swapV1Data.setReady(true);
         swapV1Data.setFactory(FACTORY_ADDRESS);
         swapV1Data.setTrxBalance(new BigInteger("4314674368935"));
         swapV1Data.setTokenBalance(new BigInteger("809465378148457871205899353"));
         swapV1Data.setLpTotalSupply(new BigInteger("41614279169"));
         swapV1.setSwapV1Data(swapV1Data);
+        swapV1.getStateInfo().setReady(true);
+        swapV1Data.setStateInfo(swapV1.getStateInfo());
         // RmLiquidity
         // rmliquidityEvent
         IContractEventWrap log0 = EventLogUtils.generateContractEvent(
@@ -159,14 +159,14 @@ public class TestSwapV1 {
                 SwapV1Event.getSigMap()
         );
 
-        swapV1.setReady(true);
         SwapV1Data swapV1Data = new SwapV1Data();
-        swapV1Data.setReady(true);
         swapV1Data.setFactory(FACTORY_ADDRESS);
         swapV1Data.setTrxBalance(new BigInteger("4314672280873"));
         swapV1Data.setTokenBalance(new BigInteger("809464986412169845445309056"));
         swapV1Data.setLpTotalSupply(new BigInteger("41614259030"));
         swapV1.setSwapV1Data(swapV1Data);
+        swapV1.getStateInfo().setReady(true);
+        swapV1Data.setStateInfo(swapV1.getStateInfo());
 
         // tokenPurchase
         IContractEventWrap log0 = EventLogUtils.generateContractEvent(
@@ -205,14 +205,14 @@ public class TestSwapV1 {
                 SwapV1Event.getSigMap()
         );
 
-        swapV1.setReady(true);
         SwapV1Data swapV1Data = new SwapV1Data();
-        swapV1Data.setReady(true);
         swapV1Data.setFactory(FACTORY_ADDRESS);
         swapV1Data.setTrxBalance(new BigInteger("4314675280873"));
         swapV1Data.setTokenBalance(new BigInteger("809464425278452519877826622"));
         swapV1Data.setLpTotalSupply(new BigInteger("41614259030"));
         swapV1.setSwapV1Data(swapV1Data);
+        swapV1.getStateInfo().setReady(true);
+        swapV1Data.setStateInfo(swapV1.getStateInfo());
 
         // TxPurchase
         IContractEventWrap log0 = EventLogUtils.generateContractEvent(

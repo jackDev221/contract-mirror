@@ -52,8 +52,7 @@ public class SwapFactoryV1 extends BaseFactory {
     private SwapFactoryV1Data getVarFactoryV1Data() {
         if (ObjectUtil.isNull(swapFactoryV1Data)) {
             swapFactoryV1Data = new SwapFactoryV1Data();
-            swapFactoryV1Data.setReady(false);
-            swapFactoryV1Data.setUsing(true);
+            swapFactoryV1Data.setStateInfo(stateInfo);
             swapFactoryV1Data.setAddress(this.address);
             swapFactoryV1Data.setType(this.type);
             swapFactoryV1Data.setVersion(version);
@@ -74,7 +73,7 @@ public class SwapFactoryV1 extends BaseFactory {
         swapFactoryV1Data.setFeeToRate(feeToRate);
         long tokenCount = CallContractUtil.getU256(iChainHelper, EMPTY_ADDRESS, address, "tokenCount").longValue();
         swapFactoryV1Data.setTokenCount(tokenCount);
-        isDirty = true;
+        stateInfo.dirty = true;
         return true;
     }
 
@@ -89,7 +88,7 @@ public class SwapFactoryV1 extends BaseFactory {
         List<BaseContract> result = newSubContracts;
         newSubContracts = new ArrayList<>();
         this.hasNewContract = false;
-        if (isAddExchangeContracts) {
+        if (stateInfo.addExchangeContracts) {
             return result;
         }
         SwapFactoryV1Data v1Data = this.getVarFactoryV1Data();
@@ -121,15 +120,6 @@ public class SwapFactoryV1 extends BaseFactory {
     }
 
     @Override
-    public void updateBaseInfo(boolean isUsing, boolean isReady, boolean isAddExchangeContracts) {
-        SwapFactoryV1Data factoryV1Data = getVarFactoryV1Data();
-        factoryV1Data.setReady(isReady);
-        factoryV1Data.setUsing(isUsing);
-        factoryV1Data.setAddExchangeContracts(isAddExchangeContracts);
-        this.isDirty = true;
-    }
-
-    @Override
     protected void saveUpdateToCache() {
 
     }
@@ -152,7 +142,7 @@ public class SwapFactoryV1 extends BaseFactory {
                 break;
             default:
                 log.warn("Contract:{} type:{} event:{} not handle", address, type, topics[0]);
-                result = HandleResult.genHandleFailMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
+                result = HandleResult.genHandleUselessMessage(String.format("Event:%s not handle", handleEventExtraData.getUniqueId()));
                 break;
         }
         return result;
@@ -227,7 +217,7 @@ public class SwapFactoryV1 extends BaseFactory {
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         BigInteger feeRate = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
         factoryV1Data.setFeeToRate(feeRate.longValue());
-        this.isDirty = true;
+        this.stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
@@ -246,7 +236,7 @@ public class SwapFactoryV1 extends BaseFactory {
         SwapFactoryV1Data factoryV1Data = this.getVarFactoryV1Data();
         String feeAddress = WalletUtil.ethAddressToTron((String) eventValues.getNonIndexedValues().get(0).getValue());
         factoryV1Data.setFeeTo(feeAddress);
-        this.isDirty = true;
+        stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 
@@ -273,7 +263,7 @@ public class SwapFactoryV1 extends BaseFactory {
                 this.iChainHelper, this.getIContractsHelper(), token, v1SigMap);
         this.newSubContracts.add(swapV1);
         this.hasNewContract = true;
-        this.isDirty = true;
+        this.stateInfo.dirty = true;
         return HandleResult.genHandleSuccess();
     }
 }
