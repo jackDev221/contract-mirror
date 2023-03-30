@@ -51,10 +51,12 @@ public class DefaultStrategy implements IStrategy {
                         currentPath.isBackward(edge) ||
                         !checkWTRXPath(currentPath, edge) ||
                         (!found && !checkWhiteBlackList(edge))) {
-                        log.trace("Prune {} |-> {}",
-                                  currentPath.getPools(),
-                                  edge.getPool().getName());
-                        log.trace("amounts {}", currentPath.getAmountsOut());
+                        if (log.isTraceEnabled()) {
+                            log.trace("Prune {} |-> {}",
+                                      currentPath.getPools(),
+                                      edge.getPool().getName());
+                            log.trace("amounts {}", currentPath.getAmountsOut());
+                        }
                         continue;
                     }
                     RouterPath path = new RouterPath(currentPath);
@@ -121,14 +123,18 @@ public class DefaultStrategy implements IStrategy {
                     candidate.getCurrentStep().setAmountOut(amountOut);
                     candidate.setAmountOut(amountOut);
                     minHeap.offer(candidate);
-                    log.debug("NEW CANDIDATE {} {}", amountOut, candidate.getPools());
-                    log.debug("amounts {}", candidate.getAmountsOut());
+                    if (log.isDebugEnabled()) {
+                        log.debug("NEW CANDIDATE {} {}", amountOut, candidate.getPools());
+                        log.debug("amounts {}", candidate.getAmountsOut());
+                    }
                     if (minHeap.size() > topN) {
                         candidate = minHeap.poll();
-                        log.debug("OBSOLETE CANDIDATE {} {}",
-                                  candidate.getAmountOut(),
-                                  candidate.getPools());
-                        log.debug("amounts {}", candidate.getAmountsOut());
+                        if (log.isDebugEnabled()) {
+                            log.debug("OBSOLETE CANDIDATE {} {}",
+                                      candidate.getAmountOut(),
+                                      candidate.getPools());
+                            log.debug("amounts {}", candidate.getAmountsOut());
+                        }
                     }
                     continue;
                 }
@@ -172,8 +178,10 @@ public class DefaultStrategy implements IStrategy {
             }
             step.setAmountOut(BigInteger.ZERO);
         }
-        log.debug("Prune {} at pos {}", pathToPrune.getPools(), pos);
-        log.debug("amounts {}", pathToPrune.getAmountsOut());
+        if (log.isDebugEnabled()) {
+            log.debug("Prune {} at pos {}", pathToPrune.getPools(), pos);
+            log.debug("amounts {}", pathToPrune.getAmountsOut());
+        }
     }
 
     protected static boolean checkWTRXPath(RouterPath path, Edge edge) {
