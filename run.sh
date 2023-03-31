@@ -2,38 +2,30 @@
 
 if [ ! $1 ];
 then
-    echo "Usage: sh run.sh [start|stop|restart|status] [projectname] [profile] [port]"
+    echo "Usage: sh run.sh [start|stop|restart|status] [profile] [port]"
     exit 1
 fi
 
-API_NAME=$2
-PROFILE=$3
-PORT=$4
+VERSION=`cat VERSION`
+API_NAME=contract-mirror-${VERSION}
+PROFILE=$2
+PORT=$3
 
 if [ ! $2 ]; then
-    API_NAME='contract-mirror-1.0.0'
-fi
-
-if [ ! $3 ]; then
     PROFILE='localdev'
 fi
 
-if [ ! $4 ]; then
+if [ ! $3 ]; then
     PORT=10020
 fi
-
-
 
 JAR_NAME=$API_NAME\.jar
 #PID  代表是PID文件
 PID=$API_NAME\.pid
 
-
-
-
 #使用说明，用来提示输入参数
 usage() {
-    echo "Usage: sh run.sh [start|stop|restart|status] [projectname] [profile] [port]"
+    echo "Usage: sh run.sh [start|stop|restart|status] [profile] [port]"
     exit 1
 }
 
@@ -54,7 +46,7 @@ start(){
   if [ $? -eq "0" ]; then
     echo ">>> ${JAR_NAME} is already running PID=${pid} <<<"
   else
-    nohup /opt/jdk-11.0.18/bin/java -XX:+UseG1GC -Xms6g -Xmx12g -jar $JAR_NAME  --spring.profiles.active=$PROFILE --server.port=$PORT >/dev/null 2>&1 &
+    nohup ${JAVA_HOME}/bin/java -XX:+UseG1GC -Xms6g -Xmx12g -jar $JAR_NAME  --spring.profiles.active=$PROFILE --server.port=$PORT >console.log 2>&1 &
     echo $! > $PID
     echo ">>> start $JAR_NAME successed PID=$! <<<"
    fi
@@ -115,5 +107,3 @@ case "$1" in
     ;;
 esac
 exit 0
-
-

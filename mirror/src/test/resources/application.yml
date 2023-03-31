@@ -1,4 +1,8 @@
-#server
+# logging
+logging:
+  config: logback-test.xml
+
+# server
 server:
   syncPeriod: 86400000
 
@@ -13,7 +17,7 @@ price-center:
     maxCacheSize: 10
     expireTime: 10
 
-#tron
+# tron
 tron:
   feeLimit: 500000000
   mainChain:
@@ -30,14 +34,14 @@ tron:
     gatewayAddress: TRDepx5KoQ8oNbFVZ5sogwUxtdYmATDRgX
     chainId: 413AF23F37DA0D48234FDD43D89931E98E1144481B
 
-#kafka
+# kafka
 kafka:
   bootstrapServers: 172.22.10.171:9092
   groupId: contract-mirror-0
   consumerTopics:
     - contractlog
 
-#contractList
+# contractList
 contract-list:
   contracts:
     - address: TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR

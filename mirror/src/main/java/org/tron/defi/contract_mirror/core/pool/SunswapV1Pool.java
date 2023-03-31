@@ -142,6 +142,7 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     protected boolean doDiff(String eventName) {
+        log.info("Diff {} {}", eventName, getAddress());
         switch (eventName) {
             case "Snapshot":
                 return diffBalances();
@@ -152,7 +153,6 @@ public class SunswapV1Pool extends Pool implements IToken, ITRC20 {
 
     @Override
     protected void handleEvent(String eventName, EventValues eventValues, long eventTime) {
-        log.info("Diff {} {}", eventName, getAddress());
         switch (eventName) {
             case "Snapshot":
                 handleSnapshotEvent(eventValues);
