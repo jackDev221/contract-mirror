@@ -12,16 +12,16 @@ if [ ! ${JAVA_HOME} ]; then
 fi
 
 BRANCH_NAME=${1}
-PROFILE=${2}
-PORT=${3}
+PROFILE=nile
+PORT=10020
 VERSION=`cat VERSION`
 
-if [ ! ${PROFILE} ]; then
-  PROFILE=nile
+if [ $# -ge 2 ]; then
+  PROFILE=${2}
 fi
 
-if [ ! ${PORT} ]; then
-  PORT=10020
+if [ $# -gt 3 ]; then
+  PORT=${3}
 fi
 
 if [ ! ${VERSION} ]; then

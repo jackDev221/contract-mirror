@@ -65,7 +65,7 @@ public abstract class Pool extends SynchronizableContract {
     public void sync() {
         timestamp0 = System.currentTimeMillis();
         getContractData();
-        timestamp1 = System.currentTimeMillis();
+        timestamp1 = Math.max(timestamp0, System.currentTimeMillis()); // max to avoid lock drift
         timestamp2 = 2 * timestamp1 - timestamp0;
     }
 
