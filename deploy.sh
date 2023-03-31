@@ -1,7 +1,5 @@
 #!/bin/bash -
 
-set -o nounset                                  # Treat unset variables as an error
-
 if [ ! ${1} ]; then
   echo "Usage sh deploy.sh [branch_name] [profile] [port]"
   exit 1
@@ -12,16 +10,16 @@ if [ ! ${JAVA_HOME} ]; then
 fi
 
 BRANCH_NAME=${1}
-PROFILE=nile
-PORT=10020
+PROFILE=${2}
+PORT=${3}
 VERSION=`cat VERSION`
 
-if [ $# -ge 2 ]; then
-  PROFILE=${2}
+if [ ! ${PROFILE} ]; then
+  PROFILE=nile
 fi
 
-if [ $# -gt 3 ]; then
-  PORT=${3}
+if [ ! ${PORT} ]; then
+  PORT=10020
 fi
 
 if [ ! ${VERSION} ]; then
