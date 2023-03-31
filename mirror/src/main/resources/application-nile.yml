@@ -2,7 +2,7 @@
 logging:
   config: 'classpath:logback-spring.xml'
 
-#server
+# server
 server:
   syncPeriod: 86400000
 
@@ -17,7 +17,7 @@ price-center:
     maxCacheSize: 100000
     expireTime: 60
 
-#tron
+# tron
 tron:
   feeLimit: 500000000
   mainChain:
@@ -34,7 +34,7 @@ tron:
     gatewayAddress: TRDepx5KoQ8oNbFVZ5sogwUxtdYmATDRgX
     chainId: 413AF23F37DA0D48234FDD43D89931E98E1144481B
 
-#kafka
+# kafka
 kafka:
   bootstrapServers: 172.22.10.171:9092
   groupId: contract-mirror-0
@@ -42,7 +42,7 @@ kafka:
   consumerTopics:
     - nile_contractlog
 
-#contractList
+# contractList
 contract-list:
   contracts:
     - address: TYsbWxNnyTgsZaTFaue9hqpxkU3Fkco94a
