@@ -1,7 +1,3 @@
-# logging
-logging:
-  config: logback-test.xml
-
 #server
 server:
   syncPeriod: 86400000

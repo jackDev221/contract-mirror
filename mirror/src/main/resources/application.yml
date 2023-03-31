@@ -1,6 +1,6 @@
 # logging
 logging:
-  config: logback-test.xml
+  config: logback-spring.xml
 
 # server
 server:

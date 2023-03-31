@@ -43,13 +43,6 @@ dependencies {
     testImplementation "org.apache.commons:commons-lang3:${apacheCommonsVersion}"
 }
 
-jar {
-    manifest {
-        attributes "Main-Class": mainClassName
-        archiveClassifier = ""
-    }
-}
-
 test {
     useJUnitPlatform()
 }
