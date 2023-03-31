@@ -14,21 +14,21 @@ buildscript {
 }
 
 plugins {
-    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+    id "io.spring.dependency-management" version "1.0.8.RELEASE"
 }
 
-apply plugin: 'application'
-apply plugin: 'org.springframework.boot'
-apply plugin: 'io.spring.dependency-management'
+apply plugin: "application"
+apply plugin: "org.springframework.boot"
+apply plugin: "io.spring.dependency-management"
 
-applicationDefaultJvmArgs = ['-XX:+UseG1GC']
-mainClassName = 'org.tron.defi.contract_mirror.application.Application'
-archivesBaseName = 'contract-mirror'
-version = "1.0.0"
+applicationDefaultJvmArgs = ["-XX:+UseG1GC"]
+mainClassName = "org.tron.defi.contract_mirror.application.Application"
+archivesBaseName = "contract-mirror"
+version = "${projectVersion}"
 
 dependencies {
     implementation fileTree(dir: "../lib", includes: ["*.jar"])
-    implementation project(':contract-abi')
+    implementation project(":contract-abi")
 
     implementation "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
     implementation "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
@@ -41,6 +41,13 @@ dependencies {
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
     testImplementation "org.apache.commons:commons-lang3:${apacheCommonsVersion}"
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": mainClassName
+        archiveClassifier = ""
+    }
 }
 
 test {
