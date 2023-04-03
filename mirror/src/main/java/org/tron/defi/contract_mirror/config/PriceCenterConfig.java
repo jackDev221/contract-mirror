@@ -16,6 +16,7 @@ import java.util.Map;
 public class PriceCenterConfig {
     private String server;
     private String uri;
+    private boolean useSymbol = false;
     private Map<String, String> params = new HashMap<>();
     private CacheConfig cacheConfig;
 

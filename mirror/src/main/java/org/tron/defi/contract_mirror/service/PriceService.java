@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.tron.defi.contract_mirror.config.PriceCenterConfig;
 import org.tron.defi.contract_mirror.config.TokenConfigList;
+import org.tron.defi.contract_mirror.core.Contract;
+import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.dto.legacy.PriceResponse;
 import org.tron.defi.contract_mirror.utils.RestClient;
 
@@ -59,7 +61,10 @@ public class PriceService {
                                                  .register(meterRegistry);
     }
 
-    public BigDecimal getPrice(String symbolOrAddress) {
+    public BigDecimal getPrice(IToken token) {
+        String symbolOrAddress = priceCenterConfig.isUseSymbol()
+                                 ? token.getSymbol()
+                                 : ((Contract) token).getAddress();
         symbolOrAddress = tokenConfigList.getWrapTokens()
                                          .getOrDefault(symbolOrAddress, symbolOrAddress);
         BigDecimal price = getPriceFromCache(symbolOrAddress);

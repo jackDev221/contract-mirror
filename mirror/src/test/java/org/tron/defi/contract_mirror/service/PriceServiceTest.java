@@ -36,9 +36,10 @@ public class PriceServiceTest {
 
     @Test
     public void cacheExpireTest() {
+        priceCenterConfig.setUseSymbol(true);
         String symbol = token.getSymbol();
         Assertions.assertNull(priceService.getPriceFromCache(symbol));
-        BigDecimal price = priceService.getPrice(symbol);
+        BigDecimal price = priceService.getPrice(token);
         Assertions.assertEquals(price, priceService.getPriceFromCache(symbol));
         try {
             Thread.sleep(priceCenterConfig.getCacheConfig().getExpireTime() * 1000 + 100);
@@ -50,9 +51,10 @@ public class PriceServiceTest {
 
     @Test
     public void getPriceByAddressTest() {
+        priceCenterConfig.setUseSymbol(false);
         String address = ((Contract) token).getAddress();
         Assertions.assertNull(priceService.getPriceFromCache(address));
-        BigDecimal price = priceService.getPrice(address);
+        BigDecimal price = priceService.getPrice(token);
         Assertions.assertEquals(price, priceService.getPriceFromCache(address));
         log.info(price.toString());
         BigDecimal diffPercentage = price.subtract(BigDecimal.ONE)
@@ -65,9 +67,10 @@ public class PriceServiceTest {
 
     @Test
     public void getPriceBySymbolTest() {
+        priceCenterConfig.setUseSymbol(true);
         String symbol = token.getSymbol();
         Assertions.assertNull(priceService.getPriceFromCache(symbol));
-        BigDecimal price = priceService.getPrice(symbol);
+        BigDecimal price = priceService.getPrice(token);
         Assertions.assertEquals(price, priceService.getPriceFromCache(symbol));
         log.info(price.toString());
         BigDecimal diffPercentage = price.subtract(BigDecimal.ONE)

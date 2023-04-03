@@ -97,11 +97,6 @@ public class RouterController {
                                            .collect(Collectors.toSet());
         try {
             long time0 = System.currentTimeMillis();
-            BigDecimal inUsdPrice = requireNonNullElse(priceService.getPrice(from),
-                                                       BigDecimal.ZERO);
-            BigDecimal outUsdPrice = requireNonNullElse(priceService.getPrice(to), BigDecimal.ZERO);
-            log.debug("inUsdPrice={} outUsdPrice={}", inUsdPrice, outUsdPrice);
-            long time1 = System.currentTimeMillis();
             List<RouterPath> paths = routerService.getPath(from,
                                                            to,
                                                            amountIn,
@@ -110,11 +105,16 @@ public class RouterController {
                                                            topN,
                                                            whitelistSet,
                                                            blacklistSet);
-            long time2 = System.currentTimeMillis();
-            List<RouterResultV2> resultV2s = new ArrayList<>(paths.size());
-            BigDecimal inUsd = null;
+            long time1 = System.currentTimeMillis();
+            BigDecimal inUsd = BigDecimal.ZERO;
+            BigDecimal outUsdPrice = BigDecimal.ZERO;
             if (!paths.isEmpty()) {
                 IToken inToken = (IToken) paths.get(0).getFrom().getToken();
+                IToken outToken = (IToken) paths.get(0).getTo().getToken();
+                BigDecimal inUsdPrice = requireNonNullElse(priceService.getPrice(inToken),
+                                                           BigDecimal.ZERO);
+                outUsdPrice = requireNonNullElse(priceService.getPrice(outToken), BigDecimal.ZERO);
+                log.debug("inUsdPrice={} outUsdPrice={}", inUsdPrice, outUsdPrice);
                 inUsd = 0 == inUsdPrice.compareTo(BigDecimal.ZERO)
                         ? BigDecimal.ZERO
                         : new BigDecimal(amount).divide(BigDecimal.valueOf(10)
@@ -122,6 +122,8 @@ public class RouterController {
                                                         inToken.getDecimals(),
                                                         RoundingMode.HALF_UP).multiply(inUsdPrice);
             }
+            long time2 = System.currentTimeMillis();
+            List<RouterResultV2> resultV2s = new ArrayList<>(paths.size());
             for (int i = 0; i < paths.size(); i++) {
                 RouterPath path = paths.get(i);
                 RouterResultV2 resultV2 = RouterResultV2.fromRouterPath(path);
@@ -135,7 +137,7 @@ public class RouterController {
             response.setCode(Response.Code.SUCCESS);
             response.setData(resultV2s);
             long time3 = System.currentTimeMillis();
-            log.trace("{}, timePrice {}ms, timePath {}ms, timeResponse {}ms, total {}ms",
+            log.trace("{}, timePath {}ms, timePrice {}ms, timeResponse {}ms, total {}ms",
                       response,
                       time1 - time0,
                       time2 - time1,
@@ -178,18 +180,17 @@ public class RouterController {
         BigInteger amountIn = new BigInteger(amount);
         try {
             long time0 = System.currentTimeMillis();
-            BigDecimal inUsdPrice = requireNonNullElse(priceService.getPrice(fromToken),
-                                                       BigDecimal.ZERO);
-            BigDecimal outUsdPrice = requireNonNullElse(priceService.getPrice(toToken),
-                                                        BigDecimal.ZERO);
-            log.debug("inUsdPrice={} outUsdPrice={}", inUsdPrice, outUsdPrice);
-            long time1 = System.currentTimeMillis();
             List<RouterPath> paths = routerService.getPath(from, to, amountIn);
-            long time2 = System.currentTimeMillis();
-            List<RouterResultV2> resultV2s = new ArrayList<>(paths.size());
-            BigDecimal inUsd = null;
+            long time1 = System.currentTimeMillis();
+            BigDecimal outUsdPrice = BigDecimal.ZERO;
+            BigDecimal inUsd = BigDecimal.ZERO;
             if (!paths.isEmpty()) {
                 IToken inToken = (IToken) paths.get(0).getFrom().getToken();
+                IToken outToken = (IToken) paths.get(0).getTo().getToken();
+                BigDecimal inUsdPrice = requireNonNullElse(priceService.getPrice(inToken),
+                                                           BigDecimal.ZERO);
+                outUsdPrice = requireNonNullElse(priceService.getPrice(outToken), BigDecimal.ZERO);
+                log.debug("inUsdPrice={} outUsdPrice={}", inUsdPrice, outUsdPrice);
                 inUsd = 0 == inUsdPrice.compareTo(BigDecimal.ZERO)
                         ? BigDecimal.ZERO
                         : new BigDecimal(amount).divide(BigDecimal.valueOf(10)
@@ -197,6 +198,8 @@ public class RouterController {
                                                         inToken.getDecimals(),
                                                         RoundingMode.HALF_UP).multiply(inUsdPrice);
             }
+            long time2 = System.currentTimeMillis();
+            List<RouterResultV2> resultV2s = new ArrayList<>(paths.size());
             for (int i = 0; i < paths.size(); i++) {
                 RouterPath path = paths.get(i);
                 RouterResultV2 resultV2 = RouterResultV2.fromRouterPath(path);
@@ -210,7 +213,7 @@ public class RouterController {
             response.setCode(Response.Code.SUCCESS);
             response.setData(resultV2s);
             long time3 = System.currentTimeMillis();
-            log.trace("{}, timePrice {}ms, timePath {}ms, timeResponse {}ms, total {}ms",
+            log.trace("{}, timePath {}ms, timePrice {}ms, timeResponse {}ms, total {}ms",
                       response,
                       time1 - time0,
                       time2 - time1,

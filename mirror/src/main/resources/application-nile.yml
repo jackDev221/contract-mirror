@@ -10,6 +10,7 @@ server:
 price-center:
   server: c.tronlink.org
   uri: /v1/cryptocurrency/getprice
+  useSymbol: true
   params:
     convert: USD
   cacheConfig:

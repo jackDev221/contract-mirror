@@ -1,6 +1,6 @@
 # logging
 logging:
-  config: logback-test.xml
+  config: 'classpath:logback-test.xml'
 
 # server
 server:
