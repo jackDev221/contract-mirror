@@ -47,10 +47,9 @@ public class DefaultStrategy implements IStrategy {
                 for (Edge edge : node.getOutEdges()) {
                     boolean found = edge.getTo().isEqual(currentPath.getTo());
                     if (edge.getPool().cost() + currentPath.getCost() > routerConfig.getMaxCost() ||
-                        edge.getTo().outDegree() <= 1 ||
                         currentPath.isBackward(edge) ||
                         !checkWTRXPath(currentPath, edge) ||
-                        (!found && !checkWhiteBlackList(edge))) {
+                        (!found && (edge.getTo().outDegree() <= 1 || !checkWhiteBlackList(edge)))) {
                         if (log.isTraceEnabled()) {
                             log.trace("Prune {} |-> {}",
                                       currentPath.getPools(),
