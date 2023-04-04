@@ -9,6 +9,7 @@ fi
 API_NAME=$2
 PROFILE=$3
 PORT=$4
+KAFKA_GROUP_ID=$5
 
 if [ ! $2 ]; then
     API_NAME='contract-mirror-1.0.0'
@@ -54,7 +55,7 @@ start(){
   if [ $? -eq "0" ]; then
     echo ">>> ${JAR_NAME} is already running PID=${pid} <<<"
   else
-    nohup /opt/jdk-11.0.18/bin/java -Xms1g -Xmx8g -jar $JAR_NAME  --spring.profiles.active=$PROFILE --server.port=$PORT --kafka.groupId=contract_mirror_${PROFILE}_${PORT} >/dev/null 2>&1 &
+    nohup /opt/jdk-11.0.18/bin/java -Xms1g -Xmx8g -jar $JAR_NAME  --spring.profiles.active=$PROFILE --server.port=$PORT --kafka.groupId=contract_mirror_${KAFKA_GROUP_ID} >/dev/null 2>&1 &
     echo $! > $PID
     echo ">>> start $JAR_NAME successed PID=$! <<<"
    fi
