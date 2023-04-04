@@ -2,7 +2,7 @@
 
 if [ ! $1 ];
 then
-    echo "Usage: sh run.sh [start|stop|restart|status] [projectname] [profile] [port]"
+    echo "Usage: sh run.sh [start|stop|restart|status] [projectname] [profile] [port] [kafka_group_id]"
     exit 1
 fi
 
@@ -34,7 +34,7 @@ PID=$API_NAME\.pid
 
 #使用说明，用来提示输入参数
 usage() {
-    echo "Usage: sh run.sh [start|stop|restart|status] [projectname] [profile] [port]"
+    echo "Usage: sh run.sh [start|stop|restart|status] [projectname] [profile] [port] [kafka_group_id]"
     exit 1
 }
 
