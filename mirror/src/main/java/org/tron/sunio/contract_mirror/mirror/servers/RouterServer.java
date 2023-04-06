@@ -79,7 +79,7 @@ public class RouterServer {
         convertTrxInRouterInput(routerInput);
         RoutNode routNode = routNodeMap.get(routerInput.getFromToken());
         List<RoutItem> res = new ArrayList<>();
-        if (!ObjectUtil.isNull(routNode) && routerInput.getIn().compareTo(BigInteger.ZERO) > 0) {
+        if (validateInput(routerInput)) {
             List<List<StepInfo>> paths = null;
             String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
             paths = cachedPaths.getIfPresent(key);
@@ -119,6 +119,27 @@ public class RouterServer {
         long t3 = System.currentTimeMillis();
         log.info("RouterServer response, cast:{}", t3 - t0);
         return res;
+    }
+
+    private boolean validateInput(RouterInput routerInput) {
+        boolean tokensValidate = validateInputToken(routerInput.getFromToken(), routerInput.getFromTokenSymbol()) &&
+                validateInputToken(routerInput.getToToken(), routerInput.getToTokenSymbol());
+        boolean validateIn = routerInput.getIn().compareTo(BigInteger.ZERO) > 0;
+        if (!validateIn) {
+            log.warn("Input amount is <= 0");
+        }
+        return tokensValidate && validateIn;
+    }
+
+    private boolean validateInputToken(String address, String tokenSymbol) {
+        RoutNode routNode = routNodeMap.get(address);
+        if (ObjectUtil.isNull(routNode)) {
+            log.warn("Can not find token: {}", address);
+            return false;
+        }
+        boolean isValidate = routNode.getSymbol().equals(tokenSymbol);
+        log.info("Token: {} is validate:{}", address, isValidate);
+        return isValidate;
     }
 
     private void convertTrxInRouterInput(RouterInput routerInput) {
