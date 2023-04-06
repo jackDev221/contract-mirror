@@ -1,11 +1,14 @@
 package org.tron.sunio.contract_mirror.mirror.servers;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.tron.sunio.contract_mirror.event_decode.utils.GsonUtil;
 import org.tron.sunio.contract_mirror.mirror.config.RouterConfig;
@@ -40,11 +43,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.CALL_FOR_ROUTER;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.EMPTY_ADDRESS;
 import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.IS_DEBUG;
+import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.NETWORK_NILE;
 
 @Slf4j
 @Service
@@ -54,18 +59,19 @@ public class RouterServer {
     private static final String USDD = "USDD";
 
     private final ConcurrentMap<String, RoutNode> routNodeMap = new ConcurrentHashMap<>();
-    // 之后考虑用缓存
-//    private final ConcurrentMap<String, List<List<StepInfo>>> cachedPaths = new ConcurrentHashMap<>();
-
+    private final static Cache<String, List<List<StepInfo>>> cachedPaths = CacheBuilder.newBuilder()
+            .initialCapacity(512)
+            .concurrencyLevel(10)
+            .expireAfterWrite(600, TimeUnit.SECONDS)
+            .build();
     @Autowired
     private TokenPrice tokenPrice;
-
     private final Map<String, String> baseTokensMap = new HashMap<>();
     private final Map<String, String> baseTokenSymbolsMap = new HashMap<>();
-
-
     @Autowired
     private RouterConfig routerConfig;
+    @Value("${contract.mirror.network}")
+    public String network;
 
     public List<RoutItem> getRouter(RouterInput routerInput, Map<String, BaseContract> contractMaps) {
         log.info("RouterServer receive request:{}", GsonUtil.objectToGson(routerInput));
@@ -75,15 +81,15 @@ public class RouterServer {
         List<RoutItem> res = new ArrayList<>();
         if (!ObjectUtil.isNull(routNode) && routerInput.getIn().compareTo(BigInteger.ZERO) > 0) {
             List<List<StepInfo>> paths = null;
-//            String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
-//            paths = cachedPaths.get(key);
+            String key = genListPathsKey(routerInput.getFromToken(), routerInput.getToToken(), routerInput.isUseBaseTokens());
+            paths = cachedPaths.getIfPresent(key);
             if (ObjectUtil.isNull(paths)) {
                 paths = new ArrayList<>();
                 getPathsNoRecurrence(routNode, routerInput.getFromToken(), routerInput.getToToken(), paths, routerConfig.getMaxHops(),
                         routerInput.isUseBaseTokens());
-//                if (paths.size() != 0) {
-//                    cachedPaths.put(key, paths);
-//                }
+                if (paths.size() != 0) {
+                    cachedPaths.put(key, paths);
+                }
             }
             long t1 = System.currentTimeMillis();
             // test
@@ -140,7 +146,7 @@ public class RouterServer {
 
     private String getTokenPriceInput(String tokenAddress, String tokenSymbol) {
         String res = tokenAddress;
-        if (routerConfig.getEnv().equals(RouterConfig.ENV_NILE)) {
+        if (network.equals(NETWORK_NILE)) {
             res = tokenSymbol;
         }
         if (res.equalsIgnoreCase("null")) {
