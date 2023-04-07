@@ -5,10 +5,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.tron.defi.contract_mirror.core.token.IToken;
 import org.tron.defi.contract_mirror.dao.RouterPath;
 import org.tron.defi.contract_mirror.dto.Response;
@@ -26,6 +23,7 @@ import static java.util.Objects.requireNonNullElse;
 
 @Slf4j
 @RestController
+@CrossOrigin
 @RequestMapping("/swap/")
 public class RouterController {
     private final Counter routerFailCounter;

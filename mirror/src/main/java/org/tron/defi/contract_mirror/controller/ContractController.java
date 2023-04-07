@@ -1,19 +1,18 @@
 package org.tron.defi.contract_mirror.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.tron.defi.contract_mirror.dto.Response;
 import org.tron.defi.contract_mirror.service.ContractService;
 
 @RestController
+@CrossOrigin
+@RequestMapping("/contract/")
 public class ContractController {
     @Autowired
     ContractService contractService;
 
-    @RequestMapping("/contract/{address}/{method}")
+    @GetMapping("/method/{address}/{method}")
     public Response callContract(@PathVariable String address, @PathVariable String method) {
         Response response = new Response();
         try {
