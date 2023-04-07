@@ -23,7 +23,7 @@ import java.util.List;
 
 @Slf4j
 public class PsmPool extends Pool {
-    private static final BigInteger FEE_DENOMINATOR = new BigInteger("1000000000000000000");
+    private static final BigInteger FEE_DENOMINATOR = BigInteger.valueOf(10).pow(18);
     private final String polyAddress;
     private PsmPoly poly;
     private PsmPoly.PsmInfo info;
@@ -155,13 +155,15 @@ public class PsmPool extends Pool {
     private BigInteger buyGemOut(BigInteger amountIn) {
         rlock.lock();
         try {
-            BigInteger fee = amountIn.multiply(info.getFeeToGem()).divide(FEE_DENOMINATOR);
-            BigInteger amountOut = amountIn.subtract(fee).divide(gemToUsddDecimalFactor);
-            if (info.getBalanceGem().compareTo(amountOut) < 0) {
+            // amountOut = amountIn / (1 + fee / FEE_DENOMINATOR) / factor
+            BigInteger amountOut = amountIn.multiply(FEE_DENOMINATOR)
+                                           .divide(FEE_DENOMINATOR.add(info.getFeeToGem()))
+                                           .divide(gemToUsddDecimalFactor);
+            if (info.getBalanceGem().compareTo(amountIn) < 0) {
                 throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }
             if (info.getEnableUsddToGemQuota() &&
-                info.getQuotaUsddToGem().compareTo(amountOut) < 0) {
+                info.getQuotaUsddToGem().compareTo(amountIn) < 0) {
                 throw new RuntimeException(getName() + " NOT ENOUGH QUOTA");
             }
             return amountOut;
@@ -322,9 +324,9 @@ public class PsmPool extends Pool {
             if (info.getBalanceUsdd().compareTo(amountOut) < 0) {
                 throw new RuntimeException(getName() + " NOT ENOUGH BALANCE");
             }
-            if (TokenMath.safeAdd(info.getAmountGemToUsdd(), amountOut)
+            if (TokenMath.safeAdd(info.getAmountGemToUsdd(), amountIn)
                          .compareTo(info.getQuotaGemToUsdd()) > 0 ||
-                TokenMath.safeAdd(info.getAmountTotalToUsdd(), amountOut)
+                TokenMath.safeAdd(info.getAmountTotalToUsdd(), amountIn)
                          .compareTo(info.getQuotaTotalToUsdd()) > 0) {
                 throw new RuntimeException(getName() + " NOT ENOUGH QUOTA");
             }
