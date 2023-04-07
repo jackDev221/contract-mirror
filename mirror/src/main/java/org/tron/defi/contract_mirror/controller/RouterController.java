@@ -32,6 +32,7 @@ public class RouterController {
     private final Counter routerCounter;
     private final Counter routingV2FailCounter;
     private final Counter routingV2Counter;
+    private final RouterResultV2 emptyResult = new RouterResultV2();
     @Autowired
     private RouterService routerService;
     @Autowired
@@ -209,6 +210,10 @@ public class RouterController {
                                     : new BigDecimal(resultV2.getAmount()).multiply(outUsdPrice);
                 resultV2.setOutUsd(outUsd.toString());
                 resultV2s.add(resultV2);
+            }
+            // default result for front-end
+            if (resultV2s.isEmpty()) {
+                resultV2s.add(emptyResult);
             }
             response.setCode(Response.Code.SUCCESS);
             response.setData(resultV2s);
