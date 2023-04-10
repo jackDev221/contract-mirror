@@ -6,7 +6,6 @@ import org.tron.defi.contract_mirror.dto.Response;
 import org.tron.defi.contract_mirror.service.ContractService;
 
 @RestController
-@CrossOrigin
 @RequestMapping("/contract/")
 public class ContractController {
     @Autowired
