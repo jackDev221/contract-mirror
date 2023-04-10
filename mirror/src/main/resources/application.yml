@@ -12,16 +12,6 @@ server:
       force: true
   syncPeriod: 86400000
 
-# spring
-spring:
-  web:
-    resources:
-      cache:
-        cachecontrol:
-          no-cache: true
-          no-store: true
-          must-revalidate: true
-
 # management
 management:
   server:

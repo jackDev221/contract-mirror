@@ -11,16 +11,6 @@ server:
       force: true
   syncPeriod: 86400000
 
-# spring
-spring:
-  web:
-    resources:
-      cache:
-        cachecontrol:
-          no-cache: true
-          no-store: true
-          must-revalidate: true
-
 # price-center
 price-center:
   server: c.tronlink.org
