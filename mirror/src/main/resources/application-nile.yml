@@ -4,7 +4,22 @@ logging:
 
 # server
 server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
   syncPeriod: 86400000
+
+# spring
+spring:
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          no-cache: true
+          no-store: true
+          must-revalidate: true
 
 # price-center
 price-center:
