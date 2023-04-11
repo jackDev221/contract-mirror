@@ -44,9 +44,8 @@ public class ContractManager {
                 case SUNSWAP_FACTORY_V2:
                     initSunswapV2(contractConfig.getAddress());
                     break;
-                case CURVE_2POOL:
-                case CURVE_3POOL:
-                case CURVE_COMBINATION_4POOL:
+                case CURVE_POOL:
+                case CURVE_COMBINATION_POOL:
                     initCurve(contractConfig);
                     break;
                 case PSM_POOL:
@@ -66,13 +65,12 @@ public class ContractManager {
         PoolType poolType = PoolType.convertFromContractType(config.getType());
         Pool pool;
         switch (config.getType()) {
-            case CURVE_2POOL:
-            case CURVE_3POOL:
+            case CURVE_POOL:
                 pool = (Pool) registerContract(new CurvePool(config.getAddress(),
                                                              poolType,
                                                              config.getCurveConfig()));
                 break;
-            case CURVE_COMBINATION_4POOL:
+            case CURVE_COMBINATION_POOL:
                 pool = (Pool) registerContract(new CurveCombinationPool(config.getAddress(),
                                                                         poolType,
                                                                         config.getCurveConfig()));
@@ -103,7 +101,7 @@ public class ContractManager {
                 node1.addOutEdge(edge1);
             }
         }
-        if (PoolType.CURVE_COMBINATION4 == pool.getType()) {
+        if (PoolType.CURVE_COMBINATION == pool.getType()) {
             Node node0 = graph.getNode(pool.getTokens().get(0).getAddress());
             ITRC20 underlyingLpToken = ((CurveCombinationPool) pool).getUnderlyingPool()
                                                                     .getLpToken();

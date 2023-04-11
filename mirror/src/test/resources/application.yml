@@ -57,7 +57,7 @@ contract-list:
       type: SUNSWAP_FACTORY_V2
     - name: 2pool
       address: TNTfaTpkdd4AQDeqr8SGG7tgdkdjdhbP5c
-      type: CURVE_2POOL
+      type: CURVE_POOL
       curveConfig:
         feeIndex: 1
         feeDenominator: 10
@@ -67,7 +67,7 @@ contract-list:
           - 30
     - name: old3pool
       address: TKcEU8ekq2ZoFzLSGFYCUY6aocJBX9X31b
-      type: CURVE_3POOL
+      type: CURVE_POOL
       curveConfig:
         feeIndex: 2
         feeDenominator: 10
@@ -78,7 +78,7 @@ contract-list:
           - 30
     - name: oldusdcpool
       address: TQx6CdLHqjwVmJ45ecRzodKfVumAsdoRXH
-      type: CURVE_COMBINATION_4POOL
+      type: CURVE_COMBINATION_POOL
       curveConfig:
         feeIndex: 3
         feeDenominator: 10

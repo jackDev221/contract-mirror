@@ -20,8 +20,8 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.tron.defi.contract_mirror.core.ContractType.CURVE_3POOL;
-import static org.tron.defi.contract_mirror.core.ContractType.CURVE_COMBINATION_4POOL;
+import static org.tron.defi.contract_mirror.core.ContractType.CURVE_COMBINATION_POOL;
+import static org.tron.defi.contract_mirror.core.ContractType.CURVE_POOL;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)
@@ -217,9 +217,11 @@ public class CurveCombinationPoolTest {
     @BeforeEach
     public void setUp() {
         for (ContractConfigList.ContractConfig contractConfig : contractConfigList.getContracts()) {
-            if (CURVE_3POOL == contractConfig.getType()) {
+            if (CURVE_POOL == contractConfig.getType() &&
+                contractConfig.getName().equals("old3pool")) {
                 contractManager.initCurve(contractConfig);
-            } else if (CURVE_COMBINATION_4POOL == contractConfig.getType()) {
+            } else if (CURVE_COMBINATION_POOL == contractConfig.getType() &&
+                       contractConfig.getName().equals("oldusdcpool")) {
                 config = contractConfig;
                 break;
             }
@@ -228,7 +230,7 @@ public class CurveCombinationPoolTest {
         log.info(config.toString());
         pool = (CurveCombinationPool) contractManager.registerContract(new CurveCombinationPool(
             config.getAddress(),
-            PoolType.CURVE_COMBINATION4,
+            PoolType.CURVE_COMBINATION,
             config.getCurveConfig()));
     }
 }

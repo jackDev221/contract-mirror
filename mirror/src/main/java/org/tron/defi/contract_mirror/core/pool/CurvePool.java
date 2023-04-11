@@ -22,15 +22,12 @@ import org.web3j.abi.datatypes.generated.Uint256;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class CurvePool extends Pool {
-    private static final ArrayList<PoolType> CURVE_TYPE
-        = new ArrayList<>(Arrays.asList(PoolType.CURVE2, PoolType.CURVE3));
     private final BigInteger FEE_DENOMINATOR;
     private final BigInteger PRECISION;
     private final List<BigInteger> RATES;
@@ -45,10 +42,6 @@ public class CurvePool extends Pool {
 
     public CurvePool(String address, PoolType type, ContractConfigList.CurveConfig curveConfig) {
         super(address);
-        int index = CURVE_TYPE.indexOf(type);
-        if (index < 0) {
-            throw new IllegalArgumentException("UNEXPECTED TYPE " + type.name());
-        }
         this.type = type;
         FEE_INDEX = curveConfig.getFeeIndex();
         FEE_DENOMINATOR = BigInteger.valueOf(10).pow(curveConfig.getFeeDenominator());
@@ -57,15 +50,9 @@ public class CurvePool extends Pool {
                            .stream()
                            .map(i -> BigInteger.valueOf(10).pow(i))
                            .collect(Collectors.toList());
-        switch (type) {
-            case CURVE2:
-                balances = Arrays.asList(BigInteger.ZERO, BigInteger.ZERO);
-                break;
-            case CURVE3:
-                balances = Arrays.asList(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO);
-                break;
-            default:
-                throw new IllegalArgumentException("UNEXPECTED TYPE " + type.name());
+        balances = new ArrayList<>(getN());
+        for (int i = 0; i < getN(); i++) {
+            balances.add(BigInteger.ZERO);
         }
     }
 
@@ -390,8 +377,7 @@ public class CurvePool extends Pool {
     }
 
     public int getN() {
-        final int CURVE_TOKENS_MIN = 2;
-        return tokens.size() > 0 ? tokens.size() : CURVE_TOKENS_MIN + CURVE_TYPE.indexOf(type);
+        return RATES.size();
     }
 
     public BigInteger getVirtualPrice(long timestamp) {

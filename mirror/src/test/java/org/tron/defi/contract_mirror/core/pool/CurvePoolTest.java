@@ -23,7 +23,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.tron.defi.contract_mirror.core.ContractType.CURVE_3POOL;
+import static org.tron.defi.contract_mirror.core.ContractType.CURVE_POOL;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)
@@ -196,7 +196,8 @@ public class CurvePoolTest {
     @BeforeEach
     public void setUp() {
         for (ContractConfigList.ContractConfig contractConfig : contractConfigList.getContracts()) {
-            if (CURVE_3POOL == contractConfig.getType()) {
+            if (CURVE_POOL == contractConfig.getType() &&
+                contractConfig.getName().equals("old3pool")) {
                 config = contractConfig;
                 break;
             }

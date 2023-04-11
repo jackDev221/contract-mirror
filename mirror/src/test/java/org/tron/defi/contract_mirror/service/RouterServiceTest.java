@@ -114,9 +114,8 @@ public class RouterServiceTest {
                     wtrx = config.getAddress();
                     contractManager.initWTRX(wtrx);
                     break;
-                case CURVE_2POOL:
-                case CURVE_3POOL:
-                case CURVE_COMBINATION_4POOL:
+                case CURVE_POOL:
+                case CURVE_COMBINATION_POOL:
                     contractManager.initCurve(config);
                     break;
                 default:
