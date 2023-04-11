@@ -105,6 +105,49 @@ contract-list:
       address: TAkD9tpd6MWVM3MQjrfDRGCXwiRMUGzzYh
       type: PSM_POOL
       polyAddress: TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r
+    - name: tusdusdt2pool
+      address: TYjci8B4GKaLRYcZgfkht788JUE7wAwTTk
+      type: CURVE_POOL
+      curveConfig:
+        feeIndex: 1
+        feeDenominator: 10
+        precision: 18
+        rates:
+          - 18
+          - 30
+    - name: usdc2pool
+      address: TD6mWZHgWC4hni4revAepspejbuvqpVHXS
+      type: CURVE_COMBINATION_POOL
+      curveConfig:
+        feeIndex: 3
+        feeDenominator: 10
+        precision: 18
+        precisionA: 2
+        rates:
+          - 30
+          - 18
+    - name: usdd2pool
+      address: TDkxLGj2tQW2a6Ejc1G4xuPXYJTU6MGiX8
+      type: CURVE_COMBINATION_POOL
+      curveConfig:
+        feeIndex: 3
+        feeDenominator: 10
+        precision: 18
+        precisionA: 2
+        rates:
+          - 18
+          - 18
+    - name: usdj2pool
+      address: TK2gCGe69rtR9T3God6W2NNhWTuq99qzgR
+      type: CURVE_COMBINATION_POOL
+      curveConfig:
+        feeIndex: 3
+        feeDenominator: 10
+        precision: 18
+        precisionA: 2
+        rates:
+          - 18
+          - 18
 
 # token-list
 token-list:
