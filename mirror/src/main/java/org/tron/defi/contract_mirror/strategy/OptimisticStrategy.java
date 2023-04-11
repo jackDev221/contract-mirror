@@ -1,0 +1,182 @@
+package org.tron.defi.contract_mirror.strategy;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.Pair;
+import org.tron.defi.contract_mirror.config.RouterConfig;
+import org.tron.defi.contract_mirror.core.graph.Edge;
+import org.tron.defi.contract_mirror.core.graph.Graph;
+import org.tron.defi.contract_mirror.core.graph.Node;
+import org.tron.defi.contract_mirror.core.token.IToken;
+import org.tron.defi.contract_mirror.dao.RouterInfo;
+import org.tron.defi.contract_mirror.dao.RouterPath;
+
+import java.math.BigInteger;
+import java.util.*;
+
+@Slf4j
+public class OptimisticStrategy extends DefaultStrategy implements IStrategy {
+    public OptimisticStrategy(Graph graph, RouterConfig routerConfig) {
+        super(graph, routerConfig);
+    }
+
+    @Override
+    public RouterInfo getPath(String from, String to, BigInteger amountIn) {
+        Node nodeFrom = graph.getNode(from);
+        Node nodeTo = graph.getNode(to);
+        if (null == nodeFrom || null == nodeTo) {
+            throw new IllegalArgumentException("INVALID FROM/TO ADDRESS");
+        }
+        long time0 = System.currentTimeMillis();
+        PriorityQueue<RouterPath> minHeap = new PriorityQueue<>(routerConfig.getTopN(),
+                                                                new RouterPath.RouterPathComparator());
+        Map<Node, Pair<Integer, RouterPath>> bestPaths = new HashMap<>(30000);
+        RouterPath initialPath = new RouterPath(nodeFrom, amountIn, nodeTo);
+        bestPaths.put(nodeFrom, Pair.of(0, initialPath));
+        // BFS with realtime pruning
+        Queue<RouterPath> searchPaths = new LinkedList<>();
+        searchPaths.offer(initialPath);
+        int stepCount = 0;
+        int candidateNum = 0;
+        while (!searchPaths.isEmpty()) {
+            stepCount++;
+            int n = searchPaths.size();
+            while (n-- > 0) {
+                RouterPath currentPath = searchPaths.poll();
+                RouterPath.Step currentStep = currentPath.getCurrentStep();
+                BigInteger amountInStep = null == currentStep
+                                          ? currentPath.getAmountIn()
+                                          : currentStep.getAmountOut();
+                if (null == amountInStep || 0 == amountInStep.compareTo(BigInteger.ZERO)) {
+                    // branch has been pruned
+                    continue;
+                }
+                Node node = null == currentStep
+                            ? currentPath.getFrom()
+                            : currentStep.getEdge().getTo();
+                for (Edge edge : node.getOutEdges()) {
+                    boolean found = edge.getTo().isEqual(currentPath.getTo());
+                    if (edge.getPool().cost() + currentPath.getCost() > routerConfig.getMaxCost() ||
+                        currentPath.isDuplicateWithCurrent(edge) ||
+                        !checkWTRXPath(currentPath, edge) ||
+                        (!found && (edge.getTo().outDegree() <= 1 || !checkWhiteBlackList(edge)))) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Prune {} |-> {}",
+                                      currentPath.getPools(),
+                                      edge.getPool().getName());
+                            log.trace("amounts {}", currentPath.getAmountsOut());
+                        }
+                        continue;
+                    }
+                    BigInteger amountOutStep;
+                    try {
+                        amountOutStep = edge.getPool()
+                                            .getAmountOut(edge.getFrom().getToken().getAddress(),
+                                                          edge.getTo().getToken().getAddress(),
+                                                          amountInStep);
+                    } catch (RuntimeException e) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("ERROR: {}", e.getMessage());
+                            log.debug("Prune {} |-> {}",
+                                      currentPath.getPools(),
+                                      edge.getPool().getName());
+                            log.debug("amounts {}", currentPath.getAmountsOut());
+                        }
+                        continue;
+                    }
+                    if (amountOutStep.compareTo(BigInteger.ZERO) <= 0) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("{} {} {} -> {} {}",
+                                      edge.getPool().getName(),
+                                      amountInStep,
+                                      ((IToken) edge.getFrom().getToken()).getSymbol(),
+                                      amountOutStep,
+                                      ((IToken) edge.getTo().getToken()).getSymbol());
+                            log.debug("Prune {} |-> {}",
+                                      currentPath.getPools(),
+                                      edge.getPool().getName());
+                            log.debug("amounts {}", currentPath.getAmountsOut());
+                        }
+                        continue;
+                    }
+                    if (found) {
+                        RouterPath candidate = new RouterPath(currentPath);
+                        candidate.addStep(edge);
+                        if (checkWTRXPath(candidate, null)) {
+                            candidate.getCurrentStep().setAmountOut(amountOutStep);
+                            candidate.setAmountOut(amountOutStep);
+                            minHeap.offer(candidate);
+                            candidateNum++;
+                            if (log.isDebugEnabled()) {
+                                log.debug("NEW CANDIDATE {} {}",
+                                          amountOutStep,
+                                          candidate.getPools());
+                                log.debug("amounts {}", candidate.getAmountsOut());
+                            }
+                            if (minHeap.size() > routerConfig.getTopN()) {
+                                candidate = minHeap.poll();
+                                if (log.isDebugEnabled()) {
+                                    log.debug("OBSOLETE CANDIDATE {} {}",
+                                              candidate.getAmountOut(),
+                                              candidate.getPools());
+                                    log.debug("amounts {}", candidate.getAmountsOut());
+                                }
+                            }
+                            continue;
+                        }
+                    }
+                    Pair<Integer, RouterPath> bestInfo = bestPaths.getOrDefault(edge.getTo(), null);
+                    BigInteger bestAmount = null;
+                    if (null != bestInfo) {
+                        bestAmount = 0 == bestInfo.getFirst()
+                                     ? bestInfo.getSecond().getAmountIn()
+                                     : bestInfo.getSecond()
+                                               .getSteps()
+                                               .get(bestInfo.getFirst() - 1)
+                                               .getAmountOut();
+                    }
+                    if (null != bestAmount && bestAmount.compareTo(amountOutStep) >= 0) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Prune {} |-> {}",
+                                      currentPath.getPools(),
+                                      edge.getPool().getName());
+                            log.debug("amounts {}", currentPath.getAmountsOut());
+                        }
+                        continue;
+                    }
+                    RouterPath path = new RouterPath(currentPath);
+                    path.addStep(edge);
+                    path.getCurrentStep().setAmountOut(amountOutStep);
+                    bestPaths.put(edge.getTo(), Pair.of(stepCount, path));
+                    searchPaths.offer(path);
+                    if (null != bestInfo && bestInfo.getFirst() >= stepCount) {
+                        RouterPath pathToPrune = bestInfo.getSecond();
+                        pathToPrune.setAmountOut(BigInteger.ZERO);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Prune {} |-> {}",
+                                      currentPath.getPools(),
+                                      edge.getPool().getName());
+                            log.debug("amounts {}", currentPath.getAmountsOut());
+                        }
+                    }
+                }
+            }
+        }
+        RouterInfo routerInfo = new RouterInfo();
+        routerInfo.setTotalCandidates(candidateNum);
+        // to get result in order
+        int n = minHeap.size();
+        if (0 == n) {
+            routerInfo.setPaths(Collections.emptyList());
+            return routerInfo;
+        }
+        RouterPath[] path = new RouterPath[n];
+        while (n-- > 0) {
+            path[n] = minHeap.poll();
+        }
+        long time1 = System.currentTimeMillis();
+        log.info("Get top {} of {} paths in {}ms", path.length, candidateNum, time1 - time0);
+
+        routerInfo.setPaths(List.of(path));
+        return routerInfo;
+    }
+}

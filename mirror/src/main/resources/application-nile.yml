@@ -1,0 +1,159 @@
+# logging
+logging:
+  config: 'classpath:logback-spring.xml'
+
+# server
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  syncPeriod: 86400000
+
+# price-center
+price-center:
+  server: c.tronlink.org
+  uri: /v1/cryptocurrency/getprice
+  useSymbol: true
+  params:
+    convert: USD
+  cacheConfig:
+    concurrencyLevel: 8
+    maxCacheSize: 100000
+    expireTime: 60
+
+# tron
+tron:
+  feeLimit: 500000000
+  mainChain:
+    type: mainnet
+    fullNodeList:
+      - 172.22.6.223:50051
+    rpcVersion: 2
+    gatewayAddress: TFLtPoEtVJBMcj6kZPrQrwEdM3W3shxsBU
+  sideChain:
+    type: mainnet
+    fullNodeList:
+      - 172.22.6.223:50051
+    rpcVersion: 2
+    gatewayAddress: TRDepx5KoQ8oNbFVZ5sogwUxtdYmATDRgX
+    chainId: 413AF23F37DA0D48234FDD43D89931E98E1144481B
+
+# kafka
+kafka:
+  bootstrapServers: 172.22.10.171:9092
+  groupId: contract-mirror-0
+  fallbackTime: 3600000
+  consumerTopics:
+    - nile_contractlog
+
+# contractList
+contract-list:
+  contracts:
+    - address: TYsbWxNnyTgsZaTFaue9hqpxkU3Fkco94a
+      type: WTRX_TOKEN
+    - address: TXFouUxm4Qs3c1VxfQtCo4xMxbpwE3aWDM
+      type: SUNSWAP_FACTORY_V1
+    - address: THomLGMLhAjMecQf9FQjbZ8a1RtwsZLrGE
+      type: SUNSWAP_FACTORY_V2
+    - name: 2pool
+      address: TH6ZjnptwVgtaTFhCJfkv3B9WVjkGW9mcr
+      type: CURVE_2POOL
+      curveConfig:
+        feeIndex: 1
+        feeDenominator: 10
+        precision: 18
+        rates:
+          - 18
+          - 30
+    - name: old3pool
+      address: TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E
+      type: CURVE_3POOL
+      curveConfig:
+        feeIndex: 2
+        feeDenominator: 10
+        precision: 18
+        rates:
+          - 18
+          - 18
+          - 30
+    - name: oldusdcpool
+      address: TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr
+      type: CURVE_COMBINATION_4POOL
+      curveConfig:
+        feeIndex: 3
+        feeDenominator: 10
+        precision: 18
+        precisionA: 2
+        rates:
+          - 30
+          - 18
+    - name: usdtpsm
+      address: TF12vhGuWttHNfxsrn6XueMLvxGLVCyN12
+      type: PSM_POOL
+      polyAddress: TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r
+    - name: usdcpsm
+      address: TFDUZ6FAtXptkY3dKHk2oRarCckyDYRkEL
+      type: PSM_POOL
+      polyAddress: TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r
+    - name: tusdpsm
+      address: TBJ1sR6RGj5675ZuHWGrG18tMxjo7cifJB
+      type: PSM_POOL
+      polyAddress: TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r
+    - name: usdjpsm
+      address: TAkD9tpd6MWVM3MQjrfDRGCXwiRMUGzzYh
+      type: PSM_POOL
+      polyAddress: TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r
+
+# token-list
+token-list:
+  tokens:
+    TRX: T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb
+    USDT: TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf
+    USDC: TWMCMCoJPqCGw5RR7eChF2HoY3a9B8eYA3
+    TUSD: TRz7J6dD2QWxBoumfYt4b3FaiRG23pXfop
+    USDD: TGjgvdTWWrybVLaVeFqSyVqJQWjxqRYbaK
+    USDJ: TLBaRhANQoJFTqre9Nf1mjuwNWjCJeYqUL
+    WTRX: TYsbWxNnyTgsZaTFaue9hqpxkU3Fkco94a
+    SUN: TDqjTkZ63yHB19w2n7vPm2qAkLHwn9fKKk
+    SUNOLD: TWrZRHY9aKQZcyjpovdH6qeCEyYZrRQDZt
+    BTC: TG9XJ75ZWcUw69W8xViEJZQ365fRupGkFP
+    ETH: TQz9i4JygMCzizdVu8NE4BdqesrsHv1L93
+    JST: TF17BgPaZYbz8oxbjhriubPDsA7ArKoLX3
+    WIN: TNDSHKGBmgRx9mDYA9CnxPx55nu672yQw2
+    DICE: TLVu3Pzaep38SGvgCxUe1cUk2SNM6fyR4e
+    LIVE: TLwpNV2gVkVk1g7ejZJ2hqzsE7RZvDuRSb
+    HT: TGfVzt44kg6ZJ4fUqpHzJy3Jb37YMf8pMH
+  wrapTokens:
+    WTRX: TRX
+    WBTC: BTC
+    WETH: ETH
+    WBTT: BTT
+
+# router
+router:
+  strategy: OPTIMISTIC
+  maxCost: 3
+  topN: 3
+  tokenWhiteList:
+    - TRX
+    - WTRX
+    - SUN
+    - SUNOLD
+    - USDJ
+    - TUSD
+    - USDD
+    - USDC
+    - BTT
+    - NFT
+    - BTC
+    - WBTC
+    - ETH
+    - WETH
+    - WBTT
+    - JST
+    - WIN
+    - LTC
+    - HT
+    - BUSD

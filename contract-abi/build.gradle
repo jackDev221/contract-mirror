@@ -1,0 +1,25 @@
+buildscript {
+    ext {
+
+    }
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+    }
+}
+
+plugins {
+}
+
+archivesBaseName = 'contract-abi'
+version = "1.0.0"
+
+dependencies {
+    implementation fileTree(dir: "../lib", includes: ["*.jar"])
+    implementation "org.web3j:abi:${web3jVersion}"
+}
+
+test {
+    useJUnitPlatform()
+}
