@@ -105,8 +105,8 @@ contract-list:
       address: TAkD9tpd6MWVM3MQjrfDRGCXwiRMUGzzYh
       type: PSM_POOL
       polyAddress: TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r
-    - name: tusdusdt2pool
-      address: TYjci8B4GKaLRYcZgfkht788JUE7wAwTTk
+    - name: 2pooltusdusdt
+      address: TJ1iMSq3o7zWRQkqyytRv7BYpNBKVYy1jk
       type: CURVE_POOL
       curveConfig:
         feeIndex: 1
@@ -115,8 +115,8 @@ contract-list:
         rates:
           - 18
           - 30
-    - name: usdc2pool
-      address: TD6mWZHgWC4hni4revAepspejbuvqpVHXS
+    - name: usdc2pooltusdusdt
+      address: TJicAdxwkexTfybwVFjZ8TwUjMf5pTkhUP
       type: CURVE_COMBINATION_POOL
       curveConfig:
         feeIndex: 3
@@ -126,8 +126,8 @@ contract-list:
         rates:
           - 30
           - 18
-    - name: usdd2pool
-      address: TDkxLGj2tQW2a6Ejc1G4xuPXYJTU6MGiX8
+    - name: usdd2pooltusdusdt
+      address: TXLCb7vwLB9HzcWB5izoggirQsqQAtJwfU
       type: CURVE_COMBINATION_POOL
       curveConfig:
         feeIndex: 3
@@ -137,8 +137,8 @@ contract-list:
         rates:
           - 18
           - 18
-    - name: usdj2pool
-      address: TK2gCGe69rtR9T3God6W2NNhWTuq99qzgR
+    - name: usdj2pooltusdusdt
+      address: TV7ybcx4wxo4L6R8EsRcV6AZD7sCRkmADg
       type: CURVE_COMBINATION_POOL
       curveConfig:
         feeIndex: 3
