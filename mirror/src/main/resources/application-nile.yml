@@ -59,7 +59,7 @@ contract-list:
       type: SUNSWAP_FACTORY_V2
     - name: 2pool
       address: TH6ZjnptwVgtaTFhCJfkv3B9WVjkGW9mcr
-      type: CURVE_2POOL
+      type: CURVE_POOL
       curveConfig:
         feeIndex: 1
         feeDenominator: 10
@@ -69,7 +69,7 @@ contract-list:
           - 30
     - name: old3pool
       address: TW6tDjosBGXpjnRMQnHAhPuqTubGs93B9E
-      type: CURVE_3POOL
+      type: CURVE_POOL
       curveConfig:
         feeIndex: 2
         feeDenominator: 10
@@ -80,7 +80,7 @@ contract-list:
           - 30
     - name: oldusdcpool
       address: TJ9d9GXCsF7cmnHDLrtT4qo6kNbVK7Qebr
-      type: CURVE_COMBINATION_4POOL
+      type: CURVE_COMBINATION_POOL
       curveConfig:
         feeIndex: 3
         feeDenominator: 10
@@ -105,6 +105,49 @@ contract-list:
       address: TAkD9tpd6MWVM3MQjrfDRGCXwiRMUGzzYh
       type: PSM_POOL
       polyAddress: TEdsCt5o6vtShpaJ5mxXx7f7pqgNqvie3r
+    - name: 2pooltusdusdt
+      address: TJ1iMSq3o7zWRQkqyytRv7BYpNBKVYy1jk
+      type: CURVE_POOL
+      curveConfig:
+        feeIndex: 1
+        feeDenominator: 10
+        precision: 18
+        rates:
+          - 18
+          - 30
+    - name: usdc2pooltusdusdt
+      address: TJicAdxwkexTfybwVFjZ8TwUjMf5pTkhUP
+      type: CURVE_COMBINATION_POOL
+      curveConfig:
+        feeIndex: 3
+        feeDenominator: 10
+        precision: 18
+        precisionA: 2
+        rates:
+          - 30
+          - 18
+    - name: usdd2pooltusdusdt
+      address: TXLCb7vwLB9HzcWB5izoggirQsqQAtJwfU
+      type: CURVE_COMBINATION_POOL
+      curveConfig:
+        feeIndex: 3
+        feeDenominator: 10
+        precision: 18
+        precisionA: 2
+        rates:
+          - 18
+          - 18
+    - name: usdj2pooltusdusdt
+      address: TV7ybcx4wxo4L6R8EsRcV6AZD7sCRkmADg
+      type: CURVE_COMBINATION_POOL
+      curveConfig:
+        feeIndex: 3
+        feeDenominator: 10
+        precision: 18
+        precisionA: 2
+        rates:
+          - 18
+          - 18
 
 # token-list
 token-list:

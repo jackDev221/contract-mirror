@@ -41,7 +41,7 @@ public class RouterResultV2Test {
     public void setUp() {
         Pool pool = null;
         for (ContractConfigList.ContractConfig config : contractConfigList.getContracts()) {
-            if (config.getType() == ContractType.CURVE_2POOL) {
+            if (config.getType() == ContractType.CURVE_POOL) {
                 contractManager.initCurve(config);
                 pool = (Pool) contractManager.getContract(config.getAddress());
                 break;

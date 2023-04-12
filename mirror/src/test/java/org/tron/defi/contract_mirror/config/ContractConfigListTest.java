@@ -23,6 +23,6 @@ public class ContractConfigListTest {
         Assertions.assertNotNull(contractConfigList);
         List<ContractConfigList.ContractConfig> configList = contractConfigList.getContracts();
         log.info(configList.toString());
-        Assertions.assertEquals(10, configList.size());
+        Assertions.assertEquals(14, configList.size());
     }
 }
