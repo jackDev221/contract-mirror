@@ -77,6 +77,10 @@ public class SharedEventConsumer extends Thread implements IEventConsumer {
         } catch (IllegalStateException e) {
             log.warn("{} need re-sync", contract.getAddress());
             contract.sync();
+        } catch (Exception unexpectedError) {
+            unexpectedError.printStackTrace();
+            log.error(unexpectedError.getMessage());
+            contract.sync();
         }
     }
 

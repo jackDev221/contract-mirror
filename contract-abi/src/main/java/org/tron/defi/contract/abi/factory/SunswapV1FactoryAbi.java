@@ -60,7 +60,7 @@ public class SunswapV1FactoryAbi extends Contract {
     public enum Events implements IEvent {
         NEW_EXCHANGE("NewExchange", "address indexed,address indexed"),
         NEW_FEE_TO("NewFeeTo", "address"),
-        NEW_FEE_RATE("NewFeeRate", "NewFeeRate(uint256)");
+        NEW_FEE_RATE("NewFeeRate", "uint256");
         private static final Map<String, Events> signatureMap = new HashMap<>();
 
         static {
