@@ -21,6 +21,7 @@ import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.M
 
 @Slf4j
 public abstract class BaseContract extends ContractObj {
+    public static final long RELOAD_TIME = 5 * 60;
     private static final int INIT_FLAG_INIT = -1;
     private static final int INIT_FLAG_START = 0;
     private static final int INIT_FLAG_DOING = 1;
@@ -30,6 +31,7 @@ public abstract class BaseContract extends ContractObj {
     private long t1;
     private long t2;
     private int initFlag;
+    private long lastEventTimestamp;
     @Setter
     @Getter
     private CountDownLatch latch;
@@ -143,6 +145,16 @@ public abstract class BaseContract extends ContractObj {
         return sigMap.getOrDefault(topics[0], "");
     }
 
+    private boolean isTimeToReloadData() {
+        long currentTime = System.currentTimeMillis() / 1000;
+        if (lastEventTimestamp == 0) {
+            lastEventTimestamp = currentTime;
+            return false;
+        }
+
+        return lastEventTimestamp + RELOAD_TIME > lastEventTimestamp;
+    }
+
     public HandleResult handleEvent(IContractEventWrap iContractEventWrap) {
         if (!stateInfo.ready) {
             // 过滤中间需要重新init和初始化失败
@@ -172,6 +184,10 @@ public abstract class BaseContract extends ContractObj {
         HandleEventExtraData handleEventExtraData = genEventExtraData(iContractEventWrap);
         try {
             wLock.lock();
+            if (isTimeToReloadData()){
+                this.resetReloadData();
+                return HandleResult.genReloadDataMessage();
+            }
             HandleResult res = handleEvent1(eventName, topics, data, handleEventExtraData);
             if (!res.result && res.code == HandleResult.CODE_HANDLE_FAIL) {
                 this.resetReloadData();
@@ -199,6 +215,7 @@ public abstract class BaseContract extends ContractObj {
 
     public void resetReloadData() {
         stateInfo.resetReloadData();
+        lastEventTimestamp = 0;
     }
 
     protected EventValues getEventValue(String eventName, String eventBody, String[] topics, String data, String id) {
@@ -233,6 +250,7 @@ public abstract class BaseContract extends ContractObj {
         public static final int CODE_NOT_READY = 2;
         public static final int CODE_PRE_LOG = 3;
         public static final int CODE_USELESS_LOG = 4;
+        public static final int CODE_REFASH_DATA = 5;
         private boolean result;
         private String message;
         private String[] newTopic;
@@ -261,6 +279,10 @@ public abstract class BaseContract extends ContractObj {
 
         public static HandleResult genHandleSuccess() {
             return HandleResult.builder().result(true).code(CODE_SUCCESS).build();
+        }
+
+        public static HandleResult genReloadDataMessage() {
+            return HandleResult.builder().result(true).code(CODE_REFASH_DATA).build();
         }
 
         public static HandleResult genHandleSuccessAndSend(String[] topics, String data) {
