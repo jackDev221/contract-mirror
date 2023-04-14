@@ -16,6 +16,7 @@ plugins {
 
 allprojects {
     apply plugin: 'java'
+    apply plugin: 'jacoco'
 
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
@@ -67,5 +68,15 @@ allprojects {
         testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
         testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
         testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    }
+
+    test {
+        finalizedBy jacocoTestReport
+    }
+
+    jacocoTestReport {
+        reports {
+            csv.enabled = true
+        }
     }
 }
