@@ -7,9 +7,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,20 +25,18 @@ import org.tron.sunio.contract_mirror.mirror.contracts.ContractFactoryManager;
 import org.tron.sunio.contract_mirror.mirror.config.ContractsMirrorConfig;
 import org.tron.sunio.contract_mirror.mirror.contracts.IContractsHelper;
 import org.tron.sunio.contract_mirror.mirror.contracts.events.ContractEventWrap;
-import org.tron.sunio.contract_mirror.mirror.contracts.impl.AbstractCurve;
-import org.tron.sunio.contract_mirror.mirror.enums.ContractType;
 import org.tron.sunio.contract_mirror.mirror.pool.CMPool;
 import org.tron.sunio.contract_mirror.mirror.tools.TimeTool;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
-
-import static org.tron.sunio.contract_mirror.mirror.consts.ContractMirrorConst.NETWORK_NILE;
 
 @Service
 @Slf4j
@@ -86,7 +87,7 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
                 Properties properties = kafkaConfig.consumerConfig();
                 consumer = new KafkaConsumer<String, String>(properties);
                 consumer.subscribe(kafkaConfig.getTopics());
-                readyKafka();
+                setOffsetToEnd(kafkaConfig.getTopics());
             }
             if (kafkaConfig.getProducerEnable()) {
                 Properties properties1 = kafkaConfig.producerConfig();
@@ -97,32 +98,17 @@ public class ContractMirror implements InitializingBean, IContractsHelper {
         }
     }
 
-    private void readyKafka() {
+    private void setOffsetToEnd(List<String> topics) {
         if (kafkaConfig.getConsumerEnable() && ObjectUtil.isNotNull(consumer)) {
-            int counts = 0;
-            while (true) {
-                ConsumerRecords<String, String> records = kafkaConsumerPoll(KAFKA_PULL_TIMEOUT);
-                if (records.count() > 0) {
-                    long localTime = System.currentTimeMillis();
-                    long kafkaTime = records.iterator().next().timestamp();
-                    if (counts % 10 == 0) {
-                        log.info("Consuming past kafka message for {} times, localTIme {}, kafkaTime {}",
-                                counts, localTime, kafkaTime);
-                    }
-                    counts++;
-                    if (kafkaTime >= localTime - 1000) {
-                        log.info("Finish consuming past kafka message at {} times, localTIme {}, kafkaTime {}",
-                                counts, localTime, kafkaTime);
-                        break;
-                    }
-                } else {
-                    counts++;
-                    log.info("Kafka not ready sleep 500mils");
-                    TimeTool.sleep(KAFKA_READY_CHECK_INTERVAL);
-                    if (counts > 5 && config.getNetwork().equals(NETWORK_NILE)) {
-                        log.info("nile net work less txs");
-                        break;
-                    }
+            for (String topic : topics) {
+                List<PartitionInfo> partitionInfos = consumer.partitionsFor(topic);
+                List<TopicPartition> tp =new ArrayList<TopicPartition>();
+                if (null != partitionInfos && partitionInfos.size() > 0) {
+                    partitionInfos.forEach(partitionInfo -> {
+                        tp.add(new TopicPartition(topic, partitionInfo.partition()));
+                    });
+                    consumer.assign(tp);
+                    consumer.seekToEnd(tp);
                 }
             }
         }
