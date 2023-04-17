@@ -12,6 +12,8 @@ buildscript {
 
 plugins {
     id 'java'
+    id 'test-report-aggregation'
+    id 'jacoco-report-aggregation'
 }
 
 allprojects {
@@ -70,13 +72,57 @@ allprojects {
         testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     }
 
-    test {
-        finalizedBy jacocoTestReport
-    }
+    testing {
+        suites {
+            test {
+                useJUnitJupiter()
+            }
 
-    jacocoTestReport {
-        reports {
-            csv.enabled = true
+            integrationTest(JvmTestSuite) {
+                dependencies {
+                    implementation project()
+                }
+
+                targets {
+                    all {
+                        testTask.configure {
+                            shouldRunAfter(test)
+                        }
+                    }
+                }
+            }
         }
     }
+
+    tasks.named('check') {
+        dependsOn(testing.suites.integrationTest)
+    }
+}
+
+dependencies {
+    testReportAggregation subprojects
+    jacocoAggregation subprojects
+}
+
+testCodeCoverageReport {
+    reports {
+        csv.required = true;
+        xml.required = false
+    }
+}
+
+reporting {
+    reports {
+        testAggregateTestReport(AggregateTestReport) {
+            testType = TestSuiteType.UNIT_TEST
+        }
+        testCodeCoverageReport(JacocoCoverageReport) {
+            testType = TestSuiteType.UNIT_TEST
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('testAggregateTestReport', TestReport)
+    dependsOn tasks.named('testCodeCoverageReport', JacocoReport)
 }
